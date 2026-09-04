@@ -19,7 +19,7 @@ const supabase = createClient(
 );
 
 // ============================================================
-//  1.  API 라우트
+//  1.  사용자 관련 API
 // ============================================================
 
 // 1-1. 닉네임 중복 확인
@@ -98,9 +98,72 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// ====== 카드(프로필) 관련 API ======
+// 1-4. 특정 사용자 정보 조회 (★ 추가됨)
+app.get('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-// 1-4. 전체 프로필 조회 (카드 목록)
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+            }
+            throw error;
+        }
+        res.json(data);
+    } catch (err) {
+        console.error('User fetch error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-5. 사용자 정보 수정 (선택)
+app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update(req.body)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (data.length === 0) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+        res.json(data[0]);
+    } catch (err) {
+        console.error('User update error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-6. 사용자 삭제 (선택)
+app.delete('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) {
+        console.error('User delete error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  2.  프로필(카드) 관련 API
+// ============================================================
+
+// 2-1. 전체 프로필 조회
 app.get('/api/profiles', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -116,7 +179,7 @@ app.get('/api/profiles', async (req, res) => {
     }
 });
 
-// 1-5. 카드 등록 (프로필 생성)
+// 2-2. 카드 등록
 app.post('/api/profiles', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -136,7 +199,7 @@ app.post('/api/profiles', async (req, res) => {
     }
 });
 
-// 1-6. 카드 수정 (프로필 업데이트)
+// 2-3. 카드 수정
 app.put('/api/profiles/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -157,7 +220,7 @@ app.put('/api/profiles/:id', async (req, res) => {
     }
 });
 
-// 1-7. 카드 삭제
+// 2-4. 카드 삭제
 app.delete('/api/profiles/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -174,7 +237,150 @@ app.delete('/api/profiles/:id', async (req, res) => {
     }
 });
 
-// 1-8. Supabase 연결 테스트 (상세)
+// ============================================================
+//  3.  좋아요(찜) 관련 API
+// ============================================================
+
+// 3-1. 좋아요 목록 조회 (★ 추가됨)
+app.get('/api/likes', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('likes')
+            .select('*');
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error('Likes fetch error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3-2. 좋아요 추가/삭제 (찜 토글)
+app.post('/api/likes', async (req, res) => {
+    const { user_id, card_id } = req.body;
+
+    if (!user_id || !card_id) {
+        return res.status(400).json({ error: 'user_id와 card_id가 필요합니다.' });
+    }
+
+    try {
+        // 이미 좋아요가 있는지 확인
+        const { data: existing, error: findError } = await supabase
+            .from('likes')
+            .select('*')
+            .eq('user_id', user_id)
+            .eq('card_id', card_id)
+            .single();
+
+        if (findError && findError.code !== 'PGRST116') {
+            throw findError;
+        }
+
+        if (existing) {
+            // 좋아요 삭제
+            const { error: deleteError } = await supabase
+                .from('likes')
+                .delete()
+                .eq('user_id', user_id)
+                .eq('card_id', card_id);
+
+            if (deleteError) throw deleteError;
+
+            // 좋아요 수 감소
+            await supabase.rpc('decrement_likes', { card_id });
+
+            return res.json({ success: true, action: 'unliked' });
+        } else {
+            // 좋아요 추가
+            const { error: insertError } = await supabase
+                .from('likes')
+                .insert([{ user_id, card_id }]);
+
+            if (insertError) throw insertError;
+
+            // 좋아요 수 증가
+            await supabase.rpc('increment_likes', { card_id });
+
+            return res.json({ success: true, action: 'liked' });
+        }
+    } catch (err) {
+        console.error('Like toggle error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  4.  매칭 관련 API
+// ============================================================
+
+// 4-1. 매칭 목록 조회 (★ 추가됨)
+app.get('/api/matches', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('matches')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error('Matches fetch error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4-2. 매칭 신청
+app.post('/api/matches', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('matches')
+            .insert([req.body])
+            .select();
+
+        if (error) {
+            console.error('Match insert error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json(data[0]);
+    } catch (err) {
+        console.error('Server error:', err);
+        res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
+    }
+});
+
+// 4-3. 매칭 응답 (수락/거절)
+app.put('/api/matches/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['accepted', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: '유효한 상태가 아닙니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('matches')
+            .update({ status, responded_at: new Date() })
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (data.length === 0) {
+            return res.status(404).json({ error: '매칭을 찾을 수 없습니다.' });
+        }
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Match update error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  5.  테스트용 API
+// ============================================================
+
 app.get('/api/supabase-ping', async (req, res) => {
     try {
         const { error } = await supabase
@@ -197,7 +403,6 @@ app.get('/api/supabase-ping', async (req, res) => {
     }
 });
 
-// 1-9. Supabase 연결 테스트 (간단)
 app.get('/api/supabase-test', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -216,13 +421,12 @@ app.get('/api/supabase-test', async (req, res) => {
     }
 });
 
-// 1-10. 기본 서버 테스트
 app.get('/api/test', (req, res) => {
     res.json({ message: '서버가 살아있습니다! 🎉' });
 });
 
 // ============================================================
-//  2.  모든 API 이외의 요청은 index.html (SPA)
+//  6.  모든 API 이외의 요청은 index.html (SPA)
 // ============================================================
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
