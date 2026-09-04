@@ -1458,135 +1458,155 @@
     const bottomNotice = document.getElementById('bottomNotice');
     const genderFilter = document.getElementById('genderFilter');
 
-    function renderProfiles() {
-        let filtered = [...allProfiles];
+function renderProfiles() {
+    let filtered = [...allProfiles];
 
-        if (currentUserId) {
-            const myCards = filtered.filter(p => p.user_id === currentUserId);
-            const otherCards = filtered.filter(p => p.user_id !== currentUserId);
-            let filteredOthers = [...otherCards];
-            if (showLikedOnly) {
-                filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
-            }
-            if (showLikedByOnly) {
-                if (!isLoggedIn) {
-                    showToast('⚠️ 로그인 후 이용 가능합니다');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    renderProfiles();
-                    return;
-                }
-                if (!hasMyCard) {
-                    showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    renderProfiles();
-                    return;
-                }
-                if (cardVerificationStatus !== 'approved') {
-                    showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
-                    document.querySelector('[data-tab="mypage"]').classList.add('active');
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    document.getElementById('page-mypage').classList.add('active');
-                    renderProfiles();
-                    return;
-                }
-                filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
-            }
-            filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
-        } else {
-            if (showLikedOnly) {
-                filtered = filtered.filter(p => likedIds.has(p.id));
-            }
-            if (showLikedByOnly) {
-                showLikedByOnly = false;
+    // 로그인 사용자 필터
+    if (currentUserId) {
+        const myCards = filtered.filter(p => p.user_id === currentUserId);
+        const otherCards = filtered.filter(p => p.user_id !== currentUserId);
+        let filteredOthers = [...otherCards];
+        if (showLikedOnly) {
+            filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
+        }
+        if (showLikedByOnly) {
+            if (!isLoggedIn) {
+                showToast('⚠️ 로그인 후 이용 가능합니다');
                 document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                renderProfiles();
+                return;
             }
-            filtered = filtered.filter(p => p.type === currentMode);
-        }
-
-        if (currentMode === 'same' && currentUser) {
-            const myCards = filtered.filter(p => p.user_id === currentUserId);
-            const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
-            filtered = [...myCards, ...others];
-            genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
-            genderFilter.disabled = true;
-        } else {
-            genderFilter.disabled = false;
-            const genderVal = genderFilter.value;
-            if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
-            else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
-        }
-
-        if (currentUser && currentUser.hide_same_school) {
-            filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
-        }
-
-        const sortVal = document.getElementById('sortFilter').value;
-        if (sortVal === 'popular') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-        else filtered.sort((a, b) => a.id - b.id);
-
-        const femaleCount = filtered.filter(p => p.gender === 'female').length;
-        const maleCount = filtered.filter(p => p.gender === 'male').length;
-        genderCount.textContent = `👩 ${femaleCount}명 · 👨 ${maleCount}명`;
-
-        if (isLoggedIn) {
-            bottomNotice.style.display = 'none';
-        } else {
-            bottomNotice.style.display = 'block';
-        }
-
-        grid.innerHTML = '';
-        filtered.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'note-card';
-            const isLiked = likedIds.has(p.id);
-            const isLikedBy = likedByIds.has(p.user_id);
-            const isMyCard = isLoggedIn && p.user_id === currentUserId;
-            const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
-            const canLike = hasMyCard && isLoggedIn && !isMyCard;
-
-            let schoolDisplay = p.school;
-            let majorDisplay = p.major;
-            if (p.user_id !== null) {
-                const owner = allUsers.find(u => u.id === p.user_id);
-                if (owner) {
-                    if (owner.hide_school) schoolDisplay = '학교 숨김';
-                    if (owner.hide_major) majorDisplay = '학과 숨김';
-                }
+            if (!hasMyCard) {
+                showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+                document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                renderProfiles();
+                return;
             }
+            if (cardVerificationStatus !== 'approved') {
+                showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
+                document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-tab="mypage"]').classList.add('active');
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById('page-mypage').classList.add('active');
+                renderProfiles();
+                return;
+            }
+            filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
+        }
+        filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
+    } else {
+        if (showLikedOnly) {
+            filtered = filtered.filter(p => likedIds.has(p.id));
+        }
+        if (showLikedByOnly) {
+            showLikedByOnly = false;
+            document.getElementById('showLikedByBtn').classList.remove('active');
+        }
+        filtered = filtered.filter(p => p.type === currentMode);
+    }
 
-            // ★ '나를찜' 표시 조건: 로그인 + 학생증 인증 완료 + 내 카드 아닐 때
-const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
+    // 동성친구 모드
+    if (currentMode === 'same' && currentUser) {
+        const myCards = filtered.filter(p => p.user_id === currentUserId);
+        const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
+        filtered = [...myCards, ...others];
+        genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
+        genderFilter.disabled = true;
+    } else {
+        genderFilter.disabled = false;
+        const genderVal = genderFilter.value;
+        if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
+        else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
+    }
 
-// 성별 텍스트 변환
-const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
+    // 같은학교 숨기기
+    if (currentUser && currentUser.hide_same_school) {
+        filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
+    }
 
-card.innerHTML = `
-    <span class="emoji-big">${p.emoji}</span>
-    <span class="card-type-badge">${typeLabel}</span>
-    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-    <div class="info-line">
-        ${genderText} · ${schoolDisplay} · ${majorDisplay}
-    </div>
-    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-        ${p.grade} · ${p.age}세 · ${p.height}cm
-    </div>
-    <div class="preview">${p.preview || detailDisplay}</div>
-    ${moreNotice}
-    <div class="meta">
-        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-        <span>
-            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-               onclick="event.stopPropagation(); toggleLike(${p.id})"
-               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-        </span>
-    </div>
-`;
+    // 정렬
+    const sortVal = document.getElementById('sortFilter').value;
+    if (sortVal === 'popular') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+    else filtered.sort((a, b) => a.id - b.id);
+
+    // 성별 카운트
+    const femaleCount = filtered.filter(p => p.gender === 'female').length;
+    const maleCount = filtered.filter(p => p.gender === 'male').length;
+    genderCount.textContent = `👩 ${femaleCount}명 · 👨 ${maleCount}명`;
+
+    if (isLoggedIn) {
+        bottomNotice.style.display = 'none';
+    } else {
+        bottomNotice.style.display = 'block';
+    }
+
+    // ====== 카드 렌더링 (수정된 부분) ======
+    grid.innerHTML = '';
+    filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        const isLiked = likedIds.has(p.id);
+        const isLikedBy = likedByIds.has(p.user_id);
+        const isMyCard = isLoggedIn && p.user_id === currentUserId;
+        const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
+        const canLike = hasMyCard && isLoggedIn && !isMyCard;
+
+        // ★ 개인정보 숨기기 (schoolDisplay, majorDisplay 정의)
+        let schoolDisplay = p.school;
+        let majorDisplay = p.major;
+        if (p.user_id !== null) {
+            const owner = allUsers.find(u => u.id === p.user_id);
+            if (owner) {
+                if (owner.hide_school) schoolDisplay = '학교비공개';
+                if (owner.hide_major) majorDisplay = '계열비공개';
+            }
+        }
+
+        // ★ 자기소개 제한 (비로그인 시)
+        let detailDisplay = p.detail;
+        let moreNotice = '';
+        if (!isLoggedIn) {
+            if (p.detail && p.detail.length > 10) {
+                detailDisplay = p.detail.slice(0, 10) + '...';
+            }
+            moreNotice = '<div style="font-size:0.55rem; color:#fbbf24; margin-top:4px; text-align:center;">🔒 전체 내용은 회원가입 후 확인 가능</div>';
+        }
+
+        // ★ '나를찜' 배지 조건: 로그인 + 학생증 인증 + 내 카드 아님
+        const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
+        const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
+
+        // ★ 카드 HTML (수정된 순서)
+        card.innerHTML = `
+            <span class="emoji-big">${p.emoji}</span>
+            <span class="card-type-badge">${typeLabel}</span>
+            ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+            ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+            <div class="info-line">
+                ${genderText} · ${schoolDisplay} · ${majorDisplay}
+            </div>
+            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+                ${p.grade} · ${p.age}세 · ${p.height}cm
+            </div>
+            <div class="preview">${p.preview || detailDisplay}</div>
+            ${moreNotice}
+            <div class="meta">
+                <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+                <span>
+                    <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+                       onclick="event.stopPropagation(); toggleLike(${p.id})"
+                       title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+                </span>
+            </div>
+        `;
+        card.addEventListener('click', () => showProfileDetail(p));
+        grid.appendChild(card);
+    });
+}
 
     async function toggleLike(cardId) {
         if (!hasMyCard || !isLoggedIn) {
@@ -1909,16 +1929,18 @@ function showProfileDetail(profile) {
     if (profile.user_id !== null) {
         const owner = allUsers.find(u => u.id === profile.user_id);
         if (owner) {
-            if (owner.hide_school) schoolDisplay = '학교 숨김';
-            if (owner.hide_major) majorDisplay = '학과 숨김';
+            if (owner.hide_school) schoolDisplay = '학교비공개';
+            if (owner.hide_major) majorDisplay = '계열비공개';
         }
     }
 
-    // ★★★ 추가: 자기소개 내용 제한 ★★★
+    // 자기소개 제한 (비로그인 시)
     let detailDisplay = profile.detail;
     if (!isLoggedIn && profile.detail && profile.detail.length > 10) {
         detailDisplay = profile.detail.slice(0, 10) + '...<br><span style="color:#fbbf24; font-size:0.7rem;">🔒 전체 내용은 회원가입 후 확인 가능</span>';
     }
+
+    const genderText = profile.gender === 'female' ? '여성' : '남성';
 
     let showMatchBtn = false;
     if (isLoggedIn && !isMyCard && hasMyCard) {
@@ -1931,21 +1953,17 @@ function showProfileDetail(profile) {
         }
     }
 
-   // 성별 텍스트
-const genderText = profile.gender === 'female' ? '여성' : '남성';
-
-content.innerHTML = `
-    <h2>💌 카드 상세</h2>
-    <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
-    <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
-    ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
-    <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
-    <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
-    <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
-    <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
-    <hr class="divider">
-    <!-- 버튼들 (그대로 유지) -->
-`;
+    // ★ 수정된 모달 HTML (MBTI 제거, 순서 변경)
+    content.innerHTML = `
+        <h2>💌 카드 상세</h2>
+        <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
+        <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
+        ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
+        <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
+        <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
+        <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
+        <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
+        <hr class="divider">
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
             ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
             ${isMyCard ? `
