@@ -44,7 +44,7 @@ app.get('/api/users/check-nickname', async (req, res) => {
     }
 });
 
-// 1-2. 회원가입 (POST /api/users)  ★★★★★ 이게 없었음!
+// 1-2. 회원가입
 app.post('/api/users', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -64,7 +64,117 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-// 1-3. Supabase 연결 테스트 (상세)
+// 1-3. 로그인
+app.post('/api/login', async (req, res) => {
+    const { nickname, password } = req.body;
+
+    if (!nickname || !password) {
+        return res.status(400).json({ error: '닉네임과 비밀번호를 입력해주세요.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('nickname', nickname)
+            .eq('password', password)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+            }
+            throw error;
+        }
+
+        if (!data) {
+            return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
+    }
+});
+
+// ====== 카드(프로필) 관련 API ======
+
+// 1-4. 전체 프로필 조회 (카드 목록)
+app.get('/api/profiles', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error('Profile fetch error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-5. 카드 등록 (프로필 생성)
+app.post('/api/profiles', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .insert([req.body])
+            .select();
+
+        if (error) {
+            console.error('Profile insert error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json(data[0]);
+    } catch (err) {
+        console.error('Server error:', err);
+        res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
+    }
+});
+
+// 1-6. 카드 수정 (프로필 업데이트)
+app.put('/api/profiles/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(req.body)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (data.length === 0) {
+            return res.status(404).json({ error: '해당 카드를 찾을 수 없습니다.' });
+        }
+        res.json(data[0]);
+    } catch (err) {
+        console.error('Profile update error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-7. 카드 삭제
+app.delete('/api/profiles/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Profile delete error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-8. Supabase 연결 테스트 (상세)
 app.get('/api/supabase-ping', async (req, res) => {
     try {
         const { error } = await supabase
@@ -87,7 +197,7 @@ app.get('/api/supabase-ping', async (req, res) => {
     }
 });
 
-// 1-4. Supabase 연결 테스트 (간단)
+// 1-9. Supabase 연결 테스트 (간단)
 app.get('/api/supabase-test', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -106,7 +216,7 @@ app.get('/api/supabase-test', async (req, res) => {
     }
 });
 
-// 1-5. 기본 서버 테스트
+// 1-10. 기본 서버 테스트
 app.get('/api/test', (req, res) => {
     res.json({ message: '서버가 살아있습니다! 🎉' });
 });
