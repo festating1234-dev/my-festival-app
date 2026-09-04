@@ -19,10 +19,10 @@ const supabase = createClient(
 );
 
 // ============================================================
-//  1.  API 라우트 (모든 API는 이 위에 위치)
+//  1.  API 라우트
 // ============================================================
 
-// 1-1. 닉네임 중복 확인 (회원가입에서 사용)
+// 1-1. 닉네임 중복 확인
 app.get('/api/users/check-nickname', async (req, res) => {
     const { nickname } = req.query;
     if (!nickname) {
@@ -35,7 +35,6 @@ app.get('/api/users/check-nickname', async (req, res) => {
             .eq('nickname', nickname)
             .single();
 
-        // PGRST116 = 데이터 없음 (정상)
         if (error && error.code !== 'PGRST116') {
             throw error;
         }
@@ -45,7 +44,27 @@ app.get('/api/users/check-nickname', async (req, res) => {
     }
 });
 
-// 1-2. Supabase 연결 테스트 (상세)
+// 1-2. 회원가입 (POST /api/users)  ★★★★★ 이게 없었음!
+app.post('/api/users', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .insert([req.body])
+            .select();
+
+        if (error) {
+            console.error('Supabase insert error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json(data[0]);
+    } catch (err) {
+        console.error('Server error:', err);
+        res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
+    }
+});
+
+// 1-3. Supabase 연결 테스트 (상세)
 app.get('/api/supabase-ping', async (req, res) => {
     try {
         const { error } = await supabase
@@ -68,7 +87,7 @@ app.get('/api/supabase-ping', async (req, res) => {
     }
 });
 
-// 1-3. Supabase 연결 테스트 (간단)
+// 1-4. Supabase 연결 테스트 (간단)
 app.get('/api/supabase-test', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -87,7 +106,7 @@ app.get('/api/supabase-test', async (req, res) => {
     }
 });
 
-// 1-4. 기본 서버 테스트
+// 1-5. 기본 서버 테스트
 app.get('/api/test', (req, res) => {
     res.json({ message: '서버가 살아있습니다! 🎉' });
 });
