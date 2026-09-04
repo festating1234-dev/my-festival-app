@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
+        /* (기존 스타일 동일, 생략) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Noto Sans KR', sans-serif;
@@ -1201,65 +1202,12 @@
     ];
 
     // ================================================================
-    // 1. localStorage 헬퍼
+    // 1. 초기 데이터 (localStorage 대신 서버에서 로드)
     // ================================================================
-    function getData(key, defaultVal) {
-        try {
-            const data = localStorage.getItem('festating_' + key);
-            return data ? JSON.parse(data) : defaultVal;
-        } catch { return defaultVal; }
-    }
-    function setData(key, val) {
-        localStorage.setItem('festating_' + key, JSON.stringify(val));
-    }
-
-    // ================================================================
-    // 2. 초기 데이터 (더미 프로필)
-    // ================================================================
-    const defaultProfiles = [
-        { id: 0, userId: null, emoji: '🐶', school: '홍익대', grade: '22학번', age: 22, gender: 'female', height: 163, region: '서울특별시', mbti: 'ENFP', major: '경영학과', preview: '전시회랑 카페투어 좋아해요', detail: '홍대에서 디자인 공부 중이에요. 낯가리지만 친해지면 말 많아져요. 같이 감성적인 데이트할 분!', likes: 12, type: 'solo' },
-        { id: 1, userId: null, emoji: '🐱', school: '연세대', grade: '21학번', age: 23, gender: 'female', height: 167, region: '서울특별시', mbti: 'INFP', major: '심리학과', detail: '연대 심리학과 21학번이에요. 사람 마음에 관심 많고, 책 읽는 걸 좋아해요. 깊은 대화 나눌 사람을 찾아요.', likes: 8, type: 'solo' },
-        { id: 2, userId: null, emoji: '🦊', school: '고려대', grade: '20학번', age: 24, gender: 'male', height: 178, region: '서울특별시', mbti: 'ENTJ', major: '컴퓨터공학과', preview: 'IT 스타트업 인턴 중', detail: '고대 컴공 20학번이에요. 개발자 지망생이고, 운동도 좋아해요. 축제에서 신나게 놀고 싶어요!', likes: 5, type: 'solo' },
-        { id: 3, userId: null, emoji: '🐻', school: '서강대', grade: '23학번', age: 21, gender: 'female', height: 165, region: '서울특별시', mbti: 'ISFJ', major: '국문학과', detail: '서강대 국문과 23학번이에요. 조용한 성격이지만 친해지면 재밌어요. 캠퍼스 투어 같이 해요.', likes: 3, type: 'group' },
-        { id: 4, userId: null, emoji: '🐼', school: '성균관대', grade: '22학번', age: 23, gender: 'male', height: 182, region: '서울특별시', mbti: 'ESTJ', major: '경영학과', preview: '축제 기획 동아리 회장', detail: '성대 경영 22학번, 축제 기획 동아리에서 활동 중이에요. 축제 놀러 오면 제가 가이드 해드릴게요!', likes: 7, type: 'solo' },
-        { id: 5, userId: null, emoji: '🦁', school: '한양대', grade: '21학번', age: 24, gender: 'male', height: 185, region: '서울특별시', mbti: 'ENFJ', major: '체육학과', preview: '축제에서 같이 놀 남자친구!', detail: '한양대 체육학과 21학번! 운동 좋아하고, 축제에서 같이 맥주 마실 친구 구해요!', likes: 4, type: 'same' },
-        { id: 6, userId: null, emoji: '🐯', school: '중앙대', grade: '22학번', age: 23, gender: 'male', height: 180, region: '서울특별시', mbti: 'ISTP', major: '기계공학과', preview: '공연 같이 볼 동성친구', detail: '중대 기계공학과 22학번. 록 음악 좋아하고, 축제 공연 보면서 놀 친구를 찾아요!', likes: 3, type: 'same' },
-        { id: 7, userId: null, emoji: '🦄', school: '이화여대', grade: '20학번', age: 22, gender: 'female', height: 168, region: '서울특별시', mbti: 'INTP', major: '영문학과', preview: '부스 투어 같이 할 언니!', detail: '이화여대 영문학과 20학번. 축제 부스 돌아다니면서 맛있는 거 먹을 친구 필요해요!', likes: 6, type: 'same' },
-        { id: 8, userId: null, emoji: '🌸', school: '숙명여대', grade: '23학번', age: 21, gender: 'female', height: 164, region: '서울특별시', mbti: 'ESFP', major: '미술학과', preview: '사진 찍어줄 동성친구', detail: '숙명여대 미술학과 23학번. 축제에서 예쁜 사진 많이 찍을 친구를 찾아요!', likes: 9, type: 'same' },
-    ];
-
-    // 축제 일정
-    const festivalEvents = [
-        { date: '2026-09-02', school: '아주대', detail: '대동제', lineup: '동아리 공연' },
-        { date: '2026-09-03', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-06', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-07', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-08', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-11', school: '신촌연합', detail: '신촌 대학가 축제', lineup: '다수 대학 참여' },
-        { date: '2026-09-12', school: '한양사이버', detail: 'HYCU BIG FESTIVAL', lineup: '추후 공개' },
-        { date: '2026-09-17', school: '동국대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-25', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-26', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-27', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-28', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-29', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-10-01', school: '고려대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-02', school: '연세대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-08', school: '성균관대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-09', school: '한양대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-15', school: '중앙대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-16', school: '서강대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-22', school: '건양대', detail: 'KY FESTA', lineup: '추후 공개' },
-        { date: '2026-10-30', school: '동국대(경주)', detail: 'APEC 메모리얼 페스타', lineup: 'K-POP 콘서트' }
-    ];
-
-    // ================================================================
-    // 3. 상태 변수 (localStorage 기반)
-    // ================================================================
-    let allProfiles = getData('profiles', defaultProfiles);
-    let allUsers = getData('users', []);
-    let allLikes = getData('likes', []);
-    let allMatches = getData('matches', []);
+    let allProfiles = [];
+    let allUsers = [];
+    let allLikes = [];
+    let allMatches = [];
     let currentUserId = getData('currentUser', null);
     let nextId = getData('nextId', 100);
 
@@ -1281,7 +1229,20 @@
     let matchingData = { sent: [], received: [], matched: [] };
 
     // ================================================================
-    // 4. 유틸리티 함수
+    // 2. localStorage 헬퍼 (로그인 상태만 유지)
+    // ================================================================
+    function getData(key, defaultVal) {
+        try {
+            const data = localStorage.getItem('festating_' + key);
+            return data ? JSON.parse(data) : defaultVal;
+        } catch { return defaultVal; }
+    }
+    function setData(key, val) {
+        localStorage.setItem('festating_' + key, JSON.stringify(val));
+    }
+
+    // ================================================================
+    // 3. 유틸리티 함수
     // ================================================================
     function getSchoolTier(school) {
         const tierMap = {
@@ -1314,28 +1275,120 @@
     }
 
     // ================================================================
-    // 5. 데이터 로드/저장
+    // 4. 서버 API 호출 함수들
     // ================================================================
-    function loadUserData() {
+
+    // 4-1. 프로필 목록 불러오기
+    async function fetchProfiles() {
+        try {
+            const res = await fetch('/api/profiles');
+            if (res.ok) {
+                allProfiles = await res.json();
+                return allProfiles;
+            } else {
+                console.error('프로필 로드 실패:', await res.text());
+                return [];
+            }
+        } catch (error) {
+            console.error('프로필 로드 오류:', error);
+            return [];
+        }
+    }
+
+    // 4-2. 사용자 정보 불러오기
+    async function fetchUser(userId) {
+        try {
+            const res = await fetch(`/api/users/${userId}`);
+            if (res.ok) {
+                return await res.json();
+            }
+            return null;
+        } catch (error) {
+            console.error('사용자 정보 로드 오류:', error);
+            return null;
+        }
+    }
+
+    // 4-3. 좋아요 목록 불러오기
+    async function fetchLikes() {
+        try {
+            const res = await fetch('/api/likes');
+            if (res.ok) {
+                allLikes = await res.json();
+                return allLikes;
+            }
+            return [];
+        } catch (error) {
+            console.error('좋아요 로드 오류:', error);
+            return [];
+        }
+    }
+
+    // 4-4. 매칭 목록 불러오기
+    async function fetchMatches() {
+        try {
+            const res = await fetch('/api/matches');
+            if (res.ok) {
+                allMatches = await res.json();
+                return allMatches;
+            }
+            return [];
+        } catch (error) {
+            console.error('매칭 로드 오류:', error);
+            return [];
+        }
+    }
+
+    // ================================================================
+    // 5. 데이터 로드/저장 (서버 기반)
+    // ================================================================
+    async function loadUserData() {
         if (currentUserId) {
-            currentUser = allUsers.find(u => u.id === currentUserId);
-            if (currentUser) {
+            // 1. 서버에서 사용자 정보 다시 불러오기
+            const userData = await fetchUser(currentUserId);
+            if (userData) {
+                currentUser = userData;
                 isLoggedIn = true;
-                isEmailVerified = currentUser.emailVerified || false;
-                cardVerificationStatus = currentUser.cardStatus || 'none';
-                freeMatchTickets = currentUser.freeTickets || 0;
-                const myCards = allProfiles.filter(p => p.userId === currentUserId);
-                hasMyCard = myCards.length > 0;
-                const myLikes = allLikes.filter(l => l.userId === currentUserId);
-                likedIds = new Set(myLikes.map(l => l.cardId));
+                isEmailVerified = currentUser.email_verified || false;
+                cardVerificationStatus = currentUser.card_status || 'none';
+                freeMatchTickets = currentUser.free_tickets || 0;
+
+                // 2. 서버에서 프로필 목록 다시 불러오기
+                await fetchProfiles();
+
+                // 3. 서버에서 좋아요 목록 불러오기
+                await fetchLikes();
+
+                // 4. 서버에서 매칭 목록 불러오기
+                await fetchMatches();
+
+                // 5. 내 카드 확인
+                const mySoloCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'solo');
+                const myGroupCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'group');
+                const mySameCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'same');
+                hasMyCard = !!(mySoloCard || myGroupCard || mySameCard);
+
+                // 6. 좋아요 데이터 계산
+                const myLikes = allLikes.filter(l => l.user_id === currentUserId);
+                likedIds = new Set(myLikes.map(l => l.card_id));
+
+                // 7. 나를 찜한 사람들
+                const myCards = allProfiles.filter(p => p.user_id === currentUserId);
                 const myCardIds = myCards.map(c => c.id);
-                const likedBy = allLikes.filter(l => myCardIds.includes(l.cardId));
-                likedByIds = new Set(likedBy.map(l => l.userId));
-                updateMatchingDataAndAutoReject();
+                const likedBy = allLikes.filter(l => myCardIds.includes(l.card_id));
+                likedByIds = new Set(likedBy.map(l => l.user_id));
+
+                // 8. 매칭 데이터 업데이트
+                updateMatchingData();
+
                 updateUI();
                 renderProfiles();
                 updateLikedBtn();
                 return true;
+            } else {
+                // 서버에 없는 사용자면 로그아웃 처리
+                logout();
+                return false;
             }
         }
         isLoggedIn = false;
@@ -1343,59 +1396,62 @@
         return false;
     }
 
-    function updateMatchingDataAndAutoReject() {
+    function updateMatchingData() {
         if (!currentUserId) return;
-        const now = new Date();
-        allMatches.forEach(m => {
-            if (m.status === 'pending') {
-                const created = new Date(m.createdAt);
-                const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-                if (diffDays >= 3) {
-                    m.status = 'rejected';
-                }
-            }
-        });
-        saveAllData();
-
-        const myCards = allProfiles.filter(p => p.userId === currentUserId);
+        const myCards = allProfiles.filter(p => p.user_id === currentUserId);
         const myCardIds = myCards.map(c => c.id);
 
         matchingData.sent = allMatches
-            .filter(m => m.fromUserId === currentUserId && m.status === 'pending')
+            .filter(m => m.from_user_id === currentUserId && m.status === 'pending')
             .map(m => {
-                const card = allProfiles.find(p => p.id === m.toCardId);
-                return { id: m.id, to: card ? card.school + ' · ' + card.age + '세 · ' + (card.gender === 'female' ? '여성' : '남성') : '알 수 없음', status: m.status, type: m.type || 'normal', createdAt: m.createdAt };
+                const card = allProfiles.find(p => p.id === m.to_card_id);
+                return {
+                    id: m.id,
+                    to: card ? card.school + ' · ' + card.age + '세 · ' + (card.gender === 'female' ? '여성' : '남성') : '알 수 없음',
+                    status: m.status,
+                    type: m.type || 'normal',
+                    createdAt: m.created_at
+                };
             });
 
         matchingData.received = allMatches
-            .filter(m => myCardIds.includes(m.toCardId) && m.status === 'pending')
+            .filter(m => myCardIds.includes(m.to_card_id) && m.status === 'pending')
             .map(m => {
-                const fromUser = allUsers.find(u => u.id === m.fromUserId);
-                return { id: m.id, from: fromUser ? fromUser.nickname + ' · ' + fromUser.age + '세 · ' + (fromUser.gender === '여성' ? '여성' : '남성') : '알 수 없음', status: m.status, type: m.type || 'normal', createdAt: m.createdAt };
+                const fromUser = allUsers.find(u => u.id === m.from_user_id);
+                return {
+                    id: m.id,
+                    from: fromUser ? fromUser.nickname + ' · ' + fromUser.age + '세 · ' + (fromUser.gender === '여성' ? '여성' : '남성') : '알 수 없음',
+                    status: m.status,
+                    type: m.type || 'normal',
+                    createdAt: m.created_at
+                };
             });
 
         matchingData.matched = allMatches
-            .filter(m => (m.fromUserId === currentUserId || myCardIds.includes(m.toCardId)) && m.status === 'accepted')
+            .filter(m => (m.from_user_id === currentUserId || myCardIds.includes(m.to_card_id)) && m.status === 'accepted')
             .map(m => {
-                const otherId = m.fromUserId === currentUserId ?
-                    allProfiles.find(p => p.id === m.toCardId)?.userId :
-                    m.fromUserId;
+                const otherId = m.from_user_id === currentUserId ?
+                    allProfiles.find(p => p.id === m.to_card_id)?.user_id :
+                    m.from_user_id;
                 const otherUser = allUsers.find(u => u.id === otherId);
-                return { id: m.id, with: otherUser ? otherUser.nickname + ' · ' + otherUser.age + '세 · ' + (otherUser.gender === '여성' ? '여성' : '남성') : '알 수 없음', type: m.type || 'normal', createdAt: m.createdAt, status: 'matched' };
+                return {
+                    id: m.id,
+                    with: otherUser ? otherUser.nickname + ' · ' + otherUser.age + '세 · ' + (otherUser.gender === '여성' ? '여성' : '남성') : '알 수 없음',
+                    type: m.type || 'normal',
+                    createdAt: m.created_at,
+                    status: 'matched'
+                };
             });
     }
 
     function saveAllData() {
-        setData('profiles', allProfiles);
-        setData('users', allUsers);
-        setData('likes', allLikes);
-        setData('matches', allMatches);
+        // 서버에 저장하는 방식으로 변경되었으므로, localstorage에는 로그인 상태만 저장
         setData('currentUser', currentUserId);
         setData('nextId', nextId);
     }
 
     // ================================================================
-    // 6. 렌더링 함수 (내 카드 배지 수정됨)
+    // 6. 렌더링 함수 (내 카드 배지 포함)
     // ================================================================
     const grid = document.getElementById('noteGrid');
     const genderCount = document.getElementById('genderCount');
@@ -1406,8 +1462,8 @@
         let filtered = [...allProfiles];
 
         if (currentUserId) {
-            const myCards = filtered.filter(p => p.userId === currentUserId);
-            const otherCards = filtered.filter(p => p.userId !== currentUserId);
+            const myCards = filtered.filter(p => p.user_id === currentUserId);
+            const otherCards = filtered.filter(p => p.user_id !== currentUserId);
             let filteredOthers = [...otherCards];
             if (showLikedOnly) {
                 filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
@@ -1438,7 +1494,7 @@
                     renderProfiles();
                     return;
                 }
-                filteredOthers = filteredOthers.filter(p => likedByIds.has(p.userId));
+                filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
             }
             filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
         } else {
@@ -1453,8 +1509,8 @@
         }
 
         if (currentMode === 'same' && currentUser) {
-            const myCards = filtered.filter(p => p.userId === currentUserId);
-            const others = filtered.filter(p => p.userId !== currentUserId && p.gender === currentUser.gender);
+            const myCards = filtered.filter(p => p.user_id === currentUserId);
+            const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
             filtered = [...myCards, ...others];
             genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
             genderFilter.disabled = true;
@@ -1465,8 +1521,8 @@
             else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
         }
 
-        if (currentUser && currentUser.hideSameSchool) {
-            filtered = filtered.filter(p => p.userId === currentUserId || p.school !== currentUser.school);
+        if (currentUser && currentUser.hide_same_school) {
+            filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
         }
 
         const sortVal = document.getElementById('sortFilter').value;
@@ -1488,19 +1544,18 @@
             const card = document.createElement('div');
             card.className = 'note-card';
             const isLiked = likedIds.has(p.id);
-            const isLikedBy = likedByIds.has(p.userId);
-            // ★★★ 수정된 부분: isLoggedIn 조건 추가 ★★★
-            const isMyCard = isLoggedIn && p.userId === currentUserId;
+            const isLikedBy = likedByIds.has(p.user_id);
+            const isMyCard = isLoggedIn && p.user_id === currentUserId;
             const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
             const canLike = hasMyCard && isLoggedIn && !isMyCard;
 
             let schoolDisplay = p.school;
             let majorDisplay = p.major;
-            if (p.userId !== null) {
-                const owner = allUsers.find(u => u.id === p.userId);
+            if (p.user_id !== null) {
+                const owner = allUsers.find(u => u.id === p.user_id);
                 if (owner) {
-                    if (owner.hideSchool) schoolDisplay = '학교 숨김';
-                    if (owner.hideMajor) majorDisplay = '학과 숨김';
+                    if (owner.hide_school) schoolDisplay = '학교 숨김';
+                    if (owner.hide_major) majorDisplay = '학과 숨김';
                 }
             }
 
@@ -1527,29 +1582,41 @@
         });
     }
 
-    function toggleLike(cardId) {
+    async function toggleLike(cardId) {
         if (!hasMyCard || !isLoggedIn) {
             showToast('⚠️ 내 카드를 먼저 등록해주세요!');
             return;
         }
         const card = allProfiles.find(p => p.id === cardId);
-        if (card && card.userId === currentUserId) {
+        if (card && card.user_id === currentUserId) {
             showToast('⚠️ 본인의 카드는 찜할 수 없습니다');
             return;
         }
-        const existing = allLikes.find(l => l.userId === currentUserId && l.cardId === cardId);
-        if (existing) {
-            allLikes = allLikes.filter(l => l !== existing);
-            if (card) card.likes = (card.likes || 0) - 1;
-            likedIds.delete(cardId);
-        } else {
-            allLikes.push({ id: Date.now(), userId: currentUserId, cardId: cardId });
-            if (card) card.likes = (card.likes || 0) + 1;
-            likedIds.add(cardId);
+
+        try {
+            const res = await fetch('/api/likes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUserId, card_id: cardId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data.action === 'liked') {
+                    likedIds.add(cardId);
+                    if (card) card.likes = (card.likes || 0) + 1;
+                } else {
+                    likedIds.delete(cardId);
+                    if (card) card.likes = (card.likes || 0) - 1;
+                }
+                renderProfiles();
+                updateLikedBtn();
+            } else {
+                showToast('❌ ' + data.error);
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Like error:', error);
         }
-        saveAllData();
-        renderProfiles();
-        updateLikedBtn();
     }
 
     function toggleShowLiked() {
@@ -1614,6 +1681,30 @@
     // ================================================================
     // 7. 캘린더
     // ================================================================
+    const festivalEvents = [
+        { date: '2026-09-02', school: '아주대', detail: '대동제', lineup: '동아리 공연' },
+        { date: '2026-09-03', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-06', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-07', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-08', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-11', school: '신촌연합', detail: '신촌 대학가 축제', lineup: '다수 대학 참여' },
+        { date: '2026-09-12', school: '한양사이버', detail: 'HYCU BIG FESTIVAL', lineup: '추후 공개' },
+        { date: '2026-09-17', school: '동국대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-25', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-26', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-27', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-28', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-29', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-10-01', school: '고려대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-02', school: '연세대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-08', school: '성균관대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-09', school: '한양대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-15', school: '중앙대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-16', school: '서강대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-22', school: '건양대', detail: 'KY FESTA', lineup: '추후 공개' },
+        { date: '2026-10-30', school: '동국대(경주)', detail: 'APEC 메모리얼 페스타', lineup: 'K-POP 콘서트' }
+    ];
+
     function renderCalendar(year, month) {
         const grid = document.getElementById('calGrid');
         document.getElementById('calMonth').textContent = `${year}년 ${month+1}월`;
@@ -1805,15 +1896,15 @@
         if (profile.type === 'solo') typeLabel = '💕 둘이서 만나요 (1:1)';
         else if (profile.type === 'group') typeLabel = '🍻 여럿이서 만나요 (2:2,3:3,4:4)';
         else if (profile.type === 'same') typeLabel = '👬 동성친구 찾기 (1:1)';
-        const isMyCard = isLoggedIn && profile.userId === currentUserId;
+        const isMyCard = isLoggedIn && profile.user_id === currentUserId;
 
         let schoolDisplay = profile.school;
         let majorDisplay = profile.major;
-        if (profile.userId !== null) {
-            const owner = allUsers.find(u => u.id === profile.userId);
+        if (profile.user_id !== null) {
+            const owner = allUsers.find(u => u.id === profile.user_id);
             if (owner) {
-                if (owner.hideSchool) schoolDisplay = '학교 숨김';
-                if (owner.hideMajor) majorDisplay = '학과 숨김';
+                if (owner.hide_school) schoolDisplay = '학교 숨김';
+                if (owner.hide_major) majorDisplay = '학과 숨김';
             }
         }
 
@@ -1891,7 +1982,7 @@
         modal.classList.add('active');
     }
 
-    function requestMatchingWithType(cardId, type) {
+    async function requestMatchingWithType(cardId, type) {
         if (!isLoggedIn) {
             showToast('⚠️ 로그인 후 이용 가능합니다');
             switchToLogin();
@@ -1911,44 +2002,56 @@
             showToast('⚠️ 동성친구는 같은 성별끼리만 매칭 가능합니다');
             return;
         }
-        const existing = allMatches.find(m => m.fromUserId === currentUserId && m.toCardId === cardId && m.status === 'pending');
-        if (existing) {
-            showToast('⚠️ 이미 매칭을 신청했습니다');
-            closeModal();
-            return;
+
+        try {
+            const res = await fetch('/api/matches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    from_user_id: currentUserId,
+                    to_card_id: cardId,
+                    type: type
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                await fetchMatches();
+                updateMatchingData();
+                closeModal();
+                showToast(`💌 ${type === 'normal' ? '일반' : '슈퍼'} 매칭 신청이 전송되었습니다!`);
+            } else {
+                showToast('❌ ' + data.error);
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Match request error:', error);
         }
-        const newMatch = {
-            id: nextId++,
-            fromUserId: currentUserId,
-            toCardId: cardId,
-            type: type,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            respondedAt: null
-        };
-        allMatches.push(newMatch);
-        saveAllData();
-        updateMatchingDataAndAutoReject();
-        closeModal();
-        showToast(`💌 ${type === 'normal' ? '일반' : '슈퍼'} 매칭 신청이 전송되었습니다!`);
     }
 
-    function respondMatching(matchId, accept) {
+    async function respondMatching(matchId, accept) {
         const match = allMatches.find(m => m.id === matchId);
         if (!match) return;
-        if (accept) {
-            match.status = 'accepted';
-            match.respondedAt = new Date().toISOString();
-            showToast('✅ 매칭을 수락했습니다!');
-        } else {
-            match.status = 'rejected';
-            match.respondedAt = new Date().toISOString();
-            showToast('❌ 매칭을 거절했습니다.');
+        const status = accept ? 'accepted' : 'rejected';
+        try {
+            const res = await fetch(`/api/matches/${matchId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                await fetchMatches();
+                updateMatchingData();
+                showToast(accept ? '✅ 매칭을 수락했습니다!' : '❌ 매칭을 거절했습니다.');
+                closeModal();
+                setTimeout(() => openMatchingStatus(), 300);
+            } else {
+                const err = await res.json();
+                showToast('❌ ' + err.error);
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Match response error:', error);
         }
-        saveAllData();
-        updateMatchingDataAndAutoReject();
-        closeModal();
-        setTimeout(() => openMatchingStatus(), 300);
     }
 
     function switchToLogin() {
@@ -1967,7 +2070,7 @@
             switchToLogin();
             return;
         }
-        updateMatchingDataAndAutoReject();
+        updateMatchingData();
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
         const sentHtml = matchingData.sent.length > 0 ? matchingData.sent.map(m => `
@@ -2022,7 +2125,7 @@
     }
 
     // ================================================================
-    // 12. 내정보 - 로그인/회원가입
+    // 12. 내정보 - 로그인/회원가입 (Supabase API 연동)
     // ================================================================
     function openLoginModal() {
         const modal = document.getElementById('commonModal');
@@ -2050,23 +2153,33 @@
         modal.classList.add('active');
     }
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
         e.preventDefault();
         const nickname = document.getElementById('loginNickname').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
-        const user = allUsers.find(u => u.nickname === nickname && u.password === password);
-        if (!user) {
-            showToast('❌ 아이디 또는 비밀번호가 올바르지 않습니다.');
-            return;
+
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname, password })
+            });
+            const user = await res.json();
+            if (res.ok) {
+                currentUserId = user.id;
+                setData('currentUser', currentUserId);
+                await loadUserData();
+                closeModal();
+                showToast('✅ 로그인 완료!');
+            } else {
+                showToast('❌ 아이디 또는 비밀번호가 올바르지 않습니다.');
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Login error:', error);
         }
-        currentUserId = user.id;
-        setData('currentUser', currentUserId);
-        loadUserData();
-        closeModal();
-        showToast('✅ 로그인 완료!');
     }
 
-    // ===== 회원가입 =====
     function openSignupModal() {
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
@@ -2369,18 +2482,26 @@
             nicknameValid = false;
             return;
         }
-        const existing = allUsers.find(u => u.nickname === nick);
-        if (existing) {
-            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 이미 사용 중인 닉네임입니다</span>';
-            nicknameValid = false;
-        } else {
-            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#4ade80;">✅ 사용 가능한 닉네임입니다</span>';
-            nicknameValid = true;
-        }
+        // 서버에서 닉네임 중복 확인
+        fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nick)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists) {
+                    document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 이미 사용 중인 닉네임입니다</span>';
+                    nicknameValid = false;
+                } else {
+                    document.getElementById('nicknameStatus').innerHTML = '<span style="color:#4ade80;">✅ 사용 가능한 닉네임입니다</span>';
+                    nicknameValid = true;
+                }
+            })
+            .catch(() => {
+                document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">⚠️ 중복 확인 중 오류가 발생했습니다</span>';
+                nicknameValid = false;
+            });
         nicknameChecked = true;
     }
 
-    function handleSignup(e) {
+    async function handleSignup(e) {
         e.preventDefault();
         const nickname = document.getElementById('signupNickname').value.trim();
         const password = document.getElementById('signupPassword').value;
@@ -2447,7 +2568,6 @@
         const genderValue = gender === '여성' ? 'female' : 'male';
 
         const newUser = {
-            id: nextId++,
             nickname,
             password,
             school: matchedSchool,
@@ -2461,35 +2581,38 @@
             phone: fullPhone,
             intro,
             email: '',
-            emailVerified: false,
-            cardStatus: 'none',
-            freeTickets: 0,
-            referredBy: referral || null,
-            hideSchool: false,
-            hideMajor: false,
-            hideSameSchool: false,
-            createdAt: new Date().toISOString()
+            email_verified: false,
+            card_status: 'none',
+            free_tickets: 0,
+            referred_by: referral || null,
+            hide_school: false,
+            hide_major: false,
+            hide_same_school: false
         };
 
-        if (referral) {
-            const referrer = allUsers.find(u => u.nickname === referral);
-            if (referrer) {
-                referrer.freeTickets = (referrer.freeTickets || 0) + 1;
-                showToast(`🎉 추천인 ${referral}님에게 무료 매치권 1회가 지급되었습니다!`);
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newUser)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                currentUserId = data.id;
+                setData('currentUser', currentUserId);
+                await loadUserData();
+                closeModal();
+                showToast('🎉 회원가입 완료!');
+            } else {
+                showToast('❌ ' + data.error);
             }
-            newUser.freeTickets = 1;
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Signup error:', error);
         }
-
-        allUsers.push(newUser);
-        saveAllData();
-        currentUserId = newUser.id;
-        setData('currentUser', currentUserId);
-        loadUserData();
-        closeModal();
-        showToast('🎉 회원가입 완료!');
     }
 
-    function logout() {
+    async function logout() {
         isLoggedIn = false;
         currentUserId = null;
         currentUser = null;
@@ -2508,16 +2631,20 @@
         showToast('👋 로그아웃 되었습니다');
     }
 
-    function confirmWithdraw() {
+    async function confirmWithdraw() {
         if (!isLoggedIn) return;
         if (confirm('정말 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.')) {
-            allUsers = allUsers.filter(u => u.id !== currentUserId);
-            allProfiles = allProfiles.filter(p => p.userId !== currentUserId);
-            allLikes = allLikes.filter(l => l.userId !== currentUserId && allProfiles.some(p => p.id === l.cardId));
-            allMatches = allMatches.filter(m => m.fromUserId !== currentUserId && !allProfiles.some(p => p.id === m.toCardId && p.userId === currentUserId));
-            saveAllData();
-            logout();
-            showToast('✅ 탈퇴 처리되었습니다.');
+            try {
+                const res = await fetch(`/api/users/${currentUserId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    await logout();
+                    showToast('✅ 탈퇴 처리되었습니다.');
+                } else {
+                    showToast('❌ 탈퇴 처리 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                showToast('⚠️ 서버 통신 오류');
+            }
         }
     }
 
@@ -2576,14 +2703,14 @@
                 <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
 
                 <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hideSchool ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hideSchool')">
+                    <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
                         <div class="toggle-knob"></div>
                     </div>
                     <label>대학교 숨기기</label>
                     <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
                 </div>
                 <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hideMajor ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hideMajor')">
+                    <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
                         <div class="toggle-knob"></div>
                     </div>
                     <label>학과계열 숨기기</label>
@@ -2592,7 +2719,7 @@
 
                 <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
                 <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hideSameSchool ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hideSameSchool')">
+                    <div class="toggle-switch ${currentUser.hide_same_school ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
                         <div class="toggle-knob"></div>
                     </div>
                     <label>같은학교 학생에게 내 카드 숨기기</label>
@@ -2604,49 +2731,74 @@
         `;
         modal.classList.add('active');
 
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hideSchool);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hideMajor);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hideSameSchool);
+        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
+        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
+        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
     }
 
-    function toggleSwitch(field) {
+    async function toggleSwitch(field) {
         if (!currentUser) return;
-        if (field === 'hideSchool') {
-            currentUser.hideSchool = !currentUser.hideSchool;
-            if (currentUser.hideSchool && currentUser.hideMajor) {
-                currentUser.hideMajor = false;
+        if (field === 'hide_school') {
+            currentUser.hide_school = !currentUser.hide_school;
+            if (currentUser.hide_school && currentUser.hide_major) {
+                currentUser.hide_major = false;
                 document.getElementById('toggleHideMajor').classList.remove('active');
             }
             document.getElementById('toggleHideSchool').classList.toggle('active');
-        } else if (field === 'hideMajor') {
-            currentUser.hideMajor = !currentUser.hideMajor;
-            if (currentUser.hideMajor && currentUser.hideSchool) {
-                currentUser.hideSchool = false;
+        } else if (field === 'hide_major') {
+            currentUser.hide_major = !currentUser.hide_major;
+            if (currentUser.hide_major && currentUser.hide_school) {
+                currentUser.hide_school = false;
                 document.getElementById('toggleHideSchool').classList.remove('active');
             }
             document.getElementById('toggleHideMajor').classList.toggle('active');
-        } else if (field === 'hideSameSchool') {
-            currentUser.hideSameSchool = !currentUser.hideSameSchool;
+        } else if (field === 'hide_same_school') {
+            currentUser.hide_same_school = !currentUser.hide_same_school;
             document.getElementById('toggleHideSameSchool').classList.toggle('active');
         }
-        saveAllData();
+        // 서버에 업데이트
+        try {
+            await fetch(`/api/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hide_school: currentUser.hide_school,
+                    hide_major: currentUser.hide_major,
+                    hide_same_school: currentUser.hide_same_school
+                })
+            });
+        } catch (error) {
+            console.error('설정 저장 오류:', error);
+        }
         updateUI();
         renderProfiles();
-        document.getElementById('profileHideSchool').textContent = currentUser.hideSchool ? '✅' : '❌';
-        document.getElementById('profileHideMajor').textContent = currentUser.hideMajor ? '✅' : '❌';
-        document.getElementById('profileHideSameSchool').textContent = currentUser.hideSameSchool ? '✅' : '❌';
+        document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
+        document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
+        document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
     }
 
-    function handleEditProfile(e) {
+    async function handleEditProfile(e) {
         e.preventDefault();
         if (!currentUser) return;
         currentUser.animal = document.getElementById('editAnimal').value;
         currentUser.region = document.getElementById('editRegion').value;
         currentUser.intro = document.getElementById('editIntro').value.trim();
-        saveAllData();
-        updateUI();
-        closeModal();
-        showToast('✅ 프로필이 수정되었습니다!');
+        try {
+            await fetch(`/api/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    animal: currentUser.animal,
+                    region: currentUser.region,
+                    intro: currentUser.intro
+                })
+            });
+            updateUI();
+            closeModal();
+            showToast('✅ 프로필이 수정되었습니다!');
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
     function openGuideModal() {
@@ -2697,7 +2849,7 @@
         if (!currentUser) return;
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
-        const myCards = allProfiles.filter(p => p.userId === currentUserId);
+        const myCards = allProfiles.filter(p => p.user_id === currentUserId);
 
         let cardsHtml = '';
         if (myCards.length === 0) {
@@ -2736,26 +2888,34 @@
         modal.classList.add('active');
     }
 
-    function deleteCard(cardId) {
+    async function deleteCard(cardId) {
         if (!confirm('이 카드를 삭제하시겠습니까?')) return;
         const card = allProfiles.find(p => p.id === cardId);
         if (!card) return;
-        allLikes = allLikes.filter(l => l.cardId !== cardId);
-        allMatches = allMatches.filter(m => m.toCardId !== cardId && m.fromUserId !== card.userId);
-        allProfiles = allProfiles.filter(p => p.id !== cardId);
-        saveAllData();
-        const myCards = allProfiles.filter(p => p.userId === currentUserId);
-        hasMyCard = myCards.length > 0;
-        renderProfiles();
-        updateLikedBtn();
-        closeModal();
-        showToast('🗑️ 카드가 삭제되었습니다');
-        setTimeout(() => openCardManagement(), 300);
+        try {
+            const res = await fetch(`/api/profiles/${cardId}`, { method: 'DELETE' });
+            if (res.ok) {
+                allProfiles = allProfiles.filter(p => p.id !== cardId);
+                allLikes = allLikes.filter(l => l.card_id !== cardId);
+                allMatches = allMatches.filter(m => m.to_card_id !== cardId && m.from_user_id !== card.user_id);
+                const myCards = allProfiles.filter(p => p.user_id === currentUserId);
+                hasMyCard = myCards.length > 0;
+                renderProfiles();
+                updateLikedBtn();
+                closeModal();
+                showToast('🗑️ 카드가 삭제되었습니다');
+                setTimeout(() => openCardManagement(), 300);
+            } else {
+                showToast('❌ 삭제 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
     function openCardRegisterForm(type) {
         if (!currentUser) return;
-        const existingCard = allProfiles.find(p => p.userId === currentUserId && p.type === type);
+        const existingCard = allProfiles.find(p => p.user_id === currentUserId && p.type === type);
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
         let typeLabel = '';
@@ -2832,7 +2992,7 @@
         });
     }
 
-    function handleCardRegister(e, type) {
+    async function handleCardRegister(e, type) {
         e.preventDefault();
         if (!currentUser) return;
         const detail = document.getElementById('cardIntro_' + type).value.trim();
@@ -2840,14 +3000,8 @@
             showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
             return;
         }
-        const existing = allProfiles.find(p => p.userId === currentUserId && p.type === type);
-        if (existing) {
-            showToast('⚠️ 이미 등록된 카드가 있습니다. 수정해주세요.');
-            return;
-        }
         const newCard = {
-            id: nextId++,
-            userId: currentUserId,
+            user_id: currentUserId,
             type: type,
             emoji: currentUser.animal.split(' ')[0] || '🐶',
             school: currentUser.school,
@@ -2855,26 +3009,39 @@
             gender: currentUser.gender,
             height: currentUser.height,
             detail: detail,
-            likes: 0,
             age: currentUser.age,
-            mbti: 'ENFP',
             major: currentUser.major,
             region: currentUser.region,
             preview: detail.slice(0, 18) + '...'
         };
-        allProfiles.push(newCard);
-        hasMyCard = true;
-        saveAllData();
-        renderProfiles();
-        updateLikedBtn();
-        closeModal();
-        showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 등록되었습니다!`);
+
+        try {
+            const res = await fetch('/api/profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newCard)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                allProfiles.push(data);
+                hasMyCard = true;
+                renderProfiles();
+                updateLikedBtn();
+                closeModal();
+                showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 등록되었습니다!`);
+            } else {
+                showToast('❌ ' + data.error);
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+            console.error('Card register error:', error);
+        }
     }
 
-    function handleCardUpdate(e, type) {
+    async function handleCardUpdate(e, type) {
         e.preventDefault();
         if (!currentUser) return;
-        const card = allProfiles.find(p => p.userId === currentUserId && p.type === type);
+        const card = allProfiles.find(p => p.user_id === currentUserId && p.type === type);
         if (!card) return;
         const detail = document.getElementById('cardIntro_' + type).value.trim();
         if (detail.length < 20) {
@@ -2883,10 +3050,18 @@
         }
         card.detail = detail;
         card.preview = detail.slice(0, 18) + '...';
-        saveAllData();
-        renderProfiles();
-        closeModal();
-        showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 수정되었습니다!`);
+        try {
+            await fetch(`/api/profiles/${card.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ detail: card.detail, preview: card.preview })
+            });
+            renderProfiles();
+            closeModal();
+            showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 수정되었습니다!`);
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
     // ================================================================
@@ -2928,16 +3103,16 @@
         document.getElementById('profileRegion').textContent = currentUser.region;
         document.getElementById('profileIntro').textContent = currentUser.intro || '';
         document.getElementById('profilePhone').textContent = currentUser.phone || '-';
-        document.getElementById('profileReferred').textContent = currentUser.referredBy || '-';
-        document.getElementById('freeTicketDisplay').textContent = (currentUser.freeTickets || 0) + '장';
+        document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
+        document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
 
-        document.getElementById('profileHideSchool').textContent = currentUser.hideSchool ? '✅' : '❌';
-        document.getElementById('profileHideMajor').textContent = currentUser.hideMajor ? '✅' : '❌';
-        document.getElementById('profileHideSameSchool').textContent = currentUser.hideSameSchool ? '✅' : '❌';
+        document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
+        document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
+        document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
 
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hideSchool);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hideMajor);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hideSameSchool);
+        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
+        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
+        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
 
         const emailStatus = document.getElementById('emailStatus');
         const emailBox = document.getElementById('emailVerifyBox');
@@ -2975,7 +3150,7 @@
         const benefit = document.getElementById('benefitDisplay');
         let html = '';
         if (isEmailVerified) {
-            html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.freeTickets || 0) + '장)<br>';
+            html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
         } else {
             html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
         }
@@ -2987,7 +3162,7 @@
         benefit.innerHTML = html;
 
         if (isAdmin) {
-            const pending = allUsers.filter(u => u.cardStatus === 'pending').length;
+            const pending = allUsers.filter(u => u.card_status === 'pending').length;
             document.getElementById('pendingCount').textContent = pending;
             document.getElementById('adminPanel').classList.remove('hidden');
         } else {
@@ -2995,7 +3170,7 @@
         }
     }
 
-    function verifyEmail() {
+    async function verifyEmail() {
         if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
         const email = document.getElementById('emailInput').value.trim();
         if (!email.endsWith('.ac.kr')) {
@@ -3006,15 +3181,32 @@
             showToast('⚠️ 이미 인증된 이메일입니다.');
             return;
         }
-        isEmailVerified = true;
-        currentUser.emailVerified = true;
-        currentUser.freeTickets = (currentUser.freeTickets || 0) + 1;
-        saveAllData();
-        updateUI();
-        showToast('✅ 학교메일 인증 완료! 무료 매치권 1회가 지급되었습니다!');
+        try {
+            const res = await fetch('/api/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUserId, email })
+            });
+            if (res.ok) {
+                isEmailVerified = true;
+                currentUser.email_verified = true;
+                currentUser.free_tickets = (currentUser.free_tickets || 0) + 1;
+                await fetch(`/api/users/${currentUserId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_verified: true, free_tickets: currentUser.free_tickets })
+                });
+                updateUI();
+                showToast('✅ 학교메일 인증 완료! 무료 매치권 1회가 지급되었습니다!');
+            } else {
+                showToast('❌ 인증 처리 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
-    function submitCardVerification() {
+    async function submitCardVerification() {
         if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
         const input = document.getElementById('cardInput');
         if (input.files.length === 0) {
@@ -3029,63 +3221,100 @@
             showToast('⚠️ 이미 관리자 확인 중입니다.');
             return;
         }
+        // 실제로는 파일을 업로드해야 하지만, 여기서는 상태만 변경
         cardVerificationStatus = 'pending';
-        currentUser.cardStatus = 'pending';
-        saveAllData();
-        updateUI();
-        showToast('📤 학생증 인증이 제출되었습니다. 관리자 확인 후 승인여부가 결정됩니다.');
-        if (isAdmin) {
-            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
+        currentUser.card_status = 'pending';
+        try {
+            await fetch(`/api/users/${currentUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ card_status: 'pending' })
+            });
+            updateUI();
+            showToast('📤 학생증 인증이 제출되었습니다. 관리자 확인 후 승인여부가 결정됩니다.');
+            if (isAdmin) {
+                document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
         }
     }
 
     // ================================================================
     // 16. 관리자 기능
     // ================================================================
-    function adminApproveCard() {
+    async function adminApproveCard() {
         if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-        const pendingUsers = allUsers.filter(u => u.cardStatus === 'pending');
+        const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
         if (pendingUsers.length === 0) {
             showToast('⚠️ 승인 대기 중인 인증이 없습니다.');
             return;
         }
         const target = pendingUsers[0];
-        target.cardStatus = 'approved';
+        target.card_status = 'approved';
         if (currentUserId === target.id) {
             cardVerificationStatus = 'approved';
         }
-        saveAllData();
-        updateUI();
-        document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
-        showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
+        try {
+            await fetch(`/api/users/${target.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ card_status: 'approved' })
+            });
+            await fetchUsers();
+            updateUI();
+            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
+            showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
-    function adminRejectCard() {
+    async function adminRejectCard() {
         if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-        const pendingUsers = allUsers.filter(u => u.cardStatus === 'pending');
+        const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
         if (pendingUsers.length === 0) {
             showToast('⚠️ 반려할 인증이 없습니다.');
             return;
         }
         const target = pendingUsers[0];
-        target.cardStatus = 'rejected';
+        target.card_status = 'rejected';
         if (currentUserId === target.id) {
             cardVerificationStatus = 'rejected';
         }
-        saveAllData();
-        updateUI();
-        document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
-        showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
+        try {
+            await fetch(`/api/users/${target.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ card_status: 'rejected' })
+            });
+            await fetchUsers();
+            updateUI();
+            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
+            showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
-    function adminAddDummy() {
+    async function fetchUsers() {
+        try {
+            const res = await fetch('/api/users');
+            if (res.ok) {
+                allUsers = await res.json();
+            }
+        } catch (error) {
+            console.error('사용자 목록 로드 오류:', error);
+        }
+    }
+
+    async function adminAddDummy() {
         if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
         const types = ['solo', 'group', 'same'];
         const type = types[Math.floor(Math.random() * 3)];
         const gender = Math.random() > 0.5 ? 'female' : 'male';
         const newProfile = {
-            id: nextId++,
-            userId: null,
+            user_id: null,
             emoji: ['🐶','🐱','🦊','🐰','🐻','🐼','🐨','🦝','🐯','🦁'][Math.floor(Math.random() * 10)],
             school: ['홍익대','연세대','고려대','서강대','성균관대','중앙대'][Math.floor(Math.random() * 6)],
             grade: ['20학번','21학번','22학번','23학번'][Math.floor(Math.random() * 4)],
@@ -3100,14 +3329,26 @@
             likes: Math.floor(Math.random() * 20),
             type: type
         };
-        allProfiles.push(newProfile);
-        saveAllData();
-        renderProfiles();
-        showToast(`✅ 더미 프로필 추가 완료! (${type} 타입)`);
+        try {
+            const res = await fetch('/api/profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newProfile)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                allProfiles.push(data);
+                renderProfiles();
+                showToast(`✅ 더미 프로필 추가 완료! (${type} 타입)`);
+            }
+        } catch (error) {
+            showToast('⚠️ 서버 통신 오류');
+        }
     }
 
-    function adminViewUsers() {
+    async function adminViewUsers() {
         if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        await fetchUsers();
         showToast(`👥 총 회원수: ${allUsers.length}명 (프로필: ${allProfiles.length}개)`);
     }
 
@@ -3298,7 +3539,7 @@
 
         let filtered = [...allProfiles];
         if (currentUserId) {
-            filtered = filtered.filter(p => p.userId !== currentUserId);
+            filtered = filtered.filter(p => p.user_id !== currentUserId);
         }
 
         if (!isNaN(heightMin)) filtered = filtered.filter(p => (p.height || 0) >= heightMin);
@@ -3348,7 +3589,7 @@
         }
         let filtered = [...allProfiles];
         if (currentUserId) {
-            filtered = filtered.filter(p => p.userId !== currentUserId);
+            filtered = filtered.filter(p => p.user_id !== currentUserId);
         }
 
         const keywords = naturalText.split(/\s+/).filter(kw => kw.length >= 2);
@@ -3382,11 +3623,11 @@
             filtered.slice(0, 20).forEach(p => {
                 let schoolDisplay = p.school;
                 let majorDisplay = p.major;
-                if (p.userId !== null) {
-                    const owner = allUsers.find(u => u.id === p.userId);
+                if (p.user_id !== null) {
+                    const owner = allUsers.find(u => u.id === p.user_id);
                     if (owner) {
-                        if (owner.hideSchool) schoolDisplay = '학교 숨김';
-                        if (owner.hideMajor) majorDisplay = '학과 숨김';
+                        if (owner.hide_school) schoolDisplay = '학교 숨김';
+                        if (owner.hide_major) majorDisplay = '학과 숨김';
                     }
                 }
                 resultHtml += `
@@ -3450,26 +3691,27 @@
     // ================================================================
     // 19. 초기화
     // ================================================================
-    if (!getData('users', null)) {
-        setData('users', []);
-        setData('profiles', defaultProfiles);
-        setData('likes', []);
-        setData('matches', []);
-        setData('nextId', 100);
+    async function init() {
+        // localStorage에서 로그인 상태 복원
+        currentUserId = getData('currentUser', null);
+        if (currentUserId) {
+            await loadUserData();
+        }
+        renderCalendar(currentYear, currentMonth);
+        renderProfiles();
+        updateLikedBtn();
+        updateUI();
+
+        // 첫 번째 축제 이벤트 표시
+        setTimeout(() => {
+            const firstEvent = festivalEvents[0];
+            if (firstEvent) showDayEvents([firstEvent]);
+        }, 300);
     }
 
-    loadUserData();
-    renderCalendar(currentYear, currentMonth);
-    renderProfiles();
-    updateLikedBtn();
-    updateUI();
+    init();
 
-    setTimeout(() => {
-        const firstEvent = festivalEvents[0];
-        if (firstEvent) showDayEvents([firstEvent]);
-    }, 300);
-
-    console.log('🎉 페스타팅 최종 완성! (내 카드 배지 버그 수정)');
+    console.log('🎉 페스타팅 Supabase 연동 완료!');
     console.log('💡 관리자 모드: sessionStorage.setItem("isAdmin", "true") 입력 후 새로고침');
     console.log('📞 문의 ID: festivalting');
 </script>
