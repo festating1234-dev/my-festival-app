@@ -3699,10 +3699,13 @@ function showProfileDetail(profile) {
     // ================================================================
     async function init() {
         // localStorage에서 로그인 상태 복원
-        currentUserId = getData('currentUser', null);
-        if (currentUserId) {
-            await loadUserData();
-        }
+        currentUserID = getData('currentUser', null);
+    if (currentUserID) {
+        await loadUserData();
+    } else {
+        // 비로그인 상태에서도 프로필 목록은 로드해야 함
+        await fetchProfiles();
+    }
         renderCalendar(currentYear, currentMonth);
         renderProfiles();
         updateLikedBtn();
