@@ -1,0 +1,3477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>페스타팅</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #0b0b1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .bg-firework {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.12;
+            font-size: 7rem;
+            user-select: none;
+        }
+        .fw1 { top: 3%; left: 3%; transform: rotate(-15deg); }
+        .fw2 { bottom: 8%; right: 3%; transform: rotate(20deg); }
+        .fw3 { top: 40%; left: 50%; transform: translateX(-50%) rotate(5deg); font-size: 10rem; opacity: 0.06; }
+        .festival-bg {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, rgba(26, 11, 46, 0.7), rgba(11, 11, 26, 0.95) 80%);
+            padding-bottom: 20px;
+        }
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 14px 14px 20px;
+        }
+        .header { text-align: center; padding: 6px 0 2px; }
+        .header h1 {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 900;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #ffd700, #ff6b9d, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+        .header p {
+            background: rgba(255,255,255,0.06);
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            color: #ffd700;
+            border: 1px solid rgba(255,215,0,0.12);
+            margin-top: 2px;
+        }
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin: 14px 0 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 30px;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .tabs span {
+            flex: 1;
+            text-align: center;
+            padding: 9px 0;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.6rem;
+            color: #888;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .tabs span.active {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(168,85,247,0.2);
+        }
+        .tabs span i { margin-right: 4px; }
+        .page { display: none; animation: fadeIn 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-primary {
+            display: inline-block;
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border: none;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 16px rgba(168,85,247,0.2);
+            text-align: center;
+            text-decoration: none;
+            border: 1px solid rgba(168,85,247,0.2);
+        }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-secondary {
+            display: inline-block;
+            padding: 10px 28px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-secondary:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
+        .btn-sm {
+            padding: 5px 14px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.6rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(168,85,247,0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168,85,247,0.2);
+        }
+        .btn-sm.primary { background: #7c3aed; color: #fff; border: none; }
+        .btn-sm.danger { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.2); }
+        .btn-sm.success { background: rgba(74,222,128,0.15); color: #4ade80; border-color: rgba(74,222,128,0.2); }
+        .btn-sm:active { transform: scale(0.95); }
+        .btn-report {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #1a1a2e;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-report:active { transform: scale(0.95); }
+        .btn-report i { margin-right: 4px; }
+        .find-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .find-header .count-badge {
+            font-size: 0.65rem;
+            color: #aaa;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+        .find-header .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .find-header .action-buttons button {
+            padding: 4px 10px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #aaa;
+            font-size: 0.55rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .find-header .action-buttons button.active {
+            background: rgba(168,85,247,0.15);
+            border-color: #a855f7;
+            color: #c084fc;
+        }
+        .find-header .action-buttons button.liked-btn.active {
+            background: rgba(244,114,182,0.15);
+            border-color: #f472b6;
+            color: #f472b6;
+        }
+        .find-header .action-buttons button.liked-by-btn.active {
+            background: rgba(74,222,128,0.15);
+            border-color: #4ade80;
+            color: #4ade80;
+        }
+        .find-header .action-buttons button.register-btn {
+            background: rgba(251,191,36,0.1);
+            border-color: rgba(251,191,36,0.2);
+            color: #fbbf24;
+        }
+        .find-header .action-buttons button.matching-btn {
+            background: rgba(74,222,128,0.1);
+            border-color: rgba(74,222,128,0.2);
+            color: #4ade80;
+        }
+        .find-header .action-buttons button.ideal-btn {
+            background: rgba(244,114,182,0.1);
+            border-color: rgba(244,114,182,0.2);
+            color: #f472b6;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .mode-tabs button {
+            flex: 1;
+            padding: 8px 0;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: #888;
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .mode-tabs button.active {
+            background: rgba(168,85,247,0.15);
+            border-color: #a855f7;
+            color: #fff;
+        }
+        .mode-tabs button i { margin-right: 4px; }
+        .filter-bar {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .filter-bar select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 30px;
+            padding: 5px 12px;
+            color: #ccc;
+            font-size: 0.55rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: 0.2s;
+        }
+        .filter-bar select:focus { border-color: #a855f7; }
+        .filter-bar select:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .note-card {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 12px 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .note-card:active { transform: scale(0.96); }
+        .note-card .emoji-big { font-size: 1.6rem; display: block; }
+        .note-card .info-line { font-size: 0.5rem; color: #aaa; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .note-card .info-line .badge-verify { background: #2e7d32; color: #a5d6a7; padding: 1px 6px; border-radius: 30px; font-size: 0.4rem; border: 1px solid #4caf50; margin-left: 4px; }
+        .note-card .preview { font-size: 0.6rem; color: #cfcfcf; height: 2.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .note-card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 0.5rem; color: #666; }
+        .note-card .meta .like-icon { color: #555; cursor: pointer; transition: 0.2s; font-size: 0.7rem; }
+        .note-card .meta .like-icon.liked { color: #f472b6; text-shadow: 0 0 12px rgba(244,114,182,0.3); }
+        .note-card .meta .like-icon:hover { transform: scale(1.2); }
+        .note-card .meta .like-icon.disabled { color: #444; cursor: not-allowed; }
+        .note-card .card-type-badge {
+            position: absolute;
+            top: 6px; right: 6px;
+            font-size: 0.4rem;
+            background: rgba(168,85,247,0.2);
+            padding: 1px 6px;
+            border-radius: 30px;
+            color: #a855f7;
+            font-weight: 700;
+        }
+        .note-card .who-liked-badge {
+            position: absolute;
+            top: 6px; left: 6px;
+            font-size: 0.4rem;
+            background: rgba(74,222,128,0.2);
+            padding: 1px 6px;
+            border-radius: 30px;
+            color: #4ade80;
+            font-weight: 700;
+        }
+        .note-card .my-card-badge {
+            position: absolute;
+            top: 6px; left: 6px;
+            font-size: 0.4rem;
+            background: rgba(251,191,36,0.25);
+            padding: 1px 8px;
+            border-radius: 30px;
+            color: #fbbf24;
+            font-weight: 700;
+            border: 1px solid rgba(251,191,36,0.2);
+        }
+        .calendar-wrap { background: rgba(255,255,255,0.04); border-radius: 20px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .cal-header button { background: none; border: none; color: #fff; font-size: 0.9rem; padding: 4px 12px; cursor: pointer; border-radius: 30px; background: rgba(255,255,255,0.05); }
+        .cal-header .month { font-weight: 700; font-size: 0.95rem; color: #fbbf24; }
+        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.55rem; color: #666; margin-bottom: 4px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; position: relative; }
+        .cal-cell {
+            aspect-ratio: 1/1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(255,255,255,0.02);
+            position: relative;
+            padding: 2px 0;
+            min-height: 50px;
+            z-index: 1;
+        }
+        .cal-cell.has-event { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.1); }
+        .cal-cell .dot { width: 4px; height: 4px; background: #fbbf24; border-radius: 50%; margin-top: 1px; }
+        .cal-cell.other-month { opacity: 0.2; }
+        .cal-cell:active { transform: scale(0.92); }
+        .cal-cell .event-badge {
+            position: absolute;
+            top: -2px; right: -2px;
+            background: #a855f7;
+            color: #fff;
+            font-size: 0.35rem;
+            padding: 1px 4px;
+            border-radius: 30px;
+            font-weight: 700;
+        }
+        .cal-cell .school-labels {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1px;
+            margin-top: 1px;
+        }
+        .cal-cell .school-label {
+            font-size: 0.4rem;
+            background: rgba(255,255,255,0.06);
+            padding: 0 3px;
+            border-radius: 3px;
+            color: #888;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        .report-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(251,191,36,0.06);
+            border-radius: 16px;
+            border: 1px solid rgba(251,191,36,0.1);
+            flex-wrap: wrap;
+        }
+        .report-area .reward-text {
+            font-size: 0.55rem;
+            color: #fbbf24;
+            flex: 1;
+            min-width: 80px;
+        }
+        .cal-event-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .cal-event-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.6rem;
+            border-left: 3px solid #fbbf24;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .cal-event-item:active { transform: scale(0.98); }
+        .cal-event-item .school-name { font-weight: 700; color: #fff; }
+        .cal-event-item .event-detail { color: #aaa; font-size: 0.5rem; }
+        .auth-box {
+            background: rgba(255,255,255,0.04);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .auth-box h2 { font-size: 1.2rem; margin-bottom: 6px; color: #fbbf24; }
+        .auth-box p { font-size: 0.75rem; color: #888; margin-bottom: 16px; }
+        .auth-box .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .profile-card {
+            background: rgba(255,255,255,0.04);
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .profile-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .profile-row .label { color: #888; font-size: 0.7rem; }
+        .profile-row .value { color: #fff; font-weight: 600; font-size: 0.8rem; }
+        .verify-section { margin-top: 12px; }
+        .verify-box {
+            background: rgba(255,255,255,0.02);
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-left: 3px solid #444;
+        }
+        .verify-box.success { border-left-color: #4ade80; }
+        .verify-box.rejected { border-left-color: #f87171; }
+        .verify-box .title { font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
+        .verify-box .desc { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
+        .verify-box .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.55rem;
+            font-weight: 700;
+        }
+        .verify-box .status-badge.pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .verify-box .status-badge.approved { background: rgba(74,222,128,0.15); color: #4ade80; }
+        .verify-box .status-badge.rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+        .input-email { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 7px 12px; border-radius: 12px; color: #fff; width: 100%; margin-top: 4px; outline: none; font-size: 0.75rem; }
+        .input-email:focus { border-color: #a855f7; }
+        .hidden { display: none !important; }
+        .badge-status { display: inline-block; padding: 2px 10px; border-radius: 30px; font-size: 0.5rem; font-weight: 700; }
+        .badge-status.verified { background: #2e7d32; color: #a5d6a7; }
+        .badge-status.unverified { background: #451a1a; color: #f87171; }
+        .signup-form .form-group { margin-bottom: 10px; }
+        .signup-form .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: #aaa;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .signup-form .form-group input,
+        .signup-form .form-group select,
+        .signup-form .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .signup-form .form-group input:focus,
+        .signup-form .form-group select:focus,
+        .signup-form .form-group textarea:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
+        }
+        .signup-form .form-group textarea { resize: vertical; min-height: 60px; }
+        .signup-form .row-half { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .signup-form .verify-option {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .signup-form .verify-option input { flex: 1; min-width: 120px; }
+        .referral-area {
+            background: rgba(251,191,36,0.05);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(251,191,36,0.08);
+            margin-bottom: 10px;
+        }
+        .referral-area .referral-title {
+            font-size: 0.75rem;
+            color: #fbbf24;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .referral-area .referral-desc {
+            font-size: 0.6rem;
+            color: #888;
+            margin-bottom: 6px;
+        }
+        .referral-area .nickname-check {
+            display: flex;
+            gap: 6px;
+        }
+        .referral-area .nickname-check input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; font-size: 0.8rem; outline: none; padding: 8px 12px; font-family: inherit; transition: 0.2s; }
+        .referral-area .nickname-check input:focus { border-color: #a855f7; box-shadow: 0 0 0 2px rgba(168,85,247,0.1); }
+        .referral-area .nickname-check .btn-sm { white-space: nowrap; }
+        .referral-area .referral-input-wrap {
+            margin-top: 6px;
+        }
+        .referral-area .referral-input-wrap input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .referral-area .referral-input-wrap input:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #1c1c2e;
+            border-radius: 24px;
+            max-width: 420px;
+            width: 92%;
+            padding: 20px 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-box .close-btn {
+            position: absolute;
+            top: 10px; right: 16px;
+            font-size: 1.3rem;
+            color: #666;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-box .close-btn:hover { color: #fff; }
+        .modal-box h2 {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 900;
+            color: #fbbf24;
+            margin-bottom: 4px;
+            font-size: 1.1rem;
+        }
+        .modal-box .subtitle { font-size: 0.7rem; color: #888; margin-bottom: 12px; }
+        .modal-box .detail-item { padding: 4px 0; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .modal-box .detail-item strong { color: #aaa; margin-right: 6px; }
+        .modal-box .divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 8px 0; }
+        .modal-box .price-tag {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .modal-box .price-tag.normal { background: rgba(74,222,128,0.15); color: #4ade80; }
+        .modal-box .price-tag.premium { background: rgba(244,114,182,0.15); color: #f472b6; }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1c1c2e;
+            border: 1px solid #a855f7;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #fff;
+            font-size: 0.75rem;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease;
+            white-space: nowrap;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .footer-text { text-align: center; color: #333; font-size: 0.5rem; padding: 12px 0 2px; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 12px; }
+        .footer-text .bottom-links { display: flex; justify-content: center; gap: 14px; margin-top: 4px; flex-wrap: wrap; }
+        .footer-text .bottom-links a { color: #555; text-decoration: none; font-size: 0.6rem; cursor: pointer; transition: 0.2s; }
+        .footer-text .bottom-links a:hover { color: #888; }
+        .inquiry-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: #fff;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+            transition: 0.3s;
+            border: none;
+        }
+        .inquiry-fab:active { transform: scale(0.9); }
+        .inquiry-fab .tooltip {
+            position: absolute;
+            right: 60px;
+            background: #1c1c2e;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.06);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+        .inquiry-fab:hover .tooltip { opacity: 1; }
+        .admin-panel {
+            background: rgba(239,68,68,0.05);
+            border: 1px solid rgba(239,68,68,0.1);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 12px;
+        }
+        .admin-panel .admin-title {
+            color: #f87171;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .admin-panel .admin-desc {
+            font-size: 0.6rem;
+            color: #888;
+        }
+        .admin-panel .admin-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .priority-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .priority-item .priority-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+        .priority-item .priority-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .priority-item .priority-row select,
+        .priority-item .priority-row input {
+            flex: 1;
+            padding: 5px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.65rem;
+            outline: none;
+            min-width: 60px;
+        }
+        .priority-item .priority-row select:focus,
+        .priority-item .priority-row input:focus {
+            border-color: #a855f7;
+        }
+        .priority-item .priority-row .multi-select-wrap {
+            flex: 2;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .priority-item .priority-row .multi-select-wrap select {
+            flex: 1;
+            min-width: 80px;
+        }
+        .ideal-mode-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .ideal-mode-tabs button {
+            flex: 1;
+            padding: 6px 0;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: #888;
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .ideal-mode-tabs button.active {
+            background: rgba(168,85,247,0.15);
+            border-color: #a855f7;
+            color: #fff;
+        }
+        select option { background: #1c1c2e; color: #fff; }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+            flex-wrap: wrap;
+        }
+        .toggle-container label {
+            font-size: 0.7rem;
+            color: #aaa;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: #333;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            flex-shrink: 0;
+        }
+        .toggle-switch.active {
+            background: #a855f7;
+        }
+        .toggle-switch .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .toggle-switch.active .toggle-knob {
+            left: 20px;
+        }
+        .toggle-description {
+            font-size: 0.6rem;
+            color: #666;
+            margin-left: 4px;
+        }
+        .privacy-settings-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .privacy-settings-section .section-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+        .privacy-settings-section .section-desc {
+            font-size: 0.6rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .privacy-settings-section .section-note {
+            font-size: 0.55rem;
+            color: #fbbf24;
+            background: rgba(251,191,36,0.06);
+            padding: 4px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 6px;
+            border: 1px solid rgba(251,191,36,0.08);
+        }
+        .password-hint {
+            font-size: 0.55rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .password-hint.valid { color: #4ade80; }
+        .password-hint.invalid { color: #f87171; }
+        .password-match-hint {
+            font-size: 0.55rem;
+            margin-top: 2px;
+        }
+        .password-match-hint.valid { color: #4ade80; }
+        .password-match-hint.invalid { color: #f87171; }
+        .school-hint {
+            font-size: 0.55rem;
+            margin-top: 2px;
+        }
+        .school-hint.valid { color: #4ade80; }
+        .school-hint.invalid { color: #f87171; }
+        .form-group .char-count {
+            font-size: 0.5rem;
+            color: #666;
+            text-align: right;
+            margin-top: 2px;
+        }
+        .card-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .card-item .card-info {
+            font-size: 0.7rem;
+        }
+        .card-item .card-info .card-type {
+            font-weight: 700;
+            color: #fbbf24;
+        }
+        .card-item .card-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .card-item .card-actions .btn-sm {
+            font-size: 0.5rem;
+            padding: 3px 10px;
+        }
+        .field-hint {
+            font-size: 0.55rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .field-hint.error { color: #f87171; }
+        .field-hint.success { color: #4ade80; }
+        .phone-prefix-input {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 0 12px;
+            transition: 0.2s;
+        }
+        .phone-prefix-input:focus-within {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
+        }
+        .phone-prefix-input .prefix {
+            color: #aaa;
+            font-size: 0.8rem;
+            padding-right: 4px;
+            user-select: none;
+        }
+        .phone-prefix-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 8px 0;
+            outline: none;
+            font-family: inherit;
+            min-width: 0;
+        }
+        .age-grade-input-wrap {
+            position: relative;
+        }
+        .age-grade-input-wrap input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .age-grade-input-wrap input:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        @media (max-width: 380px) {
+            .cal-cell { min-height: 42px; font-size: 0.6rem; }
+            .cal-cell .school-label { font-size: 0.35rem; }
+        }
+        @media (min-width: 420px) {
+            .cal-cell { min-height: 58px; font-size: 0.75rem; }
+            .cal-cell .school-label { font-size: 0.45rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-firework fw1">🎆</div>
+<div class="bg-firework fw2">🎇</div>
+<div class="bg-firework fw3">✨</div>
+
+<div class="festival-bg">
+    <div class="container">
+
+        <div class="header">
+            <h1>페스타팅</h1>
+            <p><i class="fas fa-calendar-alt"></i> 2026 대학 축제 시즌</p>
+        </div>
+
+        <div class="tabs" id="mainTabs">
+            <span class="active" data-tab="find"><i class="fas fa-users"></i> 친구찾기</span>
+            <span data-tab="calendar"><i class="fas fa-calendar-day"></i> 축제일정</span>
+            <span data-tab="mypage"><i class="fas fa-user-cog"></i> 내정보</span>
+        </div>
+
+        <!-- 친구찾기 -->
+        <div id="page-find" class="page active">
+            <div class="find-header">
+                <span class="count-badge" id="genderCount">👩 0명 · 👨 0명</span>
+                <div class="action-buttons">
+                    <button class="liked-btn" id="showLikedBtn" onclick="toggleShowLiked()"><i class="fas fa-heart"></i> 내가찜한카드</button>
+                    <button class="liked-by-btn" id="showLikedByBtn" onclick="toggleShowLikedBy()"><i class="fas fa-heart"></i> 나를찜한카드</button>
+                    <button class="register-btn" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내카드관리하기</button>
+                    <button class="matching-btn" onclick="openMatchingStatus()"><i class="fas fa-exchange-alt"></i> 매칭현황</button>
+                    <button class="ideal-btn" onclick="openIdealSearch()"><i class="fas fa-star"></i> 이상형찾기</button>
+                </div>
+            </div>
+
+            <div class="mode-tabs" id="modeTabs">
+                <button class="active" data-mode="solo" onclick="switchMode('solo')"><i class="fas fa-user"></i> 둘이서 (1:1)</button>
+                <button data-mode="group" onclick="switchMode('group')"><i class="fas fa-users"></i> 여럿이서 (2:2,3:3,4:4)</button>
+                <button data-mode="same" onclick="switchMode('same')"><i class="fas fa-user-friends"></i> 동성친구 찾기</button>
+            </div>
+
+            <div class="filter-bar">
+                <select id="genderFilter" onchange="applyFilters()">
+                    <option value="all">전체 성별</option>
+                    <option value="female">여자만</option>
+                    <option value="male">남자만</option>
+                </select>
+                <select id="sortFilter" onchange="applyFilters()">
+                    <option value="recent">최근순</option>
+                    <option value="popular">인기순</option>
+                </select>
+            </div>
+
+            <div class="card-grid" id="noteGrid"></div>
+            <div id="bottomNotice" style="text-align:center; color:#555; font-size:0.6rem; padding:10px 0;">
+                <i class="fas fa-lock" style="color:#fbbf24;"></i> 카드 전체 내용은 회원가입 후 확인 가능
+            </div>
+        </div>
+
+        <!-- 축제일정 -->
+        <div id="page-calendar" class="page">
+            <div class="calendar-wrap">
+                <div class="cal-header">
+                    <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                    <span class="month" id="calMonth">2026년 9월</span>
+                    <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="cal-days">
+                    <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+                </div>
+                <div class="cal-grid" id="calGrid"></div>
+
+                <div class="report-area">
+                    <button class="btn-report" onclick="openReport()">
+                        <i class="fas fa-bullhorn"></i> 우리학교 축제 제보하기
+                    </button>
+                    <span class="reward-text">
+                        🎁 제보 시 <strong>무료 매칭권 1회</strong> 지급!
+                    </span>
+                </div>
+
+                <div class="cal-event-list" id="eventList">
+                    <div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 내정보 -->
+        <div id="page-mypage" class="page">
+            <div id="authSection" class="auth-box">
+                <h2>👋 로그인 / 회원가입</h2>
+                <p>학교 이메일로 가입하고<br>대학생만의 인연을 찾아보세요!</p>
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="openLoginModal()"><i class="fas fa-sign-in-alt"></i> 로그인</button>
+                    <button class="btn-secondary" onclick="openSignupModal()"><i class="fas fa-user-plus"></i> 회원가입</button>
+                </div>
+            </div>
+
+            <div id="profileSection" class="hidden">
+                <div class="profile-card">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+                        <div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">👤</div>
+                        <div>
+                            <div style="font-weight:700; font-size:1rem;"><span id="profileNickname">홍길동</span> <span id="userBadgeDisplay" class="badge-status unverified">미인증</span></div>
+                            <div style="font-size:0.65rem; color:#888;"><span id="profileSchool">홍익대학교</span> · <span id="profileMajor">경영학과</span> · <span id="profileGrade">22학번</span></div>
+                        </div>
+                        <div style="margin-left:auto; display:flex; gap:4px; flex-wrap:wrap;">
+                            <button class="btn-sm" onclick="openEditProfile()"><i class="fas fa-edit"></i> 수정</button>
+                            <button class="btn-sm" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 로그아웃</button>
+                        </div>
+                    </div>
+                    <div class="profile-row"><span class="label">나이</span><span class="value" id="profileAge">22세</span></div>
+                    <div class="profile-row"><span class="label">키</span><span class="value" id="profileHeight">170 cm</span></div>
+                    <div class="profile-row"><span class="label">성별</span><span class="value" id="profileGender">♀️ 여성</span></div>
+                    <div class="profile-row"><span class="label">학과계열</span><span class="value" id="profileMajor2">경영학과</span></div>
+                    <div class="profile-row"><span class="label">닮은꼴</span><span class="value" id="profileAnimal">🐶 강아지상</span></div>
+                    <div class="profile-row"><span class="label">활동지역</span><span class="value" id="profileRegion">서울특별시</span></div>
+                    <div class="profile-row"><span class="label">자기소개</span><span class="value" id="profileIntro" style="font-size:0.7rem; line-height:1.3;">안녕하세요! 긍정적인 에너지를 가진 사람이에요. 함께 즐거운 추억 만들어요!</span></div>
+                    <div class="profile-row"><span class="label">전화번호</span><span class="value" id="profilePhone">010-1234-5678</span></div>
+                    <div class="profile-row"><span class="label">추천인</span><span class="value" id="profileReferred">-</span></div>
+                    <div class="profile-row"><span class="label">무료 매치권</span><span class="value" id="freeTicketDisplay">0장</span></div>
+                </div>
+
+                <!-- 개인정보 숨기기 설정 (별도 섹션) -->
+                <div class="privacy-settings-section">
+                    <div class="section-title"><i class="fas fa-shield-alt"></i> 개인정보 숨기기 설정</div>
+                    <div class="section-desc">※ 이 설정은 <strong>내 카드가 타인에게 보여질 때</strong> 적용됩니다. 내가 보는 타인의 카드에는 영향을 주지 않아요.</div>
+                    <div class="section-note">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+
+                    <div class="toggle-container">
+                        <div class="toggle-switch" id="toggleHideSchool" onclick="toggleSwitch('hideSchool')">
+                            <div class="toggle-knob"></div>
+                        </div>
+                        <label>대학교 숨기기</label>
+                        <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+                    </div>
+                    <div class="toggle-container">
+                        <div class="toggle-switch" id="toggleHideMajor" onclick="toggleSwitch('hideMajor')">
+                            <div class="toggle-knob"></div>
+                        </div>
+                        <label>학과계열 숨기기</label>
+                        <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+                    </div>
+                    <div class="toggle-container">
+                        <div class="toggle-switch" id="toggleHideSameSchool" onclick="toggleSwitch('hideSameSchool')">
+                            <div class="toggle-knob"></div>
+                        </div>
+                        <label>같은학교 숨기기</label>
+                        <span class="toggle-description">(같은학교 학생에게 내 카드가 보이지 않음)</span>
+                    </div>
+                    <div style="margin-top:8px; font-size:0.6rem; color:#666;">
+                        현재 설정: 대학교 <span id="profileHideSchool">❌</span> · 학과계열 <span id="profileHideMajor">❌</span> · 같은학교 <span id="profileHideSameSchool">❌</span>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;">
+                    <button class="btn-sm primary" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내 카드 관리</button>
+                    <button class="btn-sm" onclick="openGuideModal()"><i class="fas fa-question-circle"></i> 이용방법</button>
+                    <button class="btn-sm" onclick="openRefundModal()"><i class="fas fa-receipt"></i> 환불신청</button>
+                </div>
+
+                <div class="verify-section">
+                    <h3 style="font-size:0.9rem; margin-bottom:8px; color:#fbbf24;"><i class="fas fa-shield-alt"></i> 학생 인증</h3>
+
+                    <div class="verify-box" id="emailVerifyBox">
+                        <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증 (@*.ac.kr)</div>
+                        <div class="desc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
+                        <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                            <input type="email" class="input-email" id="emailInput" placeholder="example@hongik.ac.kr" style="flex:1; min-width:120px;">
+                            <button class="btn-sm primary" onclick="verifyEmail()">인증하기</button>
+                        </div>
+                        <div id="emailStatus" style="margin-top:4px; font-size:0.7rem; color:#888;"></div>
+                    </div>
+
+                    <div class="verify-box" id="cardVerifyBox">
+                        <div class="title"><i class="fas fa-id-card"></i> 학생증 인증 (관리자 확인)</div>
+                        <div class="desc">인증 시 <strong>'나를 찜한 사람'</strong> 확인 가능!</div>
+                        <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                            <input type="file" accept="image/*" id="cardInput" style="color:#aaa; font-size:0.6rem; flex:1;">
+                            <button class="btn-sm primary" onclick="submitCardVerification()">제출</button>
+                        </div>
+                        <div id="cardStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
+                            <span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>
+                        </div>
+                        <div id="cardRejectReason" style="margin-top:4px; font-size:0.7rem; color:#f87171; display:none;">
+                            ⚠️ 학생증 인증이 반려되었습니다. 좀 더 명확한 사진을 제출해 주세요.
+                        </div>
+                    </div>
+
+                    <div style="background:linear-gradient(135deg, rgba(168,85,247,0.06), rgba(124,58,237,0.02)); border-radius:14px; padding:12px; margin-top:10px; border:1px solid rgba(168,85,247,0.08);">
+                        <div style="font-weight:700; font-size:0.8rem;">🎁 내 혜택</div>
+                        <div id="benefitDisplay" style="font-size:0.7rem; color:#aaa; margin-top:3px;">
+                            🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>
+                            🔹 학생증 인증: ❌ ('나를찜한' 확인 불가)
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminPanel" class="admin-panel hidden">
+                    <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
+                    <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
+                    <div class="admin-buttons">
+                        <button class="btn-sm success" onclick="adminApproveCard()"><i class="fas fa-check"></i> 인증승인</button>
+                        <button class="btn-sm danger" onclick="adminRejectCard()"><i class="fas fa-times"></i> 인증반려</button>
+                        <button class="btn-sm" onclick="adminAddDummy()"><i class="fas fa-user-plus"></i> 더미추가</button>
+                        <button class="btn-sm" onclick="adminViewUsers()"><i class="fas fa-users"></i> 회원조회</button>
+                        <button class="btn-sm danger" onclick="adminBanUser()"><i class="fas fa-ban"></i> 이용정지</button>
+                    </div>
+                    <div style="margin-top:6px; font-size:0.55rem; color:#666;">
+                        📌 학생증 인증 대기: <span id="pendingCount">0</span>건
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04);">
+                    <button class="btn-sm danger" onclick="confirmWithdraw()"><i class="fas fa-trash-alt"></i> 탈퇴하기</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-text">
+            대학생 전용 · 페스타팅
+            <div class="bottom-links">
+                <a onclick="openInquiry()">📞 문의하기</a>
+                <a onclick="openGuideModal()">📖 이용방법</a>
+                <a onclick="openRefundModal()">💰 환불정책</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button class="inquiry-fab" onclick="openInquiry()">
+    <i class="fas fa-comment-dots"></i>
+    <span class="tooltip">📞 문의하기</span>
+</button>
+
+<div class="modal-overlay" id="commonModal">
+    <div class="modal-box">
+        <span class="close-btn" id="modalCloseBtn">&times;</span>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // 0. 한국 대학교 목록 (자동완성용)
+    // ================================================================
+    const KOREAN_UNIVERSITIES = [
+        '가천대학교', '가톨릭대학교', '감리교신학대학교', '강릉원주대학교', '강원대학교',
+        '건국대학교', '경기대학교', '경북대학교', '경상국립대학교', '경성대학교',
+        '경운대학교', '경일대학교', '경주대학교', '경희대학교', '계명대학교',
+        '고려대학교', '공주대학교', '광운대학교', '광주대학교', '국민대학교',
+        '군산대학교', '금오공과대학교', '기독교대학교', '김천대학교', '나사렛대학교',
+        '남서울대학교', '단국대학교', '대구가톨릭대학교', '대구대학교', '대구한의대학교',
+        '대전대학교', '대진대학교', '덕성여자대학교', '동국대학교', '동덕여자대학교',
+        '동명대학교', '동서대학교', '동신대학교', '동아대학교', '동의대학교',
+        '명지대학교', '목원대학교', '목포대학교', '목포해양대학교', '배재대학교',
+        '백석대학교', '부경대학교', '부산가톨릭대학교', '부산대학교', '부산외국어대학교',
+        '삼육대학교', '상명대학교', '상지대학교', '서강대학교', '서경대학교',
+        '서남대학교', '서울과학기술대학교', '서울교육대학교', '서울대학교', '서울시립대학교',
+        '서울여자대학교', '서원대학교', '선문대학교', '성결대학교', '성공회대학교',
+        '성균관대학교', '성신여자대학교', '세명대학교', '세종대학교', '세한대학교',
+        '소명대학교', '수원대학교', '숙명여자대학교', '순천대학교', '순천향대학교',
+        '숭실대학교', '신라대학교', '아주대학교', '안동대학교', '안양대학교',
+        '연세대학교', '영남대학교', '영산대학교', '용인대학교', '우석대학교',
+        '울산대학교', '원광대학교', '위덕대학교', '유원대학교', '을지대학교',
+        '이화여자대학교', '인제대학교', '인천대학교', '인하대학교', '장안대학교',
+        '전남대학교', '전북대학교', '전주대학교', '제주대학교', '조선대학교',
+        '중부대학교', '중앙대학교', '중원대학교', '차의과학대학교', '창원대학교',
+        '청운대학교', '청주대학교', '초당대학교', '총신대학교', '추계예술대학교',
+        '충남대학교', '충북대학교', '칼빈대학교', '평택대학교', '포항공과대학교',
+        '한경대학교', '한국공학대학교', '한국교원대학교', '한국교통대학교', '한국국제대학교',
+        '한국기술교육대학교', '한국방송통신대학교', '한국산업기술대학교', '한국성서대학교',
+        '한국스포츠대학교', '한국예술종합학교', '한국외국어대학교', '한국전통문화대학교',
+        '한국체육대학교', '한국해양대학교', '한남대학교', '한동대학교', '한라대학교',
+        '한림대학교', '한서대학교', '한성대학교', '한세대학교', '한신대학교',
+        '한양대학교', '한영신학대학교', '한일장신대학교', '협성대학교', '호남대학교',
+        '호서대학교', '홍익대학교', '화성대학교'
+    ];
+
+    // ================================================================
+    // 1. localStorage 헬퍼
+    // ================================================================
+    function getData(key, defaultVal) {
+        try {
+            const data = localStorage.getItem('festating_' + key);
+            return data ? JSON.parse(data) : defaultVal;
+        } catch { return defaultVal; }
+    }
+    function setData(key, val) {
+        localStorage.setItem('festating_' + key, JSON.stringify(val));
+    }
+
+    // ================================================================
+    // 2. 초기 데이터 (더미 프로필)
+    // ================================================================
+    const defaultProfiles = [
+        { id: 0, userId: null, emoji: '🐶', school: '홍익대', grade: '22학번', age: 22, gender: 'female', height: 163, region: '서울특별시', mbti: 'ENFP', major: '경영학과', preview: '전시회랑 카페투어 좋아해요', detail: '홍대에서 디자인 공부 중이에요. 낯가리지만 친해지면 말 많아져요. 같이 감성적인 데이트할 분!', likes: 12, type: 'solo' },
+        { id: 1, userId: null, emoji: '🐱', school: '연세대', grade: '21학번', age: 23, gender: 'female', height: 167, region: '서울특별시', mbti: 'INFP', major: '심리학과', detail: '연대 심리학과 21학번이에요. 사람 마음에 관심 많고, 책 읽는 걸 좋아해요. 깊은 대화 나눌 사람을 찾아요.', likes: 8, type: 'solo' },
+        { id: 2, userId: null, emoji: '🦊', school: '고려대', grade: '20학번', age: 24, gender: 'male', height: 178, region: '서울특별시', mbti: 'ENTJ', major: '컴퓨터공학과', preview: 'IT 스타트업 인턴 중', detail: '고대 컴공 20학번이에요. 개발자 지망생이고, 운동도 좋아해요. 축제에서 신나게 놀고 싶어요!', likes: 5, type: 'solo' },
+        { id: 3, userId: null, emoji: '🐻', school: '서강대', grade: '23학번', age: 21, gender: 'female', height: 165, region: '서울특별시', mbti: 'ISFJ', major: '국문학과', detail: '서강대 국문과 23학번이에요. 조용한 성격이지만 친해지면 재밌어요. 캠퍼스 투어 같이 해요.', likes: 3, type: 'group' },
+        { id: 4, userId: null, emoji: '🐼', school: '성균관대', grade: '22학번', age: 23, gender: 'male', height: 182, region: '서울특별시', mbti: 'ESTJ', major: '경영학과', preview: '축제 기획 동아리 회장', detail: '성대 경영 22학번, 축제 기획 동아리에서 활동 중이에요. 축제 놀러 오면 제가 가이드 해드릴게요!', likes: 7, type: 'solo' },
+        { id: 5, userId: null, emoji: '🦁', school: '한양대', grade: '21학번', age: 24, gender: 'male', height: 185, region: '서울특별시', mbti: 'ENFJ', major: '체육학과', preview: '축제에서 같이 놀 남자친구!', detail: '한양대 체육학과 21학번! 운동 좋아하고, 축제에서 같이 맥주 마실 친구 구해요!', likes: 4, type: 'same' },
+        { id: 6, userId: null, emoji: '🐯', school: '중앙대', grade: '22학번', age: 23, gender: 'male', height: 180, region: '서울특별시', mbti: 'ISTP', major: '기계공학과', preview: '공연 같이 볼 동성친구', detail: '중대 기계공학과 22학번. 록 음악 좋아하고, 축제 공연 보면서 놀 친구를 찾아요!', likes: 3, type: 'same' },
+        { id: 7, userId: null, emoji: '🦄', school: '이화여대', grade: '20학번', age: 22, gender: 'female', height: 168, region: '서울특별시', mbti: 'INTP', major: '영문학과', preview: '부스 투어 같이 할 언니!', detail: '이화여대 영문학과 20학번. 축제 부스 돌아다니면서 맛있는 거 먹을 친구 필요해요!', likes: 6, type: 'same' },
+        { id: 8, userId: null, emoji: '🌸', school: '숙명여대', grade: '23학번', age: 21, gender: 'female', height: 164, region: '서울특별시', mbti: 'ESFP', major: '미술학과', preview: '사진 찍어줄 동성친구', detail: '숙명여대 미술학과 23학번. 축제에서 예쁜 사진 많이 찍을 친구를 찾아요!', likes: 9, type: 'same' },
+    ];
+
+    // 축제 일정
+    const festivalEvents = [
+        { date: '2026-09-02', school: '아주대', detail: '대동제', lineup: '동아리 공연' },
+        { date: '2026-09-03', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-06', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-07', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-08', school: '경희대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-11', school: '신촌연합', detail: '신촌 대학가 축제', lineup: '다수 대학 참여' },
+        { date: '2026-09-12', school: '한양사이버', detail: 'HYCU BIG FESTIVAL', lineup: '추후 공개' },
+        { date: '2026-09-17', school: '동국대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-09-25', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-26', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-27', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-28', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-09-29', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
+        { date: '2026-10-01', school: '고려대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-02', school: '연세대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-08', school: '성균관대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-09', school: '한양대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-15', school: '중앙대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-16', school: '서강대', detail: '대동제', lineup: '추후 공개' },
+        { date: '2026-10-22', school: '건양대', detail: 'KY FESTA', lineup: '추후 공개' },
+        { date: '2026-10-30', school: '동국대(경주)', detail: 'APEC 메모리얼 페스타', lineup: 'K-POP 콘서트' }
+    ];
+
+    // ================================================================
+    // 3. 상태 변수 (localStorage 기반)
+    // ================================================================
+    let allProfiles = getData('profiles', defaultProfiles);
+    let allUsers = getData('users', []);
+    let allLikes = getData('likes', []);
+    let allMatches = getData('matches', []);
+    let currentUserId = getData('currentUser', null);
+    let nextId = getData('nextId', 100);
+
+    let likedIds = new Set();
+    let likedByIds = new Set();
+    let showLikedOnly = false;
+    let showLikedByOnly = false;
+    let currentMode = 'solo';
+    let isLoggedIn = false;
+    let isEmailVerified = false;
+    let cardVerificationStatus = 'none';
+    let isAdmin = sessionStorage.getItem('isAdmin') === 'true' || false;
+    let currentYear = 2026, currentMonth = 8;
+    let hasMyCard = false;
+    let freeMatchTickets = 0;
+    let currentUser = null;
+
+    // 매칭 데이터
+    let matchingData = { sent: [], received: [], matched: [] };
+
+    // ================================================================
+    // 4. 유틸리티 함수
+    // ================================================================
+    function getSchoolTier(school) {
+        const tierMap = {
+            '메디컬': ['가천대학교','가톨릭대학교','건국대학교','경희대학교','고려대학교','동국대학교','부산대학교','서울대학교','성균관대학교','연세대학교','울산대학교','원광대학교','이화여자대학교','인하대학교','전남대학교','전북대학교','제주대학교','조선대학교','중앙대학교','차의과학대학교','한양대학교'],
+            'SKY이상': ['서울대학교','연세대학교','고려대학교'],
+            '서성한이': ['서강대학교','성균관대학교','한양대학교'],
+            '인서울': ['서울대학교','연세대학교','고려대학교','서강대학교','성균관대학교','한양대학교','중앙대학교','경희대학교','시립대학교','이화여자대학교','외국어대학교','동국대학교','홍익대학교','국민대학교','숙명여자대학교','숭실대학교','세종대학교','건국대학교']
+        };
+        if (tierMap['메디컬'].includes(school)) return '메디컬';
+        if (tierMap['SKY이상'].includes(school)) return 'SKY이상';
+        if (tierMap['서성한이'].includes(school)) return '서성한이';
+        if (tierMap['인서울'].includes(school)) return '인서울';
+        return '기타';
+    }
+
+    function getMajorCategory(major) {
+        const map = {
+            '이공계열': ['컴퓨터공학과','기계공학과','로봇학과','자동차공학과','화학공학과','전자공학과','정보통신공학과','소프트웨어학과','전기공학과','건축공학과'],
+            '어문계열': ['국문학과','영문학과','중문학과','일문학과','불문학과','독문학과','노어문학과','언어학과'],
+            '상경계열': ['경영학과','경제학과','무역학과','회계학과','금융보험학과','호텔경영학과'],
+            '예체능': ['연극영화과','서양화과','실용음악과','체육학과','무용학과','디자인학과','미술학과','음악학과'],
+            '메디컬': ['의예과','수의학과','간호학과','약학과','한의예과','치의학과','보건학과'],
+            '서비스': ['호텔조리과','항공운항학과','사회복지학과','관광학과','외식경영학과'],
+            '기타계열': ['철학과','사학과','심리학과','행정학과','정치외교학과','교육학과']
+        };
+        for (const [key, values] of Object.entries(map)) {
+            if (values.some(v => major.includes(v))) return key;
+        }
+        return '기타계열';
+    }
+
+    // ================================================================
+    // 5. 데이터 로드/저장
+    // ================================================================
+    function loadUserData() {
+        if (currentUserId) {
+            currentUser = allUsers.find(u => u.id === currentUserId);
+            if (currentUser) {
+                isLoggedIn = true;
+                isEmailVerified = currentUser.emailVerified || false;
+                cardVerificationStatus = currentUser.cardStatus || 'none';
+                freeMatchTickets = currentUser.freeTickets || 0;
+                const myCards = allProfiles.filter(p => p.userId === currentUserId);
+                hasMyCard = myCards.length > 0;
+                const myLikes = allLikes.filter(l => l.userId === currentUserId);
+                likedIds = new Set(myLikes.map(l => l.cardId));
+                const myCardIds = myCards.map(c => c.id);
+                const likedBy = allLikes.filter(l => myCardIds.includes(l.cardId));
+                likedByIds = new Set(likedBy.map(l => l.userId));
+                updateMatchingDataAndAutoReject();
+                updateUI();
+                renderProfiles();
+                updateLikedBtn();
+                return true;
+            }
+        }
+        isLoggedIn = false;
+        currentUser = null;
+        return false;
+    }
+
+    function updateMatchingDataAndAutoReject() {
+        if (!currentUserId) return;
+        const now = new Date();
+        allMatches.forEach(m => {
+            if (m.status === 'pending') {
+                const created = new Date(m.createdAt);
+                const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+                if (diffDays >= 3) {
+                    m.status = 'rejected';
+                }
+            }
+        });
+        saveAllData();
+
+        const myCards = allProfiles.filter(p => p.userId === currentUserId);
+        const myCardIds = myCards.map(c => c.id);
+
+        matchingData.sent = allMatches
+            .filter(m => m.fromUserId === currentUserId && m.status === 'pending')
+            .map(m => {
+                const card = allProfiles.find(p => p.id === m.toCardId);
+                return { id: m.id, to: card ? card.school + ' · ' + card.age + '세 · ' + (card.gender === 'female' ? '여성' : '남성') : '알 수 없음', status: m.status, type: m.type || 'normal', createdAt: m.createdAt };
+            });
+
+        matchingData.received = allMatches
+            .filter(m => myCardIds.includes(m.toCardId) && m.status === 'pending')
+            .map(m => {
+                const fromUser = allUsers.find(u => u.id === m.fromUserId);
+                return { id: m.id, from: fromUser ? fromUser.nickname + ' · ' + fromUser.age + '세 · ' + (fromUser.gender === '여성' ? '여성' : '남성') : '알 수 없음', status: m.status, type: m.type || 'normal', createdAt: m.createdAt };
+            });
+
+        matchingData.matched = allMatches
+            .filter(m => (m.fromUserId === currentUserId || myCardIds.includes(m.toCardId)) && m.status === 'accepted')
+            .map(m => {
+                const otherId = m.fromUserId === currentUserId ?
+                    allProfiles.find(p => p.id === m.toCardId)?.userId :
+                    m.fromUserId;
+                const otherUser = allUsers.find(u => u.id === otherId);
+                return { id: m.id, with: otherUser ? otherUser.nickname + ' · ' + otherUser.age + '세 · ' + (otherUser.gender === '여성' ? '여성' : '남성') : '알 수 없음', type: m.type || 'normal', createdAt: m.createdAt, status: 'matched' };
+            });
+    }
+
+    function saveAllData() {
+        setData('profiles', allProfiles);
+        setData('users', allUsers);
+        setData('likes', allLikes);
+        setData('matches', allMatches);
+        setData('currentUser', currentUserId);
+        setData('nextId', nextId);
+    }
+
+    // ================================================================
+    // 6. 렌더링 함수 (내 카드 배지 수정됨)
+    // ================================================================
+    const grid = document.getElementById('noteGrid');
+    const genderCount = document.getElementById('genderCount');
+    const bottomNotice = document.getElementById('bottomNotice');
+    const genderFilter = document.getElementById('genderFilter');
+
+    function renderProfiles() {
+        let filtered = [...allProfiles];
+
+        if (currentUserId) {
+            const myCards = filtered.filter(p => p.userId === currentUserId);
+            const otherCards = filtered.filter(p => p.userId !== currentUserId);
+            let filteredOthers = [...otherCards];
+            if (showLikedOnly) {
+                filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
+            }
+            if (showLikedByOnly) {
+                if (!isLoggedIn) {
+                    showToast('⚠️ 로그인 후 이용 가능합니다');
+                    document.getElementById('showLikedByBtn').classList.remove('active');
+                    showLikedByOnly = false;
+                    renderProfiles();
+                    return;
+                }
+                if (!hasMyCard) {
+                    showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+                    document.getElementById('showLikedByBtn').classList.remove('active');
+                    showLikedByOnly = false;
+                    renderProfiles();
+                    return;
+                }
+                if (cardVerificationStatus !== 'approved') {
+                    showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
+                    document.getElementById('showLikedByBtn').classList.remove('active');
+                    showLikedByOnly = false;
+                    document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+                    document.querySelector('[data-tab="mypage"]').classList.add('active');
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    document.getElementById('page-mypage').classList.add('active');
+                    renderProfiles();
+                    return;
+                }
+                filteredOthers = filteredOthers.filter(p => likedByIds.has(p.userId));
+            }
+            filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
+        } else {
+            if (showLikedOnly) {
+                filtered = filtered.filter(p => likedIds.has(p.id));
+            }
+            if (showLikedByOnly) {
+                showLikedByOnly = false;
+                document.getElementById('showLikedByBtn').classList.remove('active');
+            }
+            filtered = filtered.filter(p => p.type === currentMode);
+        }
+
+        if (currentMode === 'same' && currentUser) {
+            const myCards = filtered.filter(p => p.userId === currentUserId);
+            const others = filtered.filter(p => p.userId !== currentUserId && p.gender === currentUser.gender);
+            filtered = [...myCards, ...others];
+            genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
+            genderFilter.disabled = true;
+        } else {
+            genderFilter.disabled = false;
+            const genderVal = genderFilter.value;
+            if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
+            else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
+        }
+
+        if (currentUser && currentUser.hideSameSchool) {
+            filtered = filtered.filter(p => p.userId === currentUserId || p.school !== currentUser.school);
+        }
+
+        const sortVal = document.getElementById('sortFilter').value;
+        if (sortVal === 'popular') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        else filtered.sort((a, b) => a.id - b.id);
+
+        const femaleCount = filtered.filter(p => p.gender === 'female').length;
+        const maleCount = filtered.filter(p => p.gender === 'male').length;
+        genderCount.textContent = `👩 ${femaleCount}명 · 👨 ${maleCount}명`;
+
+        if (isLoggedIn) {
+            bottomNotice.style.display = 'none';
+        } else {
+            bottomNotice.style.display = 'block';
+        }
+
+        grid.innerHTML = '';
+        filtered.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            const isLiked = likedIds.has(p.id);
+            const isLikedBy = likedByIds.has(p.userId);
+            // ★★★ 수정된 부분: isLoggedIn 조건 추가 ★★★
+            const isMyCard = isLoggedIn && p.userId === currentUserId;
+            const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
+            const canLike = hasMyCard && isLoggedIn && !isMyCard;
+
+            let schoolDisplay = p.school;
+            let majorDisplay = p.major;
+            if (p.userId !== null) {
+                const owner = allUsers.find(u => u.id === p.userId);
+                if (owner) {
+                    if (owner.hideSchool) schoolDisplay = '학교 숨김';
+                    if (owner.hideMajor) majorDisplay = '학과 숨김';
+                }
+            }
+
+            card.innerHTML = `
+                <span class="emoji-big">${p.emoji}</span>
+                <span class="card-type-badge">${typeLabel}</span>
+                ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+                ${isLikedBy && !isMyCard ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+                <div class="info-line">
+                    ${schoolDisplay} · ${p.age}세 · ${p.gender === 'female' ? '♀' : '♂'} · ${p.height}cm
+                </div>
+                <div class="preview">${p.preview || p.detail.slice(0, 18) + '...'}</div>
+                <div class="meta">
+                    <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+                    <span>
+                        <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+                           onclick="event.stopPropagation(); toggleLike(${p.id})"
+                           title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+                    </span>
+                </div>
+            `;
+            card.addEventListener('click', () => showProfileDetail(p));
+            grid.appendChild(card);
+        });
+    }
+
+    function toggleLike(cardId) {
+        if (!hasMyCard || !isLoggedIn) {
+            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+            return;
+        }
+        const card = allProfiles.find(p => p.id === cardId);
+        if (card && card.userId === currentUserId) {
+            showToast('⚠️ 본인의 카드는 찜할 수 없습니다');
+            return;
+        }
+        const existing = allLikes.find(l => l.userId === currentUserId && l.cardId === cardId);
+        if (existing) {
+            allLikes = allLikes.filter(l => l !== existing);
+            if (card) card.likes = (card.likes || 0) - 1;
+            likedIds.delete(cardId);
+        } else {
+            allLikes.push({ id: Date.now(), userId: currentUserId, cardId: cardId });
+            if (card) card.likes = (card.likes || 0) + 1;
+            likedIds.add(cardId);
+        }
+        saveAllData();
+        renderProfiles();
+        updateLikedBtn();
+    }
+
+    function toggleShowLiked() {
+        showLikedOnly = !showLikedOnly;
+        if (showLikedOnly) {
+            showLikedByOnly = false;
+            document.getElementById('showLikedByBtn').classList.remove('active');
+        }
+        document.getElementById('showLikedBtn').classList.toggle('active');
+        renderProfiles();
+    }
+
+    function toggleShowLikedBy() {
+        if (!isLoggedIn) {
+            showToast('⚠️ 로그인 후 이용 가능합니다');
+            return;
+        }
+        if (!hasMyCard) {
+            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+            return;
+        }
+        if (cardVerificationStatus !== 'approved') {
+            showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
+            document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-tab="mypage"]').classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-mypage').classList.add('active');
+            return;
+        }
+        showLikedByOnly = !showLikedByOnly;
+        if (showLikedByOnly) {
+            showLikedOnly = false;
+            document.getElementById('showLikedBtn').classList.remove('active');
+        }
+        document.getElementById('showLikedByBtn').classList.toggle('active');
+        renderProfiles();
+    }
+
+    function updateLikedBtn() {
+        const btn = document.getElementById('showLikedBtn');
+        const count = likedIds.size;
+        btn.innerHTML = `<i class="fas fa-heart"></i> 내가찜한카드${count > 0 ? ' ('+count+')' : ''}`;
+        if (count > 0) btn.classList.add('active');
+        else btn.classList.remove('active');
+
+        const btn2 = document.getElementById('showLikedByBtn');
+        const count2 = likedByIds.size;
+        btn2.innerHTML = `<i class="fas fa-heart"></i> 나를찜한카드${count2 > 0 ? ' ('+count2+')' : ''}`;
+        if (count2 > 0 && hasMyCard && cardVerificationStatus === 'approved') btn2.classList.add('active');
+        else btn2.classList.remove('active');
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('#modeTabs button').forEach(b => b.classList.remove('active'));
+        document.querySelector(`#modeTabs button[data-mode="${mode}"]`).classList.add('active');
+        renderProfiles();
+    }
+
+    function applyFilters() { renderProfiles(); }
+
+    // ================================================================
+    // 7. 캘린더
+    // ================================================================
+    function renderCalendar(year, month) {
+        const grid = document.getElementById('calGrid');
+        document.getElementById('calMonth').textContent = `${year}년 ${month+1}월`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        grid.innerHTML = '';
+
+        const eventsByDate = {};
+        festivalEvents.forEach(e => {
+            if (!eventsByDate[e.date]) eventsByDate[e.date] = [];
+            eventsByDate[e.date].push(e);
+        });
+
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'cal-cell other-month';
+            grid.appendChild(empty);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const cell = document.createElement('div');
+            cell.className = 'cal-cell';
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const events = eventsByDate[dateStr] || [];
+            if (events.length > 0) {
+                cell.classList.add('has-event');
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                cell.appendChild(document.createTextNode(d));
+                cell.appendChild(dot);
+
+                const labelsDiv = document.createElement('div');
+                labelsDiv.className = 'school-labels';
+                events.slice(0, 4).forEach(e => {
+                    const label = document.createElement('span');
+                    label.className = 'school-label';
+                    let shortName = e.school;
+                    if (shortName.includes('(')) shortName = shortName.replace(/\(.*\)/, '');
+                    if (shortName.length > 4) {
+                        if (shortName.includes('대')) shortName = shortName.slice(0, shortName.indexOf('대')+1);
+                        else shortName = shortName.slice(0, 4);
+                    }
+                    label.textContent = shortName;
+                    labelsDiv.appendChild(label);
+                });
+                if (events.length > 4) {
+                    const more = document.createElement('span');
+                    more.className = 'school-label';
+                    more.textContent = `+${events.length - 4}`;
+                    labelsDiv.appendChild(more);
+                }
+                cell.appendChild(labelsDiv);
+
+                if (events.length > 1) {
+                    const badge = document.createElement('span');
+                    badge.className = 'event-badge';
+                    badge.textContent = events.length;
+                    cell.appendChild(badge);
+                }
+            } else {
+                cell.textContent = d;
+            }
+            cell.addEventListener('click', function() {
+                const evs = eventsByDate[dateStr] || [];
+                if (evs.length > 0) showDayEvents(evs);
+                else showToast('📅 이 날은 축제가 없어요.');
+            });
+            grid.appendChild(cell);
+        }
+    }
+
+    function showDayEvents(events) {
+        const list = document.getElementById('eventList');
+        list.innerHTML = '';
+        events.forEach(e => {
+            const item = document.createElement('div');
+            item.className = 'cal-event-item';
+            item.innerHTML = `
+                <div>
+                    <div class="school-name">${e.school}</div>
+                    <div class="event-detail">${e.detail} ${e.lineup ? '· '+e.lineup : ''}</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#666; font-size:0.6rem;"></i>
+            `;
+            item.addEventListener('click', function() {
+                showEventDetail([e]);
+            });
+            list.appendChild(item);
+        });
+    }
+
+    function showEventDetail(events) {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        let html = `<h2>📅 축제 상세</h2><div class="subtitle">확정된 라인업은 추후 업데이트됩니다</div>`;
+        events.forEach(ev => {
+            html += `
+                <div class="detail-item"><strong>🏫 학교</strong> ${ev.school}</div>
+                <div class="detail-item"><strong>📆 날짜</strong> ${ev.date}</div>
+                <div class="detail-item"><strong>📌 내용</strong> ${ev.detail}</div>
+                <div class="detail-item"><strong>🎤 라인업</strong> ${ev.lineup || '추후 공개'}</div>
+                <hr style="border-color:rgba(255,255,255,0.05); margin:8px 0;">
+            `;
+        });
+        html += `<button class="btn-sm primary" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>`;
+        content.innerHTML = html;
+        modal.classList.add('active');
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        if (currentMonth === 0) { currentMonth = 11; currentYear--; } else { currentMonth--; }
+        renderCalendar(currentYear, currentMonth);
+        document.getElementById('eventList').innerHTML = '<div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>';
+    });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        if (currentMonth === 11) { currentMonth = 0; currentYear++; } else { currentMonth++; }
+        renderCalendar(currentYear, currentMonth);
+        document.getElementById('eventList').innerHTML = '<div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>';
+    });
+
+    // ================================================================
+    // 8. 제보 / 문의 / 환불
+    // ================================================================
+    function openReport() {
+        window.open('https://open.kakao.com/o/페스타팅제보', '_blank');
+        showToast('📢 카카오톡 오픈채팅으로 연결됩니다');
+    }
+
+    function openInquiry() {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>📞 문의하기</h2>
+            <div class="subtitle">궁금한 점이 있으시면 아래로 연락주세요</div>
+            <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:10px 0; text-align:center;">
+                <div style="font-size:1.2rem; margin-bottom:4px;">💬</div>
+                <div style="font-weight:700; font-size:1rem; color:#fff;">카카오톡 ID: <span style="color:#fbbf24;">festivalting</span></div>
+                <div style="font-size:0.7rem; color:#888; margin-top:4px;">운영시간: 평일 10:00 ~ 18:00</div>
+            </div>
+            <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; text-align:center; border:1px solid rgba(251,191,36,0.08);">
+                <div style="font-size:0.75rem; color:#aaa;">📋 <strong>구글 폼</strong>으로도 문의 가능합니다</div>
+                <button class="btn-sm primary" onclick="window.open('https://forms.gle/예시링크','_blank')" style="margin-top:6px;">
+                    <i class="fas fa-external-link-alt"></i> 구글 폼 열기
+                </button>
+            </div>
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    function openRefundModal() {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>💰 환불 정책</h2>
+            <div class="subtitle">비매너 행위 시 대화내역 캡처로 신고해주세요</div>
+            <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(239,68,68,0.1);">
+                <div style="font-weight:700; color:#f87171; font-size:0.85rem;">📌 환불 사유</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
+                    • 상대방의 일방적인 잠수<br>
+                    • 상대방의 차단<br>
+                    • 폭언 및 비매너 행위
+                </div>
+            </div>
+            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(74,222,128,0.1);">
+                <div style="font-weight:700; color:#4ade80; font-size:0.85rem;">📋 환불 절차</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
+                    1. 대화내역을 캡처합니다<br>
+                    2. 카카오톡 ID: <strong style="color:#fff;">festivalting</strong>으로 제보<br>
+                    3. 운영진 확인 후 환불 처리
+                </div>
+            </div>
+            <button class="btn-sm primary" onclick="window.open('https://open.kakao.com/o/페스타팅환불','_blank')" style="width:100%; margin-top:8px;">
+                <i class="fas fa-external-link-alt"></i> 환불 신청하기 (오픈채팅)
+            </button>
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    // ================================================================
+    // 9. 프로필 상세 + 매칭 신청
+    // ================================================================
+    function showProfileDetail(profile) {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        let typeLabel = '';
+        if (profile.type === 'solo') typeLabel = '💕 둘이서 만나요 (1:1)';
+        else if (profile.type === 'group') typeLabel = '🍻 여럿이서 만나요 (2:2,3:3,4:4)';
+        else if (profile.type === 'same') typeLabel = '👬 동성친구 찾기 (1:1)';
+        const isMyCard = isLoggedIn && profile.userId === currentUserId;
+
+        let schoolDisplay = profile.school;
+        let majorDisplay = profile.major;
+        if (profile.userId !== null) {
+            const owner = allUsers.find(u => u.id === profile.userId);
+            if (owner) {
+                if (owner.hideSchool) schoolDisplay = '학교 숨김';
+                if (owner.hideMajor) majorDisplay = '학과 숨김';
+            }
+        }
+
+        let showMatchBtn = false;
+        if (isLoggedIn && !isMyCard && hasMyCard) {
+            if (currentMode === 'same') {
+                showMatchBtn = true;
+            } else if (currentMode === 'solo' || currentMode === 'group') {
+                if (currentUser && profile.gender !== currentUser.gender) {
+                    showMatchBtn = true;
+                }
+            }
+        }
+
+        content.innerHTML = `
+            <h2>💌 카드 상세</h2>
+            <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
+            <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
+            ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
+            <div class="detail-item"><strong>학교</strong> ${schoolDisplay}</div>
+            <div class="detail-item"><strong>학번</strong> ${profile.grade}</div>
+            <div class="detail-item"><strong>나이/성별/키</strong> ${profile.age}세 / ${profile.gender === 'female' ? '여성' : '남성'} / ${profile.height}cm</div>
+            <div class="detail-item"><strong>MBTI</strong> ${profile.mbti}</div>
+            <div class="detail-item"><strong>자기소개</strong> ${profile.detail}</div>
+            <hr class="divider">
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
+                ${isMyCard ? `
+                    <button class="btn-sm" onclick="closeModal(); openCardRegisterForm('${profile.type}')" style="flex:1;"><i class="fas fa-edit"></i> 수정</button>
+                    <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
+                ` : ''}
+                ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
+                ${!showMatchBtn && !isMyCard && isLoggedIn ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
+                <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
+            </div>
+            ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
+            <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
+                <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
+            </div>
+        `;
+        modal.classList.add('active');
+    }
+
+    // ================================================================
+    // 10. 매칭 신청 (일반/슈퍼 선택)
+    // ================================================================
+    function openMatchingTypeSelection(cardId) {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>💌 매칭 신청</h2>
+            <div class="subtitle">원하는 매칭 방식을 선택해주세요</div>
+            <div style="margin:12px 0;">
+                <div style="background:rgba(74,222,128,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(74,222,128,0.1); cursor:pointer;" onclick="requestMatchingWithType(${cardId}, 'normal')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700;">🔹 일반 매칭</div>
+                            <div style="font-size:0.65rem; color:#888;">상대방이 수락 후 양측 결제 (5,000원)</div>
+                        </div>
+                        <span class="price-tag normal">5,000원</span>
+                    </div>
+                </div>
+                <div style="background:rgba(244,114,182,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(244,114,182,0.1); cursor:pointer;" onclick="requestMatchingWithType(${cardId}, 'premium')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700;">✨ 슈퍼 매칭</div>
+                            <div style="font-size:0.65rem; color:#888;">상대방은 무료 수락, 신청자만 결제 (10,000원)</div>
+                        </div>
+                        <span class="price-tag premium">10,000원</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">취소</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    function requestMatchingWithType(cardId, type) {
+        if (!isLoggedIn) {
+            showToast('⚠️ 로그인 후 이용 가능합니다');
+            switchToLogin();
+            return;
+        }
+        if (!hasMyCard) {
+            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+            return;
+        }
+        const targetCard = allProfiles.find(p => p.id === cardId);
+        if (!targetCard) return;
+        if ((currentMode === 'solo' || currentMode === 'group') && currentUser && targetCard.gender === currentUser.gender) {
+            showToast('⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다');
+            return;
+        }
+        if (currentMode === 'same' && currentUser && targetCard.gender !== currentUser.gender) {
+            showToast('⚠️ 동성친구는 같은 성별끼리만 매칭 가능합니다');
+            return;
+        }
+        const existing = allMatches.find(m => m.fromUserId === currentUserId && m.toCardId === cardId && m.status === 'pending');
+        if (existing) {
+            showToast('⚠️ 이미 매칭을 신청했습니다');
+            closeModal();
+            return;
+        }
+        const newMatch = {
+            id: nextId++,
+            fromUserId: currentUserId,
+            toCardId: cardId,
+            type: type,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            respondedAt: null
+        };
+        allMatches.push(newMatch);
+        saveAllData();
+        updateMatchingDataAndAutoReject();
+        closeModal();
+        showToast(`💌 ${type === 'normal' ? '일반' : '슈퍼'} 매칭 신청이 전송되었습니다!`);
+    }
+
+    function respondMatching(matchId, accept) {
+        const match = allMatches.find(m => m.id === matchId);
+        if (!match) return;
+        if (accept) {
+            match.status = 'accepted';
+            match.respondedAt = new Date().toISOString();
+            showToast('✅ 매칭을 수락했습니다!');
+        } else {
+            match.status = 'rejected';
+            match.respondedAt = new Date().toISOString();
+            showToast('❌ 매칭을 거절했습니다.');
+        }
+        saveAllData();
+        updateMatchingDataAndAutoReject();
+        closeModal();
+        setTimeout(() => openMatchingStatus(), 300);
+    }
+
+    function switchToLogin() {
+        document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tab="mypage"]').classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-mypage').classList.add('active');
+    }
+
+    // ================================================================
+    // 11. 매칭 현황
+    // ================================================================
+    function openMatchingStatus() {
+        if (!isLoggedIn) {
+            showToast('⚠️ 로그인 후 이용 가능합니다');
+            switchToLogin();
+            return;
+        }
+        updateMatchingDataAndAutoReject();
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        const sentHtml = matchingData.sent.length > 0 ? matchingData.sent.map(m => `
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin-bottom:6px;">
+                <div style="font-weight:700; font-size:0.8rem;">📌 ${m.to}</div>
+                <div style="font-size:0.65rem; color:#fbbf24;">⏳ 상대방의 응답을 기다리고 있어요! (${m.type === 'normal' ? '일반' : '슈퍼'})</div>
+                <div style="font-size:0.55rem; color:#666;">신청일: ${m.createdAt}</div>
+            </div>
+        `).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">보낸 매칭이 없습니다</div>';
+
+        const receivedHtml = matchingData.received.length > 0 ? matchingData.received.map(m => `
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin-bottom:6px;">
+                <div style="font-weight:700; font-size:0.8rem;">📌 ${m.from}</div>
+                <div style="font-size:0.65rem; color:#4ade80;">💬 나와 만나고 싶어하는 상대가 있어요! (${m.type === 'normal' ? '일반' : '슈퍼'})</div>
+                <div style="display:flex; gap:6px; margin-top:6px;">
+                    <button class="btn-sm success" onclick="respondMatching(${m.id}, true)">수락</button>
+                    <button class="btn-sm danger" onclick="respondMatching(${m.id}, false)">거절</button>
+                </div>
+            </div>
+        `).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">들어온 매칭이 없습니다</div>';
+
+        const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m => `
+            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:10px; margin-bottom:6px; border:1px solid rgba(74,222,128,0.1);">
+                <div style="font-weight:700; font-size:0.8rem;">✅ ${m.with}</div>
+                <div style="font-size:0.65rem; color:#4ade80;">🎉 매칭이 성공하였어요! (${m.type === 'normal' ? '일반' : '슈퍼'})</div>
+                <div style="font-size:0.55rem; color:#666;">성사일: ${m.createdAt}</div>
+            </div>
+        `).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">성사된 매칭이 없습니다</div>';
+
+        content.innerHTML = `
+            <h2>💌 매칭 현황</h2>
+            <div class="subtitle">나의 매칭 상태를 한눈에 확인하세요</div>
+
+            <div style="margin:8px 0;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24; margin-bottom:4px;">📤 내가 보낸 매칭</div>
+                ${sentHtml}
+            </div>
+
+            <div style="margin:8px 0;">
+                <div style="font-weight:700; font-size:0.85rem; color:#4ade80; margin-bottom:4px;">📥 들어온 매칭</div>
+                ${receivedHtml}
+            </div>
+
+            <div style="margin:8px 0;">
+                <div style="font-weight:700; font-size:0.85rem; color:#a855f7; margin-bottom:4px;">✅ 성사된 매칭</div>
+                ${matchedHtml}
+            </div>
+
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    // ================================================================
+    // 12. 내정보 - 로그인/회원가입
+    // ================================================================
+    function openLoginModal() {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>🔐 로그인</h2>
+            <div class="subtitle">가입한 아이디로 로그인해주세요</div>
+            <form class="signup-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 아이디 (닉네임)</label>
+                    <input type="text" id="loginNickname" placeholder="닉네임 입력" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 비밀번호</label>
+                    <input type="password" id="loginPassword" placeholder="비밀번호 입력" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:8px;">
+                    <i class="fas fa-sign-in-alt"></i> 로그인
+                </button>
+                <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
+                    계정이 없으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openSignupModal();">회원가입</span>
+                </div>
+            </form>
+        `;
+        modal.classList.add('active');
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const nickname = document.getElementById('loginNickname').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        const user = allUsers.find(u => u.nickname === nickname && u.password === password);
+        if (!user) {
+            showToast('❌ 아이디 또는 비밀번호가 올바르지 않습니다.');
+            return;
+        }
+        currentUserId = user.id;
+        setData('currentUser', currentUserId);
+        loadUserData();
+        closeModal();
+        showToast('✅ 로그인 완료!');
+    }
+
+    // ===== 회원가입 =====
+    function openSignupModal() {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        const uniOptions = KOREAN_UNIVERSITIES.map(u => `<option value="${u}">`).join('');
+        content.innerHTML = `
+            <h2>📝 회원가입</h2>
+            <div class="subtitle">학교 정보를 입력하고 가입해주세요</div>
+            <form class="signup-form" onsubmit="handleSignup(event)">
+                <div class="referral-area">
+                    <div class="referral-title"><i class="fas fa-user-tag"></i> 아이디 (닉네임)</div>
+                    <div class="referral-desc">한 번 만든 닉네임은 변경할 수 없어요</div>
+                    <div class="nickname-check">
+                        <input type="text" id="signupNickname" placeholder="닉네임 입력" required>
+                        <button type="button" class="btn-sm" onclick="checkNickname()">중복확인</button>
+                    </div>
+                    <div id="nicknameStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
+
+                    <div style="margin-top:8px;">
+                        <div style="font-size:0.7rem; color:#fbbf24;">🌟 추천인 (선택)</div>
+                        <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">친구의 닉네임을 입력하면 서로 혜택을 받을 수 있어요!</div>
+                        <div class="referral-input-wrap">
+                            <input type="text" id="signupReferral" placeholder="추천인 닉네임 입력">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-half">
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> 비밀번호 (6자 이상, 영문+숫자)</label>
+                        <input type="password" id="signupPassword" placeholder="비밀번호 입력" required minlength="6">
+                        <div id="passwordHint" class="password-hint">6자 이상, 영문과 숫자를 포함해야 합니다</div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-check"></i> 비밀번호 재입력</label>
+                        <input type="password" id="signupPasswordConfirm" placeholder="비밀번호 다시 입력" required>
+                        <div id="passwordMatchHint" class="password-match-hint"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-university"></i> 대학교 <span style="font-size:0.6rem; color:#888;">(검색어 입력 시 자동완성)</span></label>
+                    <input type="text" id="signupSchool" list="universityList" placeholder="예: 서울대학교" required autocomplete="off">
+                    <datalist id="universityList">${uniOptions}</datalist>
+                    <div id="schoolHint" class="school-hint">OO학교 서식으로 작성해 주세요</div>
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>학과계열</label>
+                        <select id="signupMajor" required>
+                            <option value="">선택</option>
+                            <option>이공계열</option><option>어문계열</option>
+                            <option>상경계열</option><option>예체능</option>
+                            <option>메디컬</option><option>서비스</option><option>기타계열</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>성별</label>
+                        <select id="signupGender" required>
+                            <option value="">선택</option>
+                            <option>남성</option><option>여성</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>나이</label>
+                        <div class="age-grade-input-wrap">
+                            <input type="text" id="signupAge" placeholder="예: 22살" required maxlength="4" oninput="formatAgeField(this)">
+                        </div>
+                        <div id="ageHint" class="field-hint">18~33세까지 입력 가능합니다</div>
+                    </div>
+                    <div class="form-group">
+                        <label>학번</label>
+                        <div class="age-grade-input-wrap">
+                            <input type="text" id="signupGrade" placeholder="예: 22학번" required maxlength="5" oninput="formatGradeField(this)">
+                        </div>
+                        <div id="gradeHint" class="field-hint">10~30학번까지 입력 가능합니다</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>키 (cm)</label>
+                    <input type="number" id="signupHeight" placeholder="예: 175" required min="100" max="220" oninput="validateHeight(this)">
+                    <div id="heightHint" class="field-hint">100~220cm까지 입력 가능합니다</div>
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>닮은꼴</label>
+                        <select id="signupAnimal" required>
+                            <option value="">선택</option>
+                            <option value="🐶 강아지상">🐶 강아지상</option>
+                            <option value="🐱 고양이상">🐱 고양이상</option>
+                            <option value="🐰 토끼상">🐰 토끼상</option>
+                            <option value="🦊 여우상">🦊 여우상</option>
+                            <option value="🐻 곰상">🐻 곰상</option>
+                            <option value="🦕 공룡상">🦕 공룡상</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>활동지역</label>
+                        <select id="signupRegion" required>
+                            <option value="">선택</option>
+                            <option>서울특별시</option><option>부산광역시</option><option>대구광역시</option>
+                            <option>인천광역시</option><option>광주광역시</option><option>대전광역시</option>
+                            <option>울산광역시</option><option>세종특별자치시</option>
+                            <option>경기도</option><option>강원도</option><option>충청북도</option>
+                            <option>충청남도</option><option>전라북도</option><option>전라남도</option>
+                            <option>경상북도</option><option>경상남도</option><option>제주특별자치도</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> 휴대폰 번호</label>
+                    <div class="phone-prefix-input">
+                        <span class="prefix">010-</span>
+                        <input type="text" id="signupPhone" placeholder="0000-0000" maxlength="9" oninput="formatPhoneInput(this)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>자기소개 (20자 이상)</label>
+                    <textarea id="signupIntro" placeholder="예: 안녕하세요! 저는 영문학과를 다니고 있는 23살입니다. 저희 과 부스에서 빙수 파는데 같이 먹으러 갈래요?" required minlength="20"></textarea>
+                    <div class="char-count"><span id="introCharCount">0</span> / 최소 20자</div>
+                </div>
+
+                <div style="margin:8px 0; font-size:0.7rem; color:#fbbf24; text-align:center;">
+                    💡 가입 후 학교메일, 학생증 인증시 추가 혜택이 있어요!
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:4px;">
+                    <i class="fas fa-user-plus"></i> 회원가입 완료
+                </button>
+                <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
+                    이미 계정이 있으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openLoginModal();">로그인</span>
+                </div>
+            </form>
+        `;
+        modal.classList.add('active');
+
+        document.getElementById('signupPassword').addEventListener('input', function() {
+            validatePassword(this.value);
+        });
+        document.getElementById('signupPasswordConfirm').addEventListener('input', function() {
+            checkPasswordMatch();
+        });
+        document.getElementById('signupPasswordConfirm').addEventListener('blur', function() {
+            checkPasswordMatch();
+        });
+        document.getElementById('signupSchool').addEventListener('input', function() {
+            validateSchool(this.value);
+        });
+        document.getElementById('signupIntro').addEventListener('input', function() {
+            document.getElementById('introCharCount').textContent = this.value.length;
+        });
+    }
+
+    function formatAgeField(input) {
+        let val = input.value.replace(/[^0-9]/g, '');
+        if (val.length > 2) val = val.slice(0, 2);
+        if (val.length === 2) {
+            input.value = val + '살';
+        } else {
+            input.value = val;
+        }
+        const ageHint = document.getElementById('ageHint');
+        const num = parseInt(val);
+        if (val.length === 2) {
+            if (num >= 18 && num <= 33) {
+                ageHint.textContent = '✅ 사용 가능한 나이입니다';
+                ageHint.className = 'field-hint success';
+            } else {
+                ageHint.textContent = '❌ 18~33세까지 입력 가능합니다';
+                ageHint.className = 'field-hint error';
+            }
+        } else {
+            ageHint.textContent = '18~33세까지 입력 가능합니다';
+            ageHint.className = 'field-hint';
+        }
+        input.dataset.numeric = val;
+    }
+
+    function formatGradeField(input) {
+        let val = input.value.replace(/[^0-9]/g, '');
+        if (val.length > 2) val = val.slice(0, 2);
+        if (val.length === 2) {
+            input.value = val + '학번';
+        } else {
+            input.value = val;
+        }
+        const gradeHint = document.getElementById('gradeHint');
+        const num = parseInt(val);
+        if (val.length === 2) {
+            if (num >= 10 && num <= 30) {
+                gradeHint.textContent = '✅ 사용 가능한 학번입니다';
+                gradeHint.className = 'field-hint success';
+            } else {
+                gradeHint.textContent = '❌ 10~30학번까지 입력 가능합니다';
+                gradeHint.className = 'field-hint error';
+            }
+        } else {
+            gradeHint.textContent = '10~30학번까지 입력 가능합니다';
+            gradeHint.className = 'field-hint';
+        }
+        input.dataset.numeric = val;
+    }
+
+    function validateHeight(input) {
+        const val = parseInt(input.value);
+        const hint = document.getElementById('heightHint');
+        if (input.value === '') {
+            hint.textContent = '100~220cm까지 입력 가능합니다';
+            hint.className = 'field-hint';
+            return;
+        }
+        if (!isNaN(val) && val >= 100 && val <= 220) {
+            hint.textContent = '✅ 사용 가능한 키입니다';
+            hint.className = 'field-hint success';
+        } else {
+            hint.textContent = '❌ 입력값을 확인해 주세요 (100~220cm)';
+            hint.className = 'field-hint error';
+        }
+    }
+
+    function formatPhoneInput(input) {
+        let val = input.value.replace(/[^0-9]/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length > 4) {
+            input.value = val.slice(0, 4) + '-' + val.slice(4);
+        } else {
+            input.value = val;
+        }
+    }
+
+    function validatePassword(password) {
+        const hint = document.getElementById('passwordHint');
+        const hasLetter = /[A-Za-z]/.test(password);
+        const hasNumber = /\d/.test(password);
+        const isLengthOk = password.length >= 6;
+
+        if (password.length === 0) {
+            hint.textContent = '6자 이상, 영문과 숫자를 포함해야 합니다';
+            hint.className = 'password-hint';
+            return false;
+        }
+        if (!isLengthOk) {
+            hint.textContent = '❌ 6자 이상으로 입력해 주세요';
+            hint.className = 'password-hint invalid';
+            return false;
+        }
+        if (!hasLetter || !hasNumber) {
+            hint.textContent = '❌ 영문과 숫자를 함께 사용해 주세요';
+            hint.className = 'password-hint invalid';
+            return false;
+        }
+        hint.textContent = '✅ 사용 가능한 비밀번호입니다';
+        hint.className = 'password-hint valid';
+        return true;
+    }
+
+    function checkPasswordMatch() {
+        const pwd = document.getElementById('signupPassword').value;
+        const confirm = document.getElementById('signupPasswordConfirm').value;
+        const hint = document.getElementById('passwordMatchHint');
+        if (confirm.length === 0) {
+            hint.textContent = '';
+            hint.className = 'password-match-hint';
+            return;
+        }
+        if (pwd === confirm) {
+            hint.textContent = '✅ 비밀번호가 일치합니다';
+            hint.className = 'password-match-hint valid';
+        } else {
+            hint.textContent = '❌ 입력한 비밀번호가 다릅니다';
+            hint.className = 'password-match-hint invalid';
+        }
+    }
+
+    function validateSchool(value) {
+        const hint = document.getElementById('schoolHint');
+        if (value.length === 0) {
+            hint.textContent = 'OO학교 서식으로 작성해 주세요';
+            hint.className = 'school-hint';
+            return;
+        }
+        if (value.endsWith('학교') || value.endsWith('대학교') || value.endsWith('대학')) {
+            hint.textContent = '✅ 올바른 형식입니다';
+            hint.className = 'school-hint valid';
+        } else {
+            hint.textContent = '❌ OO학교 서식으로 작성해 주세요 (예: 서울대학교)';
+            hint.className = 'school-hint invalid';
+        }
+    }
+
+    let nicknameChecked = false;
+    let nicknameValid = false;
+
+    function checkNickname() {
+        const nick = document.getElementById('signupNickname')?.value.trim();
+        if (!nick) { showToast('⚠️ 닉네임을 입력해주세요'); return; }
+        if (nick.length < 2) {
+            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 2자 이상 입력해주세요</span>';
+            nicknameValid = false;
+            return;
+        }
+        const existing = allUsers.find(u => u.nickname === nick);
+        if (existing) {
+            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 이미 사용 중인 닉네임입니다</span>';
+            nicknameValid = false;
+        } else {
+            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#4ade80;">✅ 사용 가능한 닉네임입니다</span>';
+            nicknameValid = true;
+        }
+        nicknameChecked = true;
+    }
+
+    function handleSignup(e) {
+        e.preventDefault();
+        const nickname = document.getElementById('signupNickname').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+        const school = document.getElementById('signupSchool').value.trim();
+        const major = document.getElementById('signupMajor').value;
+        const gender = document.getElementById('signupGender').value;
+        const ageInput = document.getElementById('signupAge');
+        const ageNum = parseInt(ageInput.dataset.numeric || ageInput.value.replace(/[^0-9]/g, ''));
+        const gradeInput = document.getElementById('signupGrade');
+        const gradeNum = parseInt(gradeInput.dataset.numeric || gradeInput.value.replace(/[^0-9]/g, ''));
+        const height = parseInt(document.getElementById('signupHeight').value);
+        const animal = document.getElementById('signupAnimal').value;
+        const region = document.getElementById('signupRegion').value;
+        const phone = document.getElementById('signupPhone').value.trim();
+        const intro = document.getElementById('signupIntro').value.trim();
+        const referral = document.getElementById('signupReferral').value.trim();
+
+        if (!nicknameChecked || !nicknameValid) {
+            showToast('⚠️ 닉네임 중복 확인을 해주세요');
+            return;
+        }
+        if (password !== passwordConfirm) {
+            showToast('⚠️ 비밀번호가 일치하지 않습니다');
+            return;
+        }
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+        if (!passwordRegex.test(password)) {
+            showToast('⚠️ 비밀번호는 6자 이상, 영문과 숫자를 포함해야 합니다');
+            return;
+        }
+        if (!school || !school.endsWith('학교') && !school.endsWith('대학교') && !school.endsWith('대학')) {
+            showToast('⚠️ 정확한 학교명을 입력해주세요 (OO학교 형식)');
+            return;
+        }
+        const matchedSchool = KOREAN_UNIVERSITIES.find(u => u === school);
+        if (!matchedSchool) {
+            showToast('⚠️ 정확한 대학교 이름을 입력해주세요 (자동완성 참고)');
+            return;
+        }
+        if (isNaN(ageNum) || ageNum < 18 || ageNum > 33) {
+            showToast('⚠️ 나이는 18~33세까지 입력 가능합니다');
+            return;
+        }
+        if (isNaN(gradeNum) || gradeNum < 10 || gradeNum > 30) {
+            showToast('⚠️ 학번은 10~30학번까지 입력 가능합니다');
+            return;
+        }
+        if (isNaN(height) || height < 100 || height > 220) {
+            showToast('⚠️ 키는 100~220cm까지 입력 가능합니다');
+            return;
+        }
+        if (intro.length < 20) {
+            showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
+            return;
+        }
+        const phoneDigits = phone.replace(/[^0-9]/g, '');
+        if (phoneDigits.length !== 8) {
+            showToast('⚠️ 휴대폰 번호 8자리를 모두 입력해주세요');
+            return;
+        }
+        const fullPhone = '010-' + phoneDigits.slice(0, 4) + '-' + phoneDigits.slice(4);
+
+        const genderValue = gender === '여성' ? 'female' : 'male';
+
+        const newUser = {
+            id: nextId++,
+            nickname,
+            password,
+            school: matchedSchool,
+            major,
+            gender: genderValue,
+            age: ageNum,
+            grade: gradeNum + '학번',
+            height,
+            animal,
+            region,
+            phone: fullPhone,
+            intro,
+            email: '',
+            emailVerified: false,
+            cardStatus: 'none',
+            freeTickets: 0,
+            referredBy: referral || null,
+            hideSchool: false,
+            hideMajor: false,
+            hideSameSchool: false,
+            createdAt: new Date().toISOString()
+        };
+
+        if (referral) {
+            const referrer = allUsers.find(u => u.nickname === referral);
+            if (referrer) {
+                referrer.freeTickets = (referrer.freeTickets || 0) + 1;
+                showToast(`🎉 추천인 ${referral}님에게 무료 매치권 1회가 지급되었습니다!`);
+            }
+            newUser.freeTickets = 1;
+        }
+
+        allUsers.push(newUser);
+        saveAllData();
+        currentUserId = newUser.id;
+        setData('currentUser', currentUserId);
+        loadUserData();
+        closeModal();
+        showToast('🎉 회원가입 완료!');
+    }
+
+    function logout() {
+        isLoggedIn = false;
+        currentUserId = null;
+        currentUser = null;
+        setData('currentUser', null);
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('profileSection').classList.add('hidden');
+        document.getElementById('adminPanel').classList.add('hidden');
+        isEmailVerified = false;
+        cardVerificationStatus = 'none';
+        freeMatchTickets = 0;
+        hasMyCard = false;
+        likedIds.clear();
+        likedByIds.clear();
+        updateUI();
+        renderProfiles();
+        showToast('👋 로그아웃 되었습니다');
+    }
+
+    function confirmWithdraw() {
+        if (!isLoggedIn) return;
+        if (confirm('정말 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.')) {
+            allUsers = allUsers.filter(u => u.id !== currentUserId);
+            allProfiles = allProfiles.filter(p => p.userId !== currentUserId);
+            allLikes = allLikes.filter(l => l.userId !== currentUserId && allProfiles.some(p => p.id === l.cardId));
+            allMatches = allMatches.filter(m => m.fromUserId !== currentUserId && !allProfiles.some(p => p.id === m.toCardId && p.userId === currentUserId));
+            saveAllData();
+            logout();
+            showToast('✅ 탈퇴 처리되었습니다.');
+        }
+    }
+
+    // ================================================================
+    // 13. 내정보 - 수정
+    // ================================================================
+    function openEditProfile() {
+        if (!currentUser) return;
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>✏️ 프로필 수정</h2>
+            <div class="subtitle">기본 정보와 개인정보 숨기기 설정</div>
+            <form class="signup-form" onsubmit="handleEditProfile(event)">
+                <div class="form-group">
+                    <label>닮은꼴</label>
+                    <select id="editAnimal">
+                        <option value="🐶 강아지상" ${currentUser.animal === '🐶 강아지상' ? 'selected' : ''}>🐶 강아지상</option>
+                        <option value="🐱 고양이상" ${currentUser.animal === '🐱 고양이상' ? 'selected' : ''}>🐱 고양이상</option>
+                        <option value="🐰 토끼상" ${currentUser.animal === '🐰 토끼상' ? 'selected' : ''}>🐰 토끼상</option>
+                        <option value="🦊 여우상" ${currentUser.animal === '🦊 여우상' ? 'selected' : ''}>🦊 여우상</option>
+                        <option value="🐻 곰상" ${currentUser.animal === '🐻 곰상' ? 'selected' : ''}>🐻 곰상</option>
+                        <option value="🦕 공룡상" ${currentUser.animal === '🦕 공룡상' ? 'selected' : ''}>🦕 공룡상</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>활동지역</label>
+                    <select id="editRegion">
+                        <option ${currentUser.region === '서울특별시' ? 'selected' : ''}>서울특별시</option>
+                        <option ${currentUser.region === '부산광역시' ? 'selected' : ''}>부산광역시</option>
+                        <option ${currentUser.region === '대구광역시' ? 'selected' : ''}>대구광역시</option>
+                        <option ${currentUser.region === '인천광역시' ? 'selected' : ''}>인천광역시</option>
+                        <option ${currentUser.region === '광주광역시' ? 'selected' : ''}>광주광역시</option>
+                        <option ${currentUser.region === '대전광역시' ? 'selected' : ''}>대전광역시</option>
+                        <option ${currentUser.region === '울산광역시' ? 'selected' : ''}>울산광역시</option>
+                        <option ${currentUser.region === '세종특별자치시' ? 'selected' : ''}>세종특별자치시</option>
+                        <option ${currentUser.region === '경기도' ? 'selected' : ''}>경기도</option>
+                        <option ${currentUser.region === '강원도' ? 'selected' : ''}>강원도</option>
+                        <option ${currentUser.region === '충청북도' ? 'selected' : ''}>충청북도</option>
+                        <option ${currentUser.region === '충청남도' ? 'selected' : ''}>충청남도</option>
+                        <option ${currentUser.region === '전라북도' ? 'selected' : ''}>전라북도</option>
+                        <option ${currentUser.region === '전라남도' ? 'selected' : ''}>전라남도</option>
+                        <option ${currentUser.region === '경상북도' ? 'selected' : ''}>경상북도</option>
+                        <option ${currentUser.region === '경상남도' ? 'selected' : ''}>경상남도</option>
+                        <option ${currentUser.region === '제주특별자치도' ? 'selected' : ''}>제주특별자치도</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>자기소개</label>
+                    <textarea id="editIntro" style="min-height:80px;">${currentUser.intro || ''}</textarea>
+                </div>
+
+                <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
+
+                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
+                <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+
+                <div class="toggle-container">
+                    <div class="toggle-switch ${currentUser.hideSchool ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hideSchool')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <label>대학교 숨기기</label>
+                    <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+                </div>
+                <div class="toggle-container">
+                    <div class="toggle-switch ${currentUser.hideMajor ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hideMajor')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <label>학과계열 숨기기</label>
+                    <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+                </div>
+
+                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
+                <div class="toggle-container">
+                    <div class="toggle-switch ${currentUser.hideSameSchool ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hideSameSchool')">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <label>같은학교 학생에게 내 카드 숨기기</label>
+                    <span class="toggle-description">(on: 같은학교 카드가 서로 보이지 않음)</span>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:12px;">수정 완료</button>
+            </form>
+        `;
+        modal.classList.add('active');
+
+        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hideSchool);
+        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hideMajor);
+        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hideSameSchool);
+    }
+
+    function toggleSwitch(field) {
+        if (!currentUser) return;
+        if (field === 'hideSchool') {
+            currentUser.hideSchool = !currentUser.hideSchool;
+            if (currentUser.hideSchool && currentUser.hideMajor) {
+                currentUser.hideMajor = false;
+                document.getElementById('toggleHideMajor').classList.remove('active');
+            }
+            document.getElementById('toggleHideSchool').classList.toggle('active');
+        } else if (field === 'hideMajor') {
+            currentUser.hideMajor = !currentUser.hideMajor;
+            if (currentUser.hideMajor && currentUser.hideSchool) {
+                currentUser.hideSchool = false;
+                document.getElementById('toggleHideSchool').classList.remove('active');
+            }
+            document.getElementById('toggleHideMajor').classList.toggle('active');
+        } else if (field === 'hideSameSchool') {
+            currentUser.hideSameSchool = !currentUser.hideSameSchool;
+            document.getElementById('toggleHideSameSchool').classList.toggle('active');
+        }
+        saveAllData();
+        updateUI();
+        renderProfiles();
+        document.getElementById('profileHideSchool').textContent = currentUser.hideSchool ? '✅' : '❌';
+        document.getElementById('profileHideMajor').textContent = currentUser.hideMajor ? '✅' : '❌';
+        document.getElementById('profileHideSameSchool').textContent = currentUser.hideSameSchool ? '✅' : '❌';
+    }
+
+    function handleEditProfile(e) {
+        e.preventDefault();
+        if (!currentUser) return;
+        currentUser.animal = document.getElementById('editAnimal').value;
+        currentUser.region = document.getElementById('editRegion').value;
+        currentUser.intro = document.getElementById('editIntro').value.trim();
+        saveAllData();
+        updateUI();
+        closeModal();
+        showToast('✅ 프로필이 수정되었습니다!');
+    }
+
+    function openGuideModal() {
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>📖 페스타팅 이용 방법</h2>
+            <div class="subtitle">가입부터 만남까지, 한눈에 확인하세요</div>
+            <div style="margin:8px 0;">
+                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">1️⃣ 회원가입</div>
+                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">학교 정보를 입력하고 가입해주세요. 인증은 선택이며, 인증 시 특별 혜택이 있어요!</div>
+                </div>
+                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">2️⃣ 카드 등록</div>
+                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">둘이서(1:1), 여럿이서(2:2,3:3,4:4), 동성친구 찾기 각각 카드를 등록할 수 있어요!</div>
+                </div>
+                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">3️⃣ 상대 탐색 &amp; 찜하기</div>
+                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">마음에 드는 카드에 찜하거나 매칭 신청을 보내보세요</div>
+                </div>
+                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">4️⃣ 매칭 성사</div>
+                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">매칭이 성사되면 전화번호가 공개됩니다</div>
+                </div>
+                <div style="background:rgba(251,191,36,0.06); border-radius:12px; padding:12px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">💰 결제 안내</div>
+                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">
+                        • 일반 매칭: 5,000원 (양측 결제)<br>
+                        • 슈퍼 매칭: 10,000원 (신청자만 결제, 상대방 무료)
+                    </div>
+                </div>
+            </div>
+            <button class="btn-sm primary" onclick="closeModal()" style="width:100%; margin-top:8px;">확인했어요</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    // ================================================================
+    // 14. 내 카드 관리
+    // ================================================================
+    function openCardManagement() {
+        if (!isLoggedIn) {
+            showToast('⚠️ 로그인 후 이용 가능합니다');
+            switchToLogin();
+            return;
+        }
+        if (!currentUser) return;
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        const myCards = allProfiles.filter(p => p.userId === currentUserId);
+
+        let cardsHtml = '';
+        if (myCards.length === 0) {
+            cardsHtml = '<div style="color:#666; font-size:0.7rem; padding:10px 0; text-align:center;">등록된 카드가 없습니다</div>';
+        } else {
+            myCards.forEach(c => {
+                const typeLabel = c.type === 'solo' ? '💕 둘이서 (1:1)' : c.type === 'group' ? '🍻 여럿이서 (다대다)' : '👬 동성친구 찾기';
+                cardsHtml += `
+                    <div class="card-item">
+                        <div class="card-info">
+                            <span class="card-type">${typeLabel}</span>
+                            <span style="color:#888; margin-left:6px;">${c.emoji} ${c.detail.slice(0, 15)}...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-sm primary" onclick="openCardRegisterForm('${c.type}')">수정</button>
+                            <button class="btn-sm danger" onclick="deleteCard(${c.id})">삭제</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        content.innerHTML = `
+            <h2>📇 내 카드 관리</h2>
+            <div class="subtitle">둘이서(1:1), 여럿이서(다대다), 동성친구 찾기 카드를 관리하세요</div>
+            <div style="margin:10px 0;">
+                ${cardsHtml}
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <button class="btn-sm primary" onclick="openCardRegisterForm('solo')">+ 둘이서 등록</button>
+                <button class="btn-sm primary" onclick="openCardRegisterForm('group')">+ 여럿이서 등록</button>
+                <button class="btn-sm primary" onclick="openCardRegisterForm('same')">+ 동성친구 등록</button>
+            </div>
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+        `;
+        modal.classList.add('active');
+    }
+
+    function deleteCard(cardId) {
+        if (!confirm('이 카드를 삭제하시겠습니까?')) return;
+        const card = allProfiles.find(p => p.id === cardId);
+        if (!card) return;
+        allLikes = allLikes.filter(l => l.cardId !== cardId);
+        allMatches = allMatches.filter(m => m.toCardId !== cardId && m.fromUserId !== card.userId);
+        allProfiles = allProfiles.filter(p => p.id !== cardId);
+        saveAllData();
+        const myCards = allProfiles.filter(p => p.userId === currentUserId);
+        hasMyCard = myCards.length > 0;
+        renderProfiles();
+        updateLikedBtn();
+        closeModal();
+        showToast('🗑️ 카드가 삭제되었습니다');
+        setTimeout(() => openCardManagement(), 300);
+    }
+
+    function openCardRegisterForm(type) {
+        if (!currentUser) return;
+        const existingCard = allProfiles.find(p => p.userId === currentUserId && p.type === type);
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        let typeLabel = '';
+        if (type === 'solo') typeLabel = '💕 둘이서 (1:1)';
+        else if (type === 'group') typeLabel = '🍻 여럿이서 (다대다)';
+        else if (type === 'same') typeLabel = '👬 동성친구 찾기';
+
+        const defaultIntro = '';
+
+        content.innerHTML = `
+            <h2>${existingCard ? '📝' : '📇'} ${typeLabel} 카드 ${existingCard ? '수정' : '등록'}</h2>
+            <div class="subtitle">${existingCard ? '카드를 수정합니다' : '나를 소개하는 카드를 만들어보세요'}</div>
+            <form class="signup-form" onsubmit="${existingCard ? 'handleCardUpdate(event, \''+type+'\')' : 'handleCardRegister(event, \''+type+'\')'}">
+                <div style="font-size:0.7rem; color:#888; margin-bottom:8px;">
+                    <i class="fas fa-info-circle"></i> 아래 정보는 회원가입 시 입력한 정보가 자동 입력됩니다
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>학교</label>
+                        <input type="text" value="${currentUser.school}" disabled style="opacity:0.6;">
+                    </div>
+                    <div class="form-group">
+                        <label>학과계열</label>
+                        <input type="text" value="${currentUser.major}" disabled style="opacity:0.6;">
+                    </div>
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>학번</label>
+                        <input type="text" value="${currentUser.grade}" disabled style="opacity:0.6;">
+                    </div>
+                    <div class="form-group">
+                        <label>성별</label>
+                        <input type="text" value="${currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성'}" disabled style="opacity:0.6;">
+                    </div>
+                </div>
+                <div class="row-half">
+                    <div class="form-group">
+                        <label>키</label>
+                        <input type="text" value="${currentUser.height}cm" disabled style="opacity:0.6;">
+                    </div>
+                    <div class="form-group">
+                        <label>닮은꼴</label>
+                        <input type="text" value="${currentUser.animal}" disabled style="opacity:0.6;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>활동지역</label>
+                    <input type="text" value="${currentUser.region}" disabled style="opacity:0.6;">
+                </div>
+
+                <div class="form-group">
+                    <label>자기소개</label>
+                    <div style="display:flex; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                        <button type="button" class="btn-sm" onclick="document.getElementById('cardIntro_${type}').value = '${(currentUser.intro || '').replace(/'/g, "\\'")}'">
+                            <i class="fas fa-sync"></i> 가입정보 불러오기
+                        </button>
+                        <span style="font-size:0.55rem; color:#666; align-self:center;">(기본값은 공란입니다)</span>
+                    </div>
+                    <textarea id="cardIntro_${type}" placeholder="자신을 소개해주세요!" required minlength="20" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.8rem; outline:none; resize:vertical; min-height:70px; font-family:inherit;">${existingCard ? existingCard.detail : defaultIntro}</textarea>
+                    <div class="char-count"><span id="cardIntroCount_${type}">${(existingCard ? existingCard.detail : defaultIntro).length}</span> / 최소 20자</div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:8px;">
+                    <i class="fas fa-save"></i> ${existingCard ? '카드 수정' : '카드 등록'}
+                </button>
+            </form>
+        `;
+        modal.classList.add('active');
+
+        const textarea = document.getElementById('cardIntro_' + type);
+        textarea.addEventListener('input', function() {
+            document.getElementById('cardIntroCount_' + type).textContent = this.value.length;
+        });
+    }
+
+    function handleCardRegister(e, type) {
+        e.preventDefault();
+        if (!currentUser) return;
+        const detail = document.getElementById('cardIntro_' + type).value.trim();
+        if (detail.length < 20) {
+            showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
+            return;
+        }
+        const existing = allProfiles.find(p => p.userId === currentUserId && p.type === type);
+        if (existing) {
+            showToast('⚠️ 이미 등록된 카드가 있습니다. 수정해주세요.');
+            return;
+        }
+        const newCard = {
+            id: nextId++,
+            userId: currentUserId,
+            type: type,
+            emoji: currentUser.animal.split(' ')[0] || '🐶',
+            school: currentUser.school,
+            grade: currentUser.grade,
+            gender: currentUser.gender,
+            height: currentUser.height,
+            detail: detail,
+            likes: 0,
+            age: currentUser.age,
+            mbti: 'ENFP',
+            major: currentUser.major,
+            region: currentUser.region,
+            preview: detail.slice(0, 18) + '...'
+        };
+        allProfiles.push(newCard);
+        hasMyCard = true;
+        saveAllData();
+        renderProfiles();
+        updateLikedBtn();
+        closeModal();
+        showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 등록되었습니다!`);
+    }
+
+    function handleCardUpdate(e, type) {
+        e.preventDefault();
+        if (!currentUser) return;
+        const card = allProfiles.find(p => p.userId === currentUserId && p.type === type);
+        if (!card) return;
+        const detail = document.getElementById('cardIntro_' + type).value.trim();
+        if (detail.length < 20) {
+            showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
+            return;
+        }
+        card.detail = detail;
+        card.preview = detail.slice(0, 18) + '...';
+        saveAllData();
+        renderProfiles();
+        closeModal();
+        showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 수정되었습니다!`);
+    }
+
+    // ================================================================
+    // 15. 인증 시스템
+    // ================================================================
+    function updateUI() {
+        if (!currentUser) {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('profileSection').classList.add('hidden');
+            return;
+        }
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('profileSection').classList.remove('hidden');
+
+        const badge = document.getElementById('userBadgeDisplay');
+        const hasEmail = isEmailVerified;
+        const hasCard = cardVerificationStatus === 'approved';
+
+        if (hasEmail && hasCard) {
+            badge.textContent = '⭐ 인증완료';
+            badge.className = 'badge-status verified';
+        } else if (hasEmail || hasCard) {
+            badge.textContent = '⭐ 부분인증';
+            badge.className = 'badge-status verified';
+        } else {
+            badge.textContent = '미인증';
+            badge.className = 'badge-status unverified';
+        }
+
+        document.getElementById('profileNickname').textContent = currentUser.nickname;
+        document.getElementById('profileSchool').textContent = currentUser.school;
+        document.getElementById('profileMajor').textContent = currentUser.major;
+        document.getElementById('profileGrade').textContent = currentUser.grade;
+        document.getElementById('profileAge').textContent = currentUser.age + '세';
+        document.getElementById('profileHeight').textContent = currentUser.height + ' cm';
+        document.getElementById('profileGender').textContent = currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성';
+        document.getElementById('profileMajor2').textContent = currentUser.major;
+        document.getElementById('profileAnimal').textContent = currentUser.animal;
+        document.getElementById('profileRegion').textContent = currentUser.region;
+        document.getElementById('profileIntro').textContent = currentUser.intro || '';
+        document.getElementById('profilePhone').textContent = currentUser.phone || '-';
+        document.getElementById('profileReferred').textContent = currentUser.referredBy || '-';
+        document.getElementById('freeTicketDisplay').textContent = (currentUser.freeTickets || 0) + '장';
+
+        document.getElementById('profileHideSchool').textContent = currentUser.hideSchool ? '✅' : '❌';
+        document.getElementById('profileHideMajor').textContent = currentUser.hideMajor ? '✅' : '❌';
+        document.getElementById('profileHideSameSchool').textContent = currentUser.hideSameSchool ? '✅' : '❌';
+
+        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hideSchool);
+        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hideMajor);
+        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hideSameSchool);
+
+        const emailStatus = document.getElementById('emailStatus');
+        const emailBox = document.getElementById('emailVerifyBox');
+        if (isEmailVerified) {
+            emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
+            emailBox.classList.add('success');
+        } else {
+            emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
+            emailBox.classList.remove('success');
+        }
+
+        const cardStatus = document.getElementById('cardStatus');
+        const cardBox = document.getElementById('cardVerifyBox');
+        const rejectReason = document.getElementById('cardRejectReason');
+        if (cardVerificationStatus === 'pending') {
+            cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
+            cardBox.classList.remove('success', 'rejected');
+            rejectReason.style.display = 'none';
+        } else if (cardVerificationStatus === 'approved') {
+            cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
+            cardBox.classList.add('success');
+            cardBox.classList.remove('rejected');
+            rejectReason.style.display = 'none';
+        } else if (cardVerificationStatus === 'rejected') {
+            cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
+            cardBox.classList.remove('success');
+            cardBox.classList.add('rejected');
+            rejectReason.style.display = 'block';
+        } else {
+            cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
+            cardBox.classList.remove('success', 'rejected');
+            rejectReason.style.display = 'none';
+        }
+
+        const benefit = document.getElementById('benefitDisplay');
+        let html = '';
+        if (isEmailVerified) {
+            html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.freeTickets || 0) + '장)<br>';
+        } else {
+            html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
+        }
+        if (cardVerificationStatus === 'approved') {
+            html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
+        } else {
+            html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
+        }
+        benefit.innerHTML = html;
+
+        if (isAdmin) {
+            const pending = allUsers.filter(u => u.cardStatus === 'pending').length;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('adminPanel').classList.remove('hidden');
+        } else {
+            document.getElementById('adminPanel').classList.add('hidden');
+        }
+    }
+
+    function verifyEmail() {
+        if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
+        const email = document.getElementById('emailInput').value.trim();
+        if (!email.endsWith('.ac.kr')) {
+            showToast('❌ @*.ac.kr 형식의 이메일을 입력하세요.');
+            return;
+        }
+        if (isEmailVerified) {
+            showToast('⚠️ 이미 인증된 이메일입니다.');
+            return;
+        }
+        isEmailVerified = true;
+        currentUser.emailVerified = true;
+        currentUser.freeTickets = (currentUser.freeTickets || 0) + 1;
+        saveAllData();
+        updateUI();
+        showToast('✅ 학교메일 인증 완료! 무료 매치권 1회가 지급되었습니다!');
+    }
+
+    function submitCardVerification() {
+        if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
+        const input = document.getElementById('cardInput');
+        if (input.files.length === 0) {
+            showToast('⚠️ 학생증 사진을 선택하세요.');
+            return;
+        }
+        if (cardVerificationStatus === 'approved') {
+            showToast('⚠️ 이미 인증이 완료되었습니다.');
+            return;
+        }
+        if (cardVerificationStatus === 'pending') {
+            showToast('⚠️ 이미 관리자 확인 중입니다.');
+            return;
+        }
+        cardVerificationStatus = 'pending';
+        currentUser.cardStatus = 'pending';
+        saveAllData();
+        updateUI();
+        showToast('📤 학생증 인증이 제출되었습니다. 관리자 확인 후 승인여부가 결정됩니다.');
+        if (isAdmin) {
+            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
+        }
+    }
+
+    // ================================================================
+    // 16. 관리자 기능
+    // ================================================================
+    function adminApproveCard() {
+        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        const pendingUsers = allUsers.filter(u => u.cardStatus === 'pending');
+        if (pendingUsers.length === 0) {
+            showToast('⚠️ 승인 대기 중인 인증이 없습니다.');
+            return;
+        }
+        const target = pendingUsers[0];
+        target.cardStatus = 'approved';
+        if (currentUserId === target.id) {
+            cardVerificationStatus = 'approved';
+        }
+        saveAllData();
+        updateUI();
+        document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
+        showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
+    }
+
+    function adminRejectCard() {
+        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        const pendingUsers = allUsers.filter(u => u.cardStatus === 'pending');
+        if (pendingUsers.length === 0) {
+            showToast('⚠️ 반려할 인증이 없습니다.');
+            return;
+        }
+        const target = pendingUsers[0];
+        target.cardStatus = 'rejected';
+        if (currentUserId === target.id) {
+            cardVerificationStatus = 'rejected';
+        }
+        saveAllData();
+        updateUI();
+        document.getElementById('pendingCount').textContent = allUsers.filter(u => u.cardStatus === 'pending').length;
+        showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
+    }
+
+    function adminAddDummy() {
+        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        const types = ['solo', 'group', 'same'];
+        const type = types[Math.floor(Math.random() * 3)];
+        const gender = Math.random() > 0.5 ? 'female' : 'male';
+        const newProfile = {
+            id: nextId++,
+            userId: null,
+            emoji: ['🐶','🐱','🦊','🐰','🐻','🐼','🐨','🦝','🐯','🦁'][Math.floor(Math.random() * 10)],
+            school: ['홍익대','연세대','고려대','서강대','성균관대','중앙대'][Math.floor(Math.random() * 6)],
+            grade: ['20학번','21학번','22학번','23학번'][Math.floor(Math.random() * 4)],
+            age: 20 + Math.floor(Math.random() * 5),
+            gender: gender,
+            height: 155 + Math.floor(Math.random() * 30),
+            region: '서울특별시',
+            mbti: ['ENFP','INFP','ESTJ','ISTJ','ENFJ','INFJ','ESFP','ISFP'][Math.floor(Math.random() * 8)],
+            major: ['경영학과','컴퓨터공학과','심리학과','국문학과'],
+            preview: '더미 프로필이에요',
+            detail: '관리자에 의해 생성된 더미 프로필입니다.',
+            likes: Math.floor(Math.random() * 20),
+            type: type
+        };
+        allProfiles.push(newProfile);
+        saveAllData();
+        renderProfiles();
+        showToast(`✅ 더미 프로필 추가 완료! (${type} 타입)`);
+    }
+
+    function adminViewUsers() {
+        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        showToast(`👥 총 회원수: ${allUsers.length}명 (프로필: ${allProfiles.length}개)`);
+    }
+
+    function adminBanUser() {
+        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+        if (confirm('해당 회원을 이용정지 처리하시겠습니까?')) {
+            showToast('🚫 이용정지 처리 완료');
+        }
+    }
+
+    // ================================================================
+    // 17. 이상형 찾기
+    // ================================================================
+    let idealMode = 'filter';
+
+    function openIdealSearch() {
+        if (!isLoggedIn) {
+            showToast('⚠️ 로그인 후 이용 가능합니다');
+            switchToLogin();
+            return;
+        }
+        const modal = document.getElementById('commonModal');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = `
+            <h2>🎯 내 이상형 찾기</h2>
+            <div class="subtitle">방식을 선택하고 조건을 입력해주세요</div>
+
+            <div class="ideal-mode-tabs">
+                <button class="active" data-mode="filter" onclick="switchIdealMode('filter')">📋 필터로 찾기</button>
+                <button data-mode="ai" onclick="switchIdealMode('ai')">🤖 AI 자연어로 찾기</button>
+            </div>
+
+            <div id="idealFilterArea">
+                <div class="priority-item">
+                    <div class="priority-badge">📏 키</div>
+                    <div class="priority-row">
+                        <input type="number" id="idealHeightMin" placeholder="최소" style="flex:1; padding:5px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.65rem;">
+                        <span style="color:#666; align-self:center;">~</span>
+                        <input type="number" id="idealHeightMax" placeholder="최대" style="flex:1; padding:5px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.65rem;">
+                        <span style="color:#666; align-self:center; font-size:0.5rem;">(cm)</span>
+                    </div>
+                </div>
+
+                <div class="priority-item">
+                    <div class="priority-badge">🎂 나이</div>
+                    <div class="priority-row">
+                        <input type="number" id="idealAgeMin" placeholder="최소" style="flex:1; padding:5px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.65rem;">
+                        <span style="color:#666; align-self:center;">~</span>
+                        <input type="number" id="idealAgeMax" placeholder="최대" style="flex:1; padding:5px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.65rem;">
+                        <span style="color:#666; align-self:center; font-size:0.5rem;">(세)</span>
+                    </div>
+                </div>
+
+                <div class="priority-item">
+                    <div class="priority-badge">📚 학과계열 (복수선택)</div>
+                    <div class="priority-row">
+                        <div class="multi-select-wrap" style="display:flex; gap:4px; flex-wrap:wrap; flex:2;">
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="이공계열"> 이공</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="어문계열"> 어문</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="상경계열"> 상경</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="예체능"> 예체능</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="메디컬"> 메디컬</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="서비스"> 서비스</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="기타계열"> 기타</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="priority-item">
+                    <div class="priority-badge">🐾 닮은꼴 (복수선택)</div>
+                    <div class="priority-row">
+                        <div class="multi-select-wrap" style="display:flex; gap:4px; flex-wrap:wrap; flex:2;">
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🐶 강아지상"> 강아지</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🐱 고양이상"> 고양이</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🐰 토끼상"> 토끼</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🦊 여우상"> 여우</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🐻 곰상"> 곰</label>
+                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="animal-check" value="🦕 공룡상"> 공룡</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="priority-item">
+                    <div class="priority-badge">🏫 학교 티어</div>
+                    <div class="priority-row">
+                        <select id="idealSchoolTier" style="flex:2;">
+                            <option value="all">상관 없음</option>
+                            <option value="sky">SKY 이상</option>
+                            <option value="seo">서성한이 이상</option>
+                            <option value="inseoul">인서울 이상</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
+
+                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:8px;">⭐ 우선순위 설정</div>
+                <div class="priority-item">
+                    <div class="priority-badge">1순위 (가장 중요)</div>
+                    <div class="priority-row">
+                        <select id="idealPriority1" style="flex:2;">
+                            <option value="height">키</option>
+                            <option value="age">나이</option>
+                            <option value="major">학과계열</option>
+                            <option value="animal">닮은꼴</option>
+                            <option value="school_tier">학교</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="priority-item">
+                    <div class="priority-badge">2순위</div>
+                    <div class="priority-row">
+                        <select id="idealPriority2" style="flex:2;">
+                            <option value="none">선택 안 함</option>
+                            <option value="height">키</option>
+                            <option value="age">나이</option>
+                            <option value="major">학과계열</option>
+                            <option value="animal">닮은꼴</option>
+                            <option value="school_tier">학교</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="priority-item">
+                    <div class="priority-badge">3순위</div>
+                    <div class="priority-row">
+                        <select id="idealPriority3" style="flex:2;">
+                            <option value="none">선택 안 함</option>
+                            <option value="height">키</option>
+                            <option value="age">나이</option>
+                            <option value="major">학과계열</option>
+                            <option value="animal">닮은꼴</option>
+                            <option value="school_tier">학교</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="searchIdealFilter()" style="width:100%; margin-top:8px;">
+                    <i class="fas fa-search"></i> 이상형 찾기
+                </button>
+            </div>
+
+            <div id="idealAIArea" style="display:none;">
+                <div style="margin:12px 0; padding:12px; background:rgba(251,191,36,0.06); border-radius:12px; border:1px solid rgba(251,191,36,0.1);">
+                    <div style="font-size:0.7rem; color:#fbbf24;">ℹ️ 현재 AI 자연어 검색은 <strong>키워드 매칭</strong> 방식으로 동작합니다. (실제 AI 모델 아님)</div>
+                    <div style="font-size:0.6rem; color:#888; margin-top:2px;">입력한 문장에서 키워드를 추출하여 프로필 내용과 비교합니다.</div>
+                </div>
+                <div style="margin:12px 0;">
+                    <div style="font-size:0.7rem; color:#888; margin-bottom:4px;">원하는 이상형을 자유롭게 설명해보세요</div>
+                    <textarea id="naturalLanguageIdeal" placeholder="예: 키 크고 운동 잘하는 사람이 이상형이에요" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.8rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+                </div>
+                <button class="btn-primary" onclick="searchIdealAI()" style="width:100%; margin-top:8px;">
+                    <i class="fas fa-robot"></i> AI 검색 실행 (키워드 매칭)
+                </button>
+            </div>
+
+            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+        `;
+        modal.classList.add('active');
+        switchIdealMode('filter');
+    }
+
+    function switchIdealMode(mode) {
+        idealMode = mode;
+        document.querySelectorAll('.ideal-mode-tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.ideal-mode-tabs button[data-mode="${mode}"]`).classList.add('active');
+        document.getElementById('idealFilterArea').style.display = mode === 'filter' ? 'block' : 'none';
+        document.getElementById('idealAIArea').style.display = mode === 'ai' ? 'block' : 'none';
+    }
+
+    function searchIdealFilter() {
+        const heightMin = parseInt(document.getElementById('idealHeightMin').value);
+        const heightMax = parseInt(document.getElementById('idealHeightMax').value);
+        const ageMin = parseInt(document.getElementById('idealAgeMin').value);
+        const ageMax = parseInt(document.getElementById('idealAgeMax').value);
+
+        const majorChecks = document.querySelectorAll('.major-check:checked');
+        const selectedMajors = Array.from(majorChecks).map(c => c.value);
+
+        const animalChecks = document.querySelectorAll('.animal-check:checked');
+        const selectedAnimals = Array.from(animalChecks).map(c => c.value);
+
+        const schoolTier = document.getElementById('idealSchoolTier').value;
+
+        const p1 = document.getElementById('idealPriority1').value;
+        const p2 = document.getElementById('idealPriority2').value;
+        const p3 = document.getElementById('idealPriority3').value;
+        const priorities = [p1, p2, p3].filter(p => p !== 'none');
+
+        let filtered = [...allProfiles];
+        if (currentUserId) {
+            filtered = filtered.filter(p => p.userId !== currentUserId);
+        }
+
+        if (!isNaN(heightMin)) filtered = filtered.filter(p => (p.height || 0) >= heightMin);
+        if (!isNaN(heightMax)) filtered = filtered.filter(p => (p.height || 0) <= heightMax);
+        if (!isNaN(ageMin)) filtered = filtered.filter(p => (p.age || 0) >= ageMin);
+        if (!isNaN(ageMax)) filtered = filtered.filter(p => (p.age || 0) <= ageMax);
+
+        if (selectedMajors.length > 0) {
+            filtered = filtered.filter(p => selectedMajors.some(m => getMajorCategory(p.major) === m));
+        }
+
+        if (selectedAnimals.length > 0) {
+            filtered = filtered.filter(p => selectedAnimals.some(a => p.animal === a));
+        }
+
+        if (schoolTier !== 'all') {
+            const tierMap = {
+                'sky': ['SKY이상'],
+                'seo': ['SKY이상', '서성한이'],
+                'inseoul': ['SKY이상', '서성한이', '인서울']
+            };
+            const allowedTiers = tierMap[schoolTier] || [];
+            filtered = filtered.filter(p => allowedTiers.some(t => getSchoolTier(p.school) === t));
+        }
+
+        const priorityLabels = priorities.map(p => {
+            const map = { 'height': '키', 'age': '나이', 'major': '학과계열', 'animal': '닮은꼴', 'school_tier': '학교' };
+            return map[p] || p;
+        });
+
+        const conditionLabels = [];
+        if (!isNaN(heightMin) || !isNaN(heightMax)) conditionLabels.push(`키 ${heightMin || ''}~${heightMax || ''}`);
+        if (!isNaN(ageMin) || !isNaN(ageMax)) conditionLabels.push(`나이 ${ageMin || ''}~${ageMax || ''}`);
+        if (selectedMajors.length > 0) conditionLabels.push(`학과: ${selectedMajors.join(', ')}`);
+        if (selectedAnimals.length > 0) conditionLabels.push(`닮은꼴: ${selectedAnimals.join(', ')}`);
+        if (schoolTier !== 'all') conditionLabels.push(`학교: ${schoolTier}`);
+        if (priorities.length > 0) conditionLabels.push(`우선순위: ${priorityLabels.join(' > ')}`);
+
+        showIdealResults(filtered, conditionLabels);
+    }
+
+    function searchIdealAI() {
+        const naturalText = document.getElementById('naturalLanguageIdeal').value.trim();
+        if (!naturalText) {
+            showToast('⚠️ 이상형 설명을 입력해주세요');
+            return;
+        }
+        let filtered = [...allProfiles];
+        if (currentUserId) {
+            filtered = filtered.filter(p => p.userId !== currentUserId);
+        }
+
+        const keywords = naturalText.split(/\s+/).filter(kw => kw.length >= 2);
+        filtered = filtered.filter(p => {
+            const text = (p.detail + ' ' + (p.preview || '') + ' ' + p.school + ' ' + p.major).toLowerCase();
+            return keywords.some(kw => text.includes(kw.toLowerCase()));
+        });
+
+        showIdealResults(filtered, ['AI 키워드 매칭: ' + naturalText]);
+    }
+
+    function showIdealResults(filtered, conditionLabels) {
+        const modalContent = document.getElementById('modalContent');
+        if (filtered.length === 0) {
+            modalContent.innerHTML = `
+                <h2>🔍 이상형 검색 결과</h2>
+                <div class="subtitle">조건에 맞는 카드가 없습니다</div>
+                <div style="text-align:center; padding:30px 0;">
+                    <div style="font-size:3rem; margin-bottom:10px;">😅</div>
+                    <div style="color:#888; font-size:0.9rem;">조건을 완화하고 다시 검색해보세요</div>
+                    <button class="btn-sm primary" onclick="openIdealSearch()" style="margin-top:12px;">다시 검색하기</button>
+                    <button class="btn-sm" onclick="closeModal()" style="margin-top:12px;">닫기</button>
+                </div>
+            `;
+        } else {
+            let resultHtml = `
+                <h2>🔍 이상형 검색 결과 (${filtered.length}명)</h2>
+                <div class="subtitle">${conditionLabels.join(' → ')}</div>
+                <div style="max-height:400px; overflow-y:auto; margin:8px 0;">
+            `;
+            filtered.slice(0, 20).forEach(p => {
+                let schoolDisplay = p.school;
+                let majorDisplay = p.major;
+                if (p.userId !== null) {
+                    const owner = allUsers.find(u => u.id === p.userId);
+                    if (owner) {
+                        if (owner.hideSchool) schoolDisplay = '학교 숨김';
+                        if (owner.hideMajor) majorDisplay = '학과 숨김';
+                    }
+                }
+                resultHtml += `
+                    <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin-bottom:6px; cursor:pointer;" 
+                         onclick="(function(profile){ closeModal(); showProfileDetail(profile); })(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:1.5rem;">${p.emoji}</span>
+                            <div>
+                                <div style="font-weight:700; font-size:0.8rem;">${schoolDisplay} · ${p.age}세 · ${p.gender === 'female' ? '여성' : '남성'} · ${p.height}cm</div>
+                                <div style="font-size:0.6rem; color:#888;">${p.detail.slice(0, 30)}...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            if (filtered.length > 20) {
+                resultHtml += `<div style="color:#666; font-size:0.6rem; text-align:center; padding:6px;">+ ${filtered.length - 20}명 더 있습니다</div>`;
+            }
+            resultHtml += `
+                </div>
+                <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>
+            `;
+            modalContent.innerHTML = resultHtml;
+        }
+    }
+
+    // ================================================================
+    // 18. 공통 함수
+    // ================================================================
+    function closeModal() {
+        document.getElementById('commonModal').classList.remove('active');
+    }
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('commonModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+
+    function showToast(msg) {
+        const old = document.querySelector('.toast');
+        if (old) old.remove();
+        const div = document.createElement('div');
+        div.className = 'toast';
+        div.textContent = msg;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 2800);
+    }
+
+    document.querySelectorAll('#mainTabs span').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${this.dataset.tab}`).classList.add('active');
+        });
+    });
+
+    document.getElementById('emailInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') verifyEmail();
+    });
+
+    // ================================================================
+    // 19. 초기화
+    // ================================================================
+    if (!getData('users', null)) {
+        setData('users', []);
+        setData('profiles', defaultProfiles);
+        setData('likes', []);
+        setData('matches', []);
+        setData('nextId', 100);
+    }
+
+    loadUserData();
+    renderCalendar(currentYear, currentMonth);
+    renderProfiles();
+    updateLikedBtn();
+    updateUI();
+
+    setTimeout(() => {
+        const firstEvent = festivalEvents[0];
+        if (firstEvent) showDayEvents([firstEvent]);
+    }, 300);
+
+    console.log('🎉 페스타팅 최종 완성! (내 카드 배지 버그 수정)');
+    console.log('💡 관리자 모드: sessionStorage.setItem("isAdmin", "true") 입력 후 새로고침');
+    console.log('📞 문의 ID: festivalting');
+</script>
+</body>
+</html>
