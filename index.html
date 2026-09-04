@@ -1559,28 +1559,34 @@
                 }
             }
 
-            card.innerHTML = `
-                <span class="emoji-big">${p.emoji}</span>
-                <span class="card-type-badge">${typeLabel}</span>
-                ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-                ${isLikedBy && !isMyCard ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-                <div class="info-line">
-                    ${schoolDisplay} · ${p.age}세 · ${p.gender === 'female' ? '♀' : '♂'} · ${p.height}cm
-                </div>
-                <div class="preview">${p.preview || p.detail.slice(0, 18) + '...'}</div>
-                <div class="meta">
-                    <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-                    <span>
-                        <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-                           onclick="event.stopPropagation(); toggleLike(${p.id})"
-                           title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-                    </span>
-                </div>
-            `;
-            card.addEventListener('click', () => showProfileDetail(p));
-            grid.appendChild(card);
-        });
-    }
+            // ★ '나를찜' 표시 조건: 로그인 + 학생증 인증 완료 + 내 카드 아닐 때
+const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
+
+// 성별 텍스트 변환
+const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
+
+card.innerHTML = `
+    <span class="emoji-big">${p.emoji}</span>
+    <span class="card-type-badge">${typeLabel}</span>
+    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+    <div class="info-line">
+        ${genderText} · ${schoolDisplay} · ${majorDisplay}
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${p.grade} · ${p.age}세 · ${p.height}cm
+    </div>
+    <div class="preview">${p.preview || detailDisplay}</div>
+    ${moreNotice}
+    <div class="meta">
+        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+        <span>
+            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+               onclick="event.stopPropagation(); toggleLike(${p.id})"
+               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+        </span>
+    </div>
+`;
 
     async function toggleLike(cardId) {
         if (!hasMyCard || !isLoggedIn) {
@@ -1925,17 +1931,21 @@ function showProfileDetail(profile) {
         }
     }
 
-    content.innerHTML = `
-        <h2>💌 카드 상세</h2>
-        <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
-        <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
-        ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
-        <div class="detail-item"><strong>학교</strong> ${schoolDisplay}</div>
-        <div class="detail-item"><strong>학번</strong> ${profile.grade}</div>
-        <div class="detail-item"><strong>나이/성별/키</strong> ${profile.age}세 / ${profile.gender === 'female' ? '여성' : '남성'} / ${profile.height}cm</div>
-        <div class="detail-item"><strong>MBTI</strong> ${profile.mbti}</div>
-        <div class="detail-item"><strong>자기소개</strong> ${detailDisplay}</div>   <!-- ★★★ 수정된 부분 ★★★ -->
-        <hr class="divider">
+   // 성별 텍스트
+const genderText = profile.gender === 'female' ? '여성' : '남성';
+
+content.innerHTML = `
+    <h2>💌 카드 상세</h2>
+    <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
+    <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
+    ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
+    <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
+    <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
+    <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
+    <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
+    <hr class="divider">
+    <!-- 버튼들 (그대로 유지) -->
+`;
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
             ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
             ${isMyCard ? `
