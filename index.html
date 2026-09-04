@@ -1889,64 +1889,70 @@
     // ================================================================
     // 9. 프로필 상세 + 매칭 신청
     // ================================================================
-    function showProfileDetail(profile) {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        let typeLabel = '';
-        if (profile.type === 'solo') typeLabel = '💕 둘이서 만나요 (1:1)';
-        else if (profile.type === 'group') typeLabel = '🍻 여럿이서 만나요 (2:2,3:3,4:4)';
-        else if (profile.type === 'same') typeLabel = '👬 동성친구 찾기 (1:1)';
-        const isMyCard = isLoggedIn && profile.user_id === currentUserId;
+function showProfileDetail(profile) {
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    let typeLabel = '';
+    if (profile.type === 'solo') typeLabel = '💕 둘이서 만나요 (1:1)';
+    else if (profile.type === 'group') typeLabel = '🍻 여럿이서 만나요 (2:2,3:3,4:4)';
+    else if (profile.type === 'same') typeLabel = '👬 동성친구 찾기 (1:1)';
+    const isMyCard = isLoggedIn && profile.user_id === currentUserId;
 
-        let schoolDisplay = profile.school;
-        let majorDisplay = profile.major;
-        if (profile.user_id !== null) {
-            const owner = allUsers.find(u => u.id === profile.user_id);
-            if (owner) {
-                if (owner.hide_school) schoolDisplay = '학교 숨김';
-                if (owner.hide_major) majorDisplay = '학과 숨김';
-            }
+    let schoolDisplay = profile.school;
+    let majorDisplay = profile.major;
+    if (profile.user_id !== null) {
+        const owner = allUsers.find(u => u.id === profile.user_id);
+        if (owner) {
+            if (owner.hide_school) schoolDisplay = '학교 숨김';
+            if (owner.hide_major) majorDisplay = '학과 숨김';
         }
-
-        let showMatchBtn = false;
-        if (isLoggedIn && !isMyCard && hasMyCard) {
-            if (currentMode === 'same') {
-                showMatchBtn = true;
-            } else if (currentMode === 'solo' || currentMode === 'group') {
-                if (currentUser && profile.gender !== currentUser.gender) {
-                    showMatchBtn = true;
-                }
-            }
-        }
-
-        content.innerHTML = `
-            <h2>💌 카드 상세</h2>
-            <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
-            <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
-            ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
-            <div class="detail-item"><strong>학교</strong> ${schoolDisplay}</div>
-            <div class="detail-item"><strong>학번</strong> ${profile.grade}</div>
-            <div class="detail-item"><strong>나이/성별/키</strong> ${profile.age}세 / ${profile.gender === 'female' ? '여성' : '남성'} / ${profile.height}cm</div>
-            <div class="detail-item"><strong>MBTI</strong> ${profile.mbti}</div>
-            <div class="detail-item"><strong>자기소개</strong> ${profile.detail}</div>
-            <hr class="divider">
-            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
-                ${isMyCard ? `
-                    <button class="btn-sm" onclick="closeModal(); openCardRegisterForm('${profile.type}')" style="flex:1;"><i class="fas fa-edit"></i> 수정</button>
-                    <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
-                ` : ''}
-                ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-                ${!showMatchBtn && !isMyCard && isLoggedIn ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
-                <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
-            </div>
-            ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
-            <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
-                <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
-            </div>
-        `;
-        modal.classList.add('active');
     }
+
+    // ★★★ 추가: 자기소개 내용 제한 ★★★
+    let detailDisplay = profile.detail;
+    if (!isLoggedIn && profile.detail && profile.detail.length > 10) {
+        detailDisplay = profile.detail.slice(0, 10) + '...<br><span style="color:#fbbf24; font-size:0.7rem;">🔒 전체 내용은 회원가입 후 확인 가능</span>';
+    }
+
+    let showMatchBtn = false;
+    if (isLoggedIn && !isMyCard && hasMyCard) {
+        if (currentMode === 'same') {
+            showMatchBtn = true;
+        } else if (currentMode === 'solo' || currentMode === 'group') {
+            if (currentUser && profile.gender !== currentUser.gender) {
+                showMatchBtn = true;
+            }
+        }
+    }
+
+    content.innerHTML = `
+        <h2>💌 카드 상세</h2>
+        <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
+        <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
+        ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
+        <div class="detail-item"><strong>학교</strong> ${schoolDisplay}</div>
+        <div class="detail-item"><strong>학번</strong> ${profile.grade}</div>
+        <div class="detail-item"><strong>나이/성별/키</strong> ${profile.age}세 / ${profile.gender === 'female' ? '여성' : '남성'} / ${profile.height}cm</div>
+        <div class="detail-item"><strong>MBTI</strong> ${profile.mbti}</div>
+        <div class="detail-item"><strong>자기소개</strong> ${detailDisplay}</div>   <!-- ★★★ 수정된 부분 ★★★ -->
+        <hr class="divider">
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
+            ${isMyCard ? `
+                <button class="btn-sm" onclick="closeModal(); openCardRegisterForm('${profile.type}')" style="flex:1;"><i class="fas fa-edit"></i> 수정</button>
+                <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
+            ` : ''}
+            ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
+            ${!showMatchBtn && !isMyCard && isLoggedIn ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
+            <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
+        </div>
+        ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
+        <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
+            <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
+        </div>
+    `;
+    modal.classList.add('active');
+}
 
     // ================================================================
     // 10. 매칭 신청 (일반/슈퍼 선택)
