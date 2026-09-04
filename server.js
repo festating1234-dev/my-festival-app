@@ -63,7 +63,6 @@ app.post('/api/profiles', async (req, res) => {
 // 5. 좋아요 추가/삭제
 app.post('/api/likes', async (req, res) => {
     const { user_id, card_id } = req.body;
-    // 중복 체크
     const { data: existing } = await supabase
         .from('likes')
         .select('*')
@@ -72,17 +71,14 @@ app.post('/api/likes', async (req, res) => {
         .single();
     
     if (existing) {
-        // 이미 좋아요가 있으면 삭제
         await supabase
             .from('likes')
             .delete()
             .eq('user_id', user_id)
             .eq('card_id', card_id);
-        // 좋아요 수 감소
         await supabase.rpc('decrement_likes', { card_id });
         res.json({ success: true, action: 'unliked' });
     } else {
-        // 좋아요 추가
         await supabase.from('likes').insert([{ user_id, card_id }]);
         await supabase.rpc('increment_likes', { card_id });
         res.json({ success: true, action: 'liked' });
@@ -113,16 +109,17 @@ app.put('/api/matches/:id', async (req, res) => {
     res.json(data[0]);
 });
 
-// 8. 좋아요 수 증가 함수 (Supabase RPC)
+// 8. 서버 상태 확인용 테스트 API
 app.get('/api/test', (req, res) => {
     res.json({ message: '🚀 Supabase 연결 성공!' });
 });
 
-// 모든 요청을 index.html로
+// 모든 요청을 index.html로 보내기
 app.get('/*splat', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// 서버 실행
 app.listen(PORT, () => {
     console.log(`✅ 서버 실행 중! http://localhost:${PORT}`);
 });
