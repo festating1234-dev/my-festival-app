@@ -49,3 +49,24 @@ app.listen(PORT, () => {
     console.log(`✅ 서버 실행 중! http://localhost:${PORT}`);
     console.log(`🔗 Supabase URL: ${process.env.SUPABASE_URL ? '✅ 설정됨' : '❌ 설정 안 됨'}`);
 });
+// Supabase 연결 상태 확인용 (간단)
+app.get('/api/supabase-ping', async (req, res) => {
+    try {
+        // 아무 쿼리나 실행해보기 (존재하지 않는 테이블이라도 됨)
+        const { error } = await supabase.from('users').select('id', { head: true, count: 'exact' });
+        if (error) {
+            return res.json({ 
+                status: '❌ Supabase 연결은 되었지만 쿼리 실패', 
+                error: error.message,
+                hint: 'RLS 정책 때문일 수 있습니다. 테이블의 RLS를 임시로 비활성화해보세요.'
+            });
+        }
+        res.json({ status: '✅ Supabase 연결 및 쿼리 성공!' });
+    } catch (err) {
+        res.json({ 
+            status: '❌ Supabase 연결 자체가 실패', 
+            error: err.message,
+            stack: err.stack
+        });
+    }
+});
