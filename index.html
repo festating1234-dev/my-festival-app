@@ -1460,7 +1460,7 @@
     const bottomNotice = document.getElementById('bottomNotice');
     const genderFilter = document.getElementById('genderFilter');
 
-function renderProfiles() {
+async function renderProfiles() {
     let filtered = [...allProfiles];
 
     // 로그인 사용자 필터
@@ -1476,14 +1476,14 @@ function renderProfiles() {
                 showToast('⚠️ 로그인 후 이용 가능합니다');
                 document.getElementById('showLikedByBtn').classList.remove('active');
                 showLikedByOnly = false;
-                renderProfiles();
+                await renderProfiles();
                 return;
             }
             if (!hasMyCard) {
                 showToast('⚠️ 내 카드를 먼저 등록해주세요!');
                 document.getElementById('showLikedByBtn').classList.remove('active');
                 showLikedByOnly = false;
-                renderProfiles();
+                await renderProfiles();
                 return;
             }
             if (cardVerificationStatus !== 'approved') {
@@ -1494,7 +1494,7 @@ function renderProfiles() {
                 document.querySelector('[data-tab="mypage"]').classList.add('active');
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById('page-mypage').classList.add('active');
-                renderProfiles();
+                await renderProfiles();
                 return;
             }
             filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
@@ -1546,25 +1546,46 @@ function renderProfiles() {
         bottomNotice.style.display = 'block';
     }
 
-    // ====== 카드 렌더링 (수정된 부분) ======
+    // ====== 카드 렌더링 ======
     grid.innerHTML = '';
-    filtered.forEach(p => {
+    
+    for (const p of filtered) {
         const card = document.createElement('div');
         card.className = 'note-card';
         const isLiked = likedIds.has(p.id);
         const isLikedBy = likedByIds.has(p.user_id);
-        const isMyCard = isLoggedIn && p.user_id === currentUserId;
+        // ★ 내 카드 판별 (타입 변환으로 number vs string 문제 해결)
+        const isMyCard = isLoggedIn && String(p.user_id) === String(currentUserId);
         const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
         const canLike = hasMyCard && isLoggedIn && !isMyCard;
 
-        // ★ 개인정보 숨기기 (schoolDisplay, majorDisplay 정의)
+        // ★ 개인정보 숨기기 - 내 카드 우선 적용
         let schoolDisplay = p.school;
         let majorDisplay = p.major;
-        if (p.user_id !== null) {
-            const owner = allUsers.find(u => u.id === p.user_id);
+
+        if (isMyCard) {
+            // 내 카드: currentUser의 설정을 우선 적용 (가장 최신 보장)
+            if (currentUser.hide_school) schoolDisplay = '학교비공개';
+            if (currentUser.hide_major) majorDisplay = '계열비공개';
+        } else if (p.user_id !== null && p.user_id !== undefined) {
+            // 다른 사람의 카드: allUsers에서 찾기
+            let owner = allUsers.find(u => String(u.id) === String(p.user_id));
             if (owner) {
                 if (owner.hide_school) schoolDisplay = '학교비공개';
                 if (owner.hide_major) majorDisplay = '계열비공개';
+            } else {
+                // allUsers에 없으면 API에서 직접 가져오기 (fallback)
+                try {
+                    const res = await fetch(`/api/users/${p.user_id}`);
+                    if (res.ok) {
+                        const user = await res.json();
+                        if (user.hide_school) schoolDisplay = '학교비공개';
+                        if (user.hide_major) majorDisplay = '계열비공개';
+                        allUsers.push(user); // 다음을 위해 캐시
+                    }
+                } catch (e) {
+                    console.error('사용자 정보 로드 실패:', e);
+                }
             }
         }
 
@@ -1582,35 +1603,35 @@ function renderProfiles() {
         const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
         const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
 
-        // ★ 카드 HTML (수정된 순서)
+        // ★ 카드 HTML
         card.innerHTML = `
-    <span class="emoji-big">${p.emoji}</span>
-    <span class="card-type-badge">${typeLabel}</span>
-    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-    <div class="info-line">
-        ${schoolDisplay} / ${majorDisplay}
-    </div>
-    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-        ${genderText} / ${p.height}cm
-    </div>
-    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-        ${p.grade} / ${p.age}세
-    </div>
-    <div class="preview">${p.preview || detailDisplay}</div>
-    ${moreNotice}
-    <div class="meta">
-        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-        <span>
-            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-               onclick="event.stopPropagation(); toggleLike(${p.id})"
-               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-        </span>
-    </div>
-`;
+            <span class="emoji-big">${p.emoji}</span>
+            <span class="card-type-badge">${typeLabel}</span>
+            ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+            ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+            <div class="info-line">
+                ${schoolDisplay} / ${majorDisplay}
+            </div>
+            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+                ${genderText} / ${p.height}cm
+            </div>
+            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+                ${p.grade} / ${p.age}세
+            </div>
+            <div class="preview">${p.preview || detailDisplay}</div>
+            ${moreNotice}
+            <div class="meta">
+                <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+                <span>
+                    <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+                       onclick="event.stopPropagation(); toggleLike(${p.id})"
+                       title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+                </span>
+            </div>
+        `;
         card.addEventListener('click', () => showProfileDetail(p));
         grid.appendChild(card);
-    });
+    }
 }
 
     async function toggleLike(cardId) {
