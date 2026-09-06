@@ -1023,7 +1023,7 @@
             <div id="profileSection" class="hidden">
                 <div class="profile-card">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
-                        <div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">👤</div>
+                        <div id="profileAvatar" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">👤</div>
                         <div>
                             <div style="font-weight:700; font-size:1rem;"><span id="profileNickname">홍길동</span> <span id="userBadgeDisplay" class="badge-status unverified">미인증</span></div>
                             <div style="font-size:0.65rem; color:#888;"><span id="profileSchool">홍익대학교</span> · <span id="profileMajor">경영학과</span> · <span id="profileGrade">22학번</span></div>
@@ -3123,113 +3123,129 @@ function openEditProfile() {
     // 15. 인증 시스템
     // ================================================================
     function updateUI() {
-        if (!currentUser) {
-            document.getElementById('authSection').classList.remove('hidden');
-            document.getElementById('profileSection').classList.add('hidden');
-            return;
-        }
-        document.getElementById('authSection').classList.add('hidden');
-        document.getElementById('profileSection').classList.remove('hidden');
-
-        const badge = document.getElementById('userBadgeDisplay');
-        const hasEmail = isEmailVerified;
-        const hasCard = cardVerificationStatus === 'approved';
-
-        if (hasEmail && hasCard) {
-            badge.textContent = '⭐ 인증완료';
-            badge.className = 'badge-status verified';
-        } else if (hasEmail || hasCard) {
-            badge.textContent = '⭐ 부분인증';
-            badge.className = 'badge-status verified';
-        } else {
-            badge.textContent = '미인증';
-            badge.className = 'badge-status unverified';
-        }
-
-        const profileNicknameEl = document.getElementById('profileNickname');
-if (currentUser && currentUser.animal) {
-    const emoji = currentUser.animal.split(' ')[0] || '👤';
-    profileNicknameEl.innerHTML = `${emoji} ${currentUser.nickname}`;
-} else if (currentUser) {
-    profileNicknameEl.textContent = currentUser.nickname;
-}
-        document.getElementById('profileSchool').textContent = currentUser.school;
-        document.getElementById('profileMajor').textContent = currentUser.major;
-        document.getElementById('profileGrade').textContent = currentUser.grade;
-        document.getElementById('profileAge').textContent = currentUser.age + '세';
-        document.getElementById('profileHeight').textContent = currentUser.height + ' cm';
-        document.getElementById('profileGender').textContent = currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성';
-        document.getElementById('profileMajor2').textContent = currentUser.major;
-        document.getElementById('profileAnimal').textContent = currentUser.animal;
-        document.getElementById('profileRegion').textContent = currentUser.region;
-        document.getElementById('profileIntro').textContent = currentUser.intro || '';
-        document.getElementById('profilePhone').textContent = currentUser.phone || '-';
-        document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
-        document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
-
-        document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
-        document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
-        document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
-
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
-
-        const emailStatus = document.getElementById('emailStatus');
-        const emailBox = document.getElementById('emailVerifyBox');
-        if (isEmailVerified) {
-            emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
-            emailBox.classList.add('success');
-        } else {
-            emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
-            emailBox.classList.remove('success');
-        }
-
-        const cardStatus = document.getElementById('cardStatus');
-        const cardBox = document.getElementById('cardVerifyBox');
-        const rejectReason = document.getElementById('cardRejectReason');
-        if (cardVerificationStatus === 'pending') {
-            cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
-            cardBox.classList.remove('success', 'rejected');
-            rejectReason.style.display = 'none';
-        } else if (cardVerificationStatus === 'approved') {
-            cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
-            cardBox.classList.add('success');
-            cardBox.classList.remove('rejected');
-            rejectReason.style.display = 'none';
-        } else if (cardVerificationStatus === 'rejected') {
-            cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
-            cardBox.classList.remove('success');
-            cardBox.classList.add('rejected');
-            rejectReason.style.display = 'block';
-        } else {
-            cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
-            cardBox.classList.remove('success', 'rejected');
-            rejectReason.style.display = 'none';
-        }
-
-        const benefit = document.getElementById('benefitDisplay');
-        let html = '';
-        if (isEmailVerified) {
-            html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
-        } else {
-            html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
-        }
-        if (cardVerificationStatus === 'approved') {
-            html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
-        } else {
-            html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
-        }
-        benefit.innerHTML = html;
-
-        if (isAdmin) {
-            const pending = allUsers.filter(u => u.card_status === 'pending').length;
-            document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('adminPanel').classList.remove('hidden');
-        } else {
-            document.getElementById('adminPanel').classList.add('hidden');
-        }
+    if (!currentUser) {
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('profileSection').classList.add('hidden');
+        return;
     }
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('profileSection').classList.remove('hidden');
+
+    // ===== 1. 프로필 아바타를 동물 이모지로 변경 =====
+    const avatarDiv = document.querySelector('.profile-card > div > div:first-child');
+    if (avatarDiv && currentUser && currentUser.animal) {
+        const emoji = currentUser.animal.split(' ')[0] || '👤';
+        avatarDiv.textContent = emoji;
+        avatarDiv.style.fontSize = '1.8rem';
+    } else if (avatarDiv) {
+        avatarDiv.textContent = '👤';
+        avatarDiv.style.fontSize = '1.4rem';
+    }
+
+    // ===== 2. 닉네임은 순수 텍스트로만 표시 =====
+    document.getElementById('profileNickname').textContent = currentUser.nickname;
+
+    // ===== 3. 인증 상태 배지 =====
+    const badge = document.getElementById('userBadgeDisplay');
+    const hasEmail = isEmailVerified;
+    const hasCard = cardVerificationStatus === 'approved';
+
+    if (hasEmail && hasCard) {
+        badge.textContent = '⭐ 인증완료';
+        badge.className = 'badge-status verified';
+    } else if (hasEmail || hasCard) {
+        badge.textContent = '⭐ 부분인증';
+        badge.className = 'badge-status verified';
+    } else {
+        badge.textContent = '미인증';
+        badge.className = 'badge-status unverified';
+    }
+
+    // ===== 4. 사용자 기본 정보 =====
+    document.getElementById('profileSchool').textContent = currentUser.school;
+    document.getElementById('profileMajor').textContent = currentUser.major;
+    document.getElementById('profileGrade').textContent = currentUser.grade;
+    document.getElementById('profileAge').textContent = currentUser.age + '세';
+    document.getElementById('profileHeight').textContent = currentUser.height + ' cm';
+    document.getElementById('profileGender').textContent = currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성';
+    document.getElementById('profileMajor2').textContent = currentUser.major;
+    document.getElementById('profileAnimal').textContent = currentUser.animal;
+    document.getElementById('profileRegion').textContent = currentUser.region;
+    document.getElementById('profileIntro').textContent = currentUser.intro || '';
+    document.getElementById('profilePhone').textContent = currentUser.phone || '-';
+    document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
+    document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
+
+    // ===== 5. 개인정보 숨기기 상태 =====
+    document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
+    document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
+    document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
+
+    // ===== 6. 토글 버튼 상태 동기화 =====
+    const toggleSchool = document.getElementById('toggleHideSchool');
+    const toggleMajor = document.getElementById('toggleHideMajor');
+    const toggleSame = document.getElementById('toggleHideSameSchool');
+    if (toggleSchool) toggleSchool.classList.toggle('active', currentUser.hide_school);
+    if (toggleMajor) toggleMajor.classList.toggle('active', currentUser.hide_major);
+    if (toggleSame) toggleSame.classList.toggle('active', currentUser.hide_same_school);
+
+    // ===== 7. 이메일 인증 상태 =====
+    const emailStatus = document.getElementById('emailStatus');
+    const emailBox = document.getElementById('emailVerifyBox');
+    if (isEmailVerified) {
+        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
+        if (emailBox) emailBox.classList.add('success');
+    } else {
+        emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
+        if (emailBox) emailBox.classList.remove('success');
+    }
+
+    // ===== 8. 학생증 인증 상태 =====
+    const cardStatus = document.getElementById('cardStatus');
+    const cardBox = document.getElementById('cardVerifyBox');
+    const rejectReason = document.getElementById('cardRejectReason');
+    if (cardVerificationStatus === 'pending') {
+        cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
+        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    } else if (cardVerificationStatus === 'approved') {
+        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
+        if (cardBox) { cardBox.classList.add('success'); cardBox.classList.remove('rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    } else if (cardVerificationStatus === 'rejected') {
+        cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
+        if (cardBox) { cardBox.classList.remove('success'); cardBox.classList.add('rejected'); }
+        if (rejectReason) rejectReason.style.display = 'block';
+    } else {
+        cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
+        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    }
+
+    // ===== 9. 혜택 표시 =====
+    const benefit = document.getElementById('benefitDisplay');
+    let html = '';
+    if (isEmailVerified) {
+        html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
+    } else {
+        html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
+    }
+    if (cardVerificationStatus === 'approved') {
+        html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
+    } else {
+        html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
+    }
+    benefit.innerHTML = html;
+
+    // ===== 10. 관리자 패널 =====
+    if (isAdmin) {
+        const pending = allUsers.filter(u => u.card_status === 'pending').length;
+        document.getElementById('pendingCount').textContent = pending;
+        document.getElementById('adminPanel').classList.remove('hidden');
+    } else {
+        document.getElementById('adminPanel').classList.add('hidden');
+    }
+}
 
     async function verifyEmail() {
         if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
