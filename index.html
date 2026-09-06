@@ -1158,32 +1158,63 @@
         </div>
 
         <!-- 축제일정 -->
-        <div id="page-calendar" class="page">
-            <div class="calendar-wrap">
-                <div class="cal-header">
-                    <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
-                    <span class="month" id="calMonth">2026년 9월</span>
-                    <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
-                </div>
-                <div class="cal-days">
-                    <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-                </div>
-                <div class="cal-grid" id="calGrid"></div>
-
-                <div class="report-area">
-                    <button class="btn-report" onclick="openReport()">
-                        <i class="fas fa-bullhorn"></i> 우리학교 축제 제보하기
-                    </button>
-                    <span class="reward-text">
-                        🎁 제보 시 <strong>무료 매칭권 1회</strong> 지급!
-                    </span>
-                </div>
-
-                <div class="cal-event-list" id="eventList">
-                    <div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>
-                </div>
-            </div>
+        <!-- 축제일정 (새 달력) -->
+<div id="page-calendar" class="page">
+    <div class="festival-calendar-wrap">
+        <!-- 헤더 -->
+        <div class="festival-calendar-header">
+            <button id="festivalPrevMonth"><i class="fas fa-chevron-left"></i></button>
+            <span class="month" id="festivalMonthLabel">2026년 9월</span>
+            <button id="festivalNextMonth"><i class="fas fa-chevron-right"></i></button>
         </div>
+
+        <!-- 요일 -->
+        <div class="festival-calendar-grid" id="festivalDayHeaders">
+            <div class="day-header">일</div>
+            <div class="day-header">월</div>
+            <div class="day-header">화</div>
+            <div class="day-header">수</div>
+            <div class="day-header">목</div>
+            <div class="day-header">금</div>
+            <div class="day-header">토</div>
+        </div>
+
+        <!-- ★★★ 이게 가장 중요! ★★★ -->
+        <div class="festival-calendar-grid" id="festivalCalendarGrid"></div>
+
+        <!-- 범례 -->
+        <div class="festival-legend" id="festivalLegend"></div>
+
+        <!-- 제보하기 -->
+        <div class="report-area" style="margin-top:12px;">
+            <button class="btn-report" onclick="openReport()">
+                <i class="fas fa-bullhorn"></i> 우리학교 축제 제보하기
+            </button>
+            <span class="reward-text">🎁 제보 시 <strong>무료 매칭권 1회</strong> 지급!</span>
+        </div>
+    </div>
+</div>
+
+<!-- 축제 상세 모달 -->
+<div class="festival-modal-overlay" id="festivalModalOverlay">
+    <div class="festival-modal-box">
+        <button class="close-btn" id="festivalModalClose">&times;</button>
+        <h3 id="festivalModalSchool">학교명</h3>
+        <div class="modal-sub" id="festivalModalDate">2026.09.24 ~ 2026.09.26</div>
+        <div class="modal-row">
+            <span class="label">🎪 축제제목</span>
+            <span class="value" id="festivalModalTitle">대동제</span>
+        </div>
+        <div class="modal-row">
+            <span class="label">🎫 티켓</span>
+            <span class="value" id="festivalModalTicket"><span class="ticket-badge free">불필요</span></span>
+        </div>
+        <div class="modal-row" style="border-bottom: none; flex-direction: column; align-items: flex-start; gap: 4px;">
+            <span class="label">🎤 라인업</span>
+            <div class="modal-lineup" id="festivalModalLineup"></div>
+        </div>
+    </div>
+</div>
 
         <!-- 내정보 -->
         <div id="page-mypage" class="page">
