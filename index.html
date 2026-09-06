@@ -1293,7 +1293,6 @@
         console.error('프로필 로드 오류:', error);
     }
 }
-
     // 4-2. 사용자 정보 불러오기
     async function fetchUser(userId) {
         try {
@@ -1352,11 +1351,15 @@
             cardVerificationStatus = currentUser.card_status || 'none';
             freeMatchTickets = currentUser.free_tickets || 0;
 
-            // ★★★ 추가: 모든 사용자 목록을 불러와서 allUsers 배열 채우기 ★★★
+            // ★★★ 모든 사용자 목록 불러오기 ★★★
             await fetchUsers();
 
-            // ★★★ 중요: 프로필 목록을 가져오기 전에 초기화 (중복 방지) ★★★
+            // ★★★ 중요: 프로필 데이터를 가져오기 전에 반드시 초기화! ★★★
             allProfiles = [];
+            allLikes = [];
+            allMatches = [];
+
+            // 2. 서버에서 프로필 목록 다시 불러오기
             await fetchProfiles();
 
             // 3. 서버에서 좋아요 목록 불러오기
