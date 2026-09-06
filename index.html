@@ -3820,25 +3820,27 @@ function openEditProfile() {
     // 19. 초기화
     // ================================================================
     async function init() {
-        // localStorage에서 로그인 상태 복원
-        currentUserID = getData('currentUser', null);
-    if (currentUserID) {
+    // localStorage에서 로그인 상태 복원
+    currentUserId = getData('currentUser', null);
+    if (currentUserId) {
         await loadUserData();
     } else {
         // 비로그인 상태에서도 프로필 목록은 로드해야 함
+        allProfiles = [];
         await fetchProfiles();
+        renderProfiles();  // ← 이 줄은 유지 (비로그인 시 필요)
     }
-        renderCalendar(currentYear, currentMonth);
-        renderProfiles();
-        updateLikedBtn();
-        updateUI();
+    renderCalendar(currentYear, currentMonth);
+    // renderProfiles();  // ← ★★★ 이 줄을 삭제! ★★★
+    updateLikedBtn();
+    updateUI();
 
-        // 첫 번째 축제 이벤트 표시
-        setTimeout(() => {
-            const firstEvent = festivalEvents[0];
-            if (firstEvent) showDayEvents([firstEvent]);
-        }, 300);
-    }
+    // 첫 번째 축제 이벤트 표시
+    setTimeout(() => {
+        const firstEvent = festivalEvents[0];
+        if (firstEvent) showDayEvents([firstEvent]);
+    }, 300);
+}
 
     init();
 
