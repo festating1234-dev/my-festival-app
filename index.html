@@ -2688,90 +2688,108 @@ function showProfileDetail(profile) {
     // ================================================================
     // 13. 내정보 - 수정
     // ================================================================
-    function openEditProfile() {
-        if (!currentUser) return;
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>✏️ 프로필 수정</h2>
-            <div class="subtitle">기본 정보와 개인정보 숨기기 설정</div>
-            <form class="signup-form" onsubmit="handleEditProfile(event)">
-                <div class="form-group">
-                    <label>닮은꼴</label>
-                    <select id="editAnimal">
-                        <option value="🐶 강아지상" ${currentUser.animal === '🐶 강아지상' ? 'selected' : ''}>🐶 강아지상</option>
-                        <option value="🐱 고양이상" ${currentUser.animal === '🐱 고양이상' ? 'selected' : ''}>🐱 고양이상</option>
-                        <option value="🐰 토끼상" ${currentUser.animal === '🐰 토끼상' ? 'selected' : ''}>🐰 토끼상</option>
-                        <option value="🦊 여우상" ${currentUser.animal === '🦊 여우상' ? 'selected' : ''}>🦊 여우상</option>
-                        <option value="🐻 곰상" ${currentUser.animal === '🐻 곰상' ? 'selected' : ''}>🐻 곰상</option>
-                        <option value="🦕 공룡상" ${currentUser.animal === '🦕 공룡상' ? 'selected' : ''}>🦕 공룡상</option>
-                    </select>
+function openEditProfile() {
+    if (!currentUser) return;
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>✏️ 프로필 수정</h2>
+        <div class="subtitle">기본 정보와 개인정보 숨기기 설정</div>
+        <form class="signup-form" onsubmit="handleEditProfile(event)">
+            <div class="form-group">
+                <label>닮은꼴</label>
+                <select id="editAnimal">
+                    <option value="🐶 강아지상" ${currentUser.animal === '🐶 강아지상' ? 'selected' : ''}>🐶 강아지상</option>
+                    <option value="🐱 고양이상" ${currentUser.animal === '🐱 고양이상' ? 'selected' : ''}>🐱 고양이상</option>
+                    <option value="🐰 토끼상" ${currentUser.animal === '🐰 토끼상' ? 'selected' : ''}>🐰 토끼상</option>
+                    <option value="🦊 여우상" ${currentUser.animal === '🦊 여우상' ? 'selected' : ''}>🦊 여우상</option>
+                    <option value="🐻 곰상" ${currentUser.animal === '🐻 곰상' ? 'selected' : ''}>🐻 곰상</option>
+                    <option value="🦕 공룡상" ${currentUser.animal === '🦕 공룡상' ? 'selected' : ''}>🦕 공룡상</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>활동지역</label>
+                <select id="editRegion">
+                    <option ${currentUser.region === '서울특별시' ? 'selected' : ''}>서울특별시</option>
+                    <option ${currentUser.region === '부산광역시' ? 'selected' : ''}>부산광역시</option>
+                    <option ${currentUser.region === '대구광역시' ? 'selected' : ''}>대구광역시</option>
+                    <option ${currentUser.region === '인천광역시' ? 'selected' : ''}>인천광역시</option>
+                    <option ${currentUser.region === '광주광역시' ? 'selected' : ''}>광주광역시</option>
+                    <option ${currentUser.region === '대전광역시' ? 'selected' : ''}>대전광역시</option>
+                    <option ${currentUser.region === '울산광역시' ? 'selected' : ''}>울산광역시</option>
+                    <option ${currentUser.region === '세종특별자치시' ? 'selected' : ''}>세종특별자치시</option>
+                    <option ${currentUser.region === '경기도' ? 'selected' : ''}>경기도</option>
+                    <option ${currentUser.region === '강원도' ? 'selected' : ''}>강원도</option>
+                    <option ${currentUser.region === '충청북도' ? 'selected' : ''}>충청북도</option>
+                    <option ${currentUser.region === '충청남도' ? 'selected' : ''}>충청남도</option>
+                    <option ${currentUser.region === '전라북도' ? 'selected' : ''}>전라북도</option>
+                    <option ${currentUser.region === '전라남도' ? 'selected' : ''}>전라남도</option>
+                    <option ${currentUser.region === '경상북도' ? 'selected' : ''}>경상북도</option>
+                    <option ${currentUser.region === '경상남도' ? 'selected' : ''}>경상남도</option>
+                    <option ${currentUser.region === '제주특별자치도' ? 'selected' : ''}>제주특별자치도</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>자기소개 (20자 이상)</label>
+                <textarea id="editIntro" style="min-height:80px;" required minlength="20">${currentUser.intro || ''}</textarea>
+                <div style="font-size:0.55rem; color:#888; text-align:right; margin-top:2px;">
+                    <span id="editIntroCount">${(currentUser.intro || '').length}</span> / 최소 20자
                 </div>
-                <div class="form-group">
-                    <label>활동지역</label>
-                    <select id="editRegion">
-                        <option ${currentUser.region === '서울특별시' ? 'selected' : ''}>서울특별시</option>
-                        <option ${currentUser.region === '부산광역시' ? 'selected' : ''}>부산광역시</option>
-                        <option ${currentUser.region === '대구광역시' ? 'selected' : ''}>대구광역시</option>
-                        <option ${currentUser.region === '인천광역시' ? 'selected' : ''}>인천광역시</option>
-                        <option ${currentUser.region === '광주광역시' ? 'selected' : ''}>광주광역시</option>
-                        <option ${currentUser.region === '대전광역시' ? 'selected' : ''}>대전광역시</option>
-                        <option ${currentUser.region === '울산광역시' ? 'selected' : ''}>울산광역시</option>
-                        <option ${currentUser.region === '세종특별자치시' ? 'selected' : ''}>세종특별자치시</option>
-                        <option ${currentUser.region === '경기도' ? 'selected' : ''}>경기도</option>
-                        <option ${currentUser.region === '강원도' ? 'selected' : ''}>강원도</option>
-                        <option ${currentUser.region === '충청북도' ? 'selected' : ''}>충청북도</option>
-                        <option ${currentUser.region === '충청남도' ? 'selected' : ''}>충청남도</option>
-                        <option ${currentUser.region === '전라북도' ? 'selected' : ''}>전라북도</option>
-                        <option ${currentUser.region === '전라남도' ? 'selected' : ''}>전라남도</option>
-                        <option ${currentUser.region === '경상북도' ? 'selected' : ''}>경상북도</option>
-                        <option ${currentUser.region === '경상남도' ? 'selected' : ''}>경상남도</option>
-                        <option ${currentUser.region === '제주특별자치도' ? 'selected' : ''}>제주특별자치도</option>
-                    </select>
+            </div>
+
+            <!-- ★ 추가된 안내 문구 ★ -->
+            <div style="margin:12px 0; font-size:0.55rem; color:#888; text-align:center;">
+                💡 키, 성별, 전화번호를 수정하고 싶다면 <span style="color:#fbbf24; cursor:pointer; text-decoration:underline;" onclick="closeModal(); openInquiry();">문의하기</span> 기능을 사용해 주세요.
+            </div>
+
+            <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
+
+            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
+            <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
+                    <div class="toggle-knob"></div>
                 </div>
-                <div class="form-group">
-                    <label>자기소개</label>
-                    <textarea id="editIntro" style="min-height:80px;">${currentUser.intro || ''}</textarea>
+                <label>대학교 숨기기</label>
+                <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+            </div>
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
+                    <div class="toggle-knob"></div>
                 </div>
+                <label>학과계열 숨기기</label>
+                <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+            </div>
 
-                <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
-
-                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
-                <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
-
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>대학교 숨기기</label>
-                    <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_same_school ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
+                    <div class="toggle-knob"></div>
                 </div>
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>학과계열 숨기기</label>
-                    <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
-                </div>
+                <label>같은학교 학생에게 내 카드 숨기기</label>
+                <span class="toggle-description">(on: 같은학교 카드가 서로 보이지 않음)</span>
+            </div>
 
-                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_same_school ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>같은학교 학생에게 내 카드 숨기기</label>
-                    <span class="toggle-description">(on: 같은학교 카드가 서로 보이지 않음)</span>
-                </div>
+            <button type="submit" class="btn-primary" style="width:100%; margin-top:12px;">수정 완료</button>
+        </form>
+    `;
+    modal.classList.add('active');
 
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:12px;">수정 완료</button>
-            </form>
-        `;
-        modal.classList.add('active');
-
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
+    // ★ 자기소개 글자수 실시간 체크 (모달 열린 후 이벤트 등록) ★
+    const editIntro = document.getElementById('editIntro');
+    const editIntroCount = document.getElementById('editIntroCount');
+    if (editIntro && editIntroCount) {
+        editIntro.addEventListener('input', function() {
+            editIntroCount.textContent = this.value.length;
+        });
     }
+
+    // ★ 토글 상태 동기화 ★
+    document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
+    document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
+    document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
+}
 
     async function toggleSwitch(field) {
         if (!currentUser) return;
