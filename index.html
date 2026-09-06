@@ -1529,6 +1529,9 @@ async function renderProfiles() {
     if (currentUser && currentUser.hide_same_school) {
         filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
     }
+    
+    // ★★★ 중복 제거 (id 기준) ★★★
+    filtered = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
     // 정렬
     const sortVal = document.getElementById('sortFilter').value;
