@@ -1342,60 +1342,62 @@
     // ================================================================
     // 5. 데이터 로드/저장 (서버 기반)
     // ================================================================
-    async function loadUserData() {
-        if (currentUserId) {
-            // 1. 서버에서 사용자 정보 다시 불러오기
-            const userData = await fetchUser(currentUserId);
-            if (userData) {
-                currentUser = userData;
-                isLoggedIn = true;
-                isEmailVerified = currentUser.email_verified || false;
-                cardVerificationStatus = currentUser.card_status || 'none';
-                freeMatchTickets = currentUser.free_tickets || 0;
+   async function loadUserData() {
+    if (currentUserId) {
+        // 1. 서버에서 사용자 정보 다시 불러오기
+        const userData = await fetchUser(currentUserId);
+        if (userData) {
+            currentUser = userData;
+            isLoggedIn = true;
+            isEmailVerified = currentUser.email_verified || false;
+            cardVerificationStatus = currentUser.card_status || 'none';
+            freeMatchTickets = currentUser.free_tickets || 0;
 
-                // 2. 서버에서 프로필 목록 다시 불러오기
-                await fetchProfiles();
+            // ★★★ 추가: 모든 사용자 목록을 불러와서 allUsers 배열 채우기 ★★★
+            await fetchUsers();
 
-                // 3. 서버에서 좋아요 목록 불러오기
-                await fetchLikes();
+            // 2. 서버에서 프로필 목록 다시 불러오기
+            await fetchProfiles();
 
-                // 4. 서버에서 매칭 목록 불러오기
-                await fetchMatches();
+            // 3. 서버에서 좋아요 목록 불러오기
+            await fetchLikes();
 
-                // 5. 내 카드 확인
-                const mySoloCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'solo');
-                const myGroupCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'group');
-                const mySameCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'same');
-                hasMyCard = !!(mySoloCard || myGroupCard || mySameCard);
+            // 4. 서버에서 매칭 목록 불러오기
+            await fetchMatches();
 
-                // 6. 좋아요 데이터 계산
-                const myLikes = allLikes.filter(l => l.user_id === currentUserId);
-                likedIds = new Set(myLikes.map(l => l.card_id));
+            // 5. 내 카드 확인
+            const mySoloCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'solo');
+            const myGroupCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'group');
+            const mySameCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'same');
+            hasMyCard = !!(mySoloCard || myGroupCard || mySameCard);
 
-                // 7. 나를 찜한 사람들
-                const myCards = allProfiles.filter(p => p.user_id === currentUserId);
-                const myCardIds = myCards.map(c => c.id);
-                const likedBy = allLikes.filter(l => myCardIds.includes(l.card_id));
-                likedByIds = new Set(likedBy.map(l => l.user_id));
+            // 6. 좋아요 데이터 계산
+            const myLikes = allLikes.filter(l => l.user_id === currentUserId);
+            likedIds = new Set(myLikes.map(l => l.card_id));
 
-                // 8. 매칭 데이터 업데이트
-                updateMatchingData();
+            // 7. 나를 찜한 사람들
+            const myCards = allProfiles.filter(p => p.user_id === currentUserId);
+            const myCardIds = myCards.map(c => c.id);
+            const likedBy = allLikes.filter(l => myCardIds.includes(l.card_id));
+            likedByIds = new Set(likedBy.map(l => l.user_id));
 
-                updateUI();
-                renderProfiles();
-                updateLikedBtn();
-                return true;
-            } else {
-                // 서버에 없는 사용자면 로그아웃 처리
-                logout();
-                return false;
-            }
+            // 8. 매칭 데이터 업데이트
+            updateMatchingData();
+
+            updateUI();
+            renderProfiles();
+            updateLikedBtn();
+            return true;
+        } else {
+            // 서버에 없는 사용자면 로그아웃 처리
+            logout();
+            return false;
         }
-        isLoggedIn = false;
-        currentUser = null;
-        return false;
     }
-
+    isLoggedIn = false;
+    currentUser = null;
+    return false;
+}
     function updateMatchingData() {
         if (!currentUserId) return;
         const myCards = allProfiles.filter(p => p.user_id === currentUserId);
@@ -3395,15 +3397,17 @@ function openEditProfile() {
     }
 
     async function fetchUsers() {
-        try {
-            const res = await fetch('/api/users');
-            if (res.ok) {
-                allUsers = await res.json();
-            }
-        } catch (error) {
-            console.error('사용자 목록 로드 오류:', error);
+    try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+            allUsers = await res.json();
+        } else {
+            console.error('사용자 목록 로드 실패:', await res.text());
         }
+    } catch (error) {
+        console.error('사용자 목록 로드 오류:', error);
     }
+}
 
     async function adminAddDummy() {
         if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
