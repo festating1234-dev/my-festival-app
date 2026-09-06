@@ -1280,20 +1280,19 @@
 
     // 4-1. 프로필 목록 불러오기
     async function fetchProfiles() {
-        try {
-            const res = await fetch('/api/profiles');
-            if (res.ok) {
-                allProfiles = await res.json();
-                return allProfiles;
-            } else {
-                console.error('프로필 로드 실패:', await res.text());
-                return [];
-            }
-        } catch (error) {
-            console.error('프로필 로드 오류:', error);
-            return [];
+    try {
+        const res = await fetch('/api/profiles');
+        if (res.ok) {
+            const data = await res.json();
+            // 중복 제거 (id 기준)
+            allProfiles = data.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+        } else {
+            console.error('프로필 로드 실패:', await res.text());
         }
+    } catch (error) {
+        console.error('프로필 로드 오류:', error);
     }
+}
 
     // 4-2. 사용자 정보 불러오기
     async function fetchUser(userId) {
@@ -1356,7 +1355,8 @@
             // ★★★ 추가: 모든 사용자 목록을 불러와서 allUsers 배열 채우기 ★★★
             await fetchUsers();
 
-            // 2. 서버에서 프로필 목록 다시 불러오기
+            // ★★★ 중요: 프로필 목록을 가져오기 전에 초기화 (중복 방지) ★★★
+            allProfiles = [];
             await fetchProfiles();
 
             // 3. 서버에서 좋아요 목록 불러오기
