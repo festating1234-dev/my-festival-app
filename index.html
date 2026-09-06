@@ -318,6 +318,7 @@
     border-radius: 20px;
     padding: 16px;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
 }
 .festival-calendar-header {
     display: flex;
@@ -347,6 +348,8 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
+    overflow: hidden;      /* ← 추가 */
+    min-width: 0;           /* ← 추가 */
 }
 .festival-calendar-grid .day-header {
     text-align: center;
@@ -357,7 +360,8 @@
 }
 .festival-calendar-grid .day-cell {
     aspect-ratio: 4 / 5;
-    min-height: 90px;
+    min-height: 70px;
+    min-width: 0;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
     padding: 4px 6px;
