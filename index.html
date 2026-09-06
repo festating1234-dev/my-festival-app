@@ -3128,7 +3128,13 @@ function showProfileDetail(profile) {
             badge.className = 'badge-status unverified';
         }
 
-        document.getElementById('profileNickname').textContent = currentUser.nickname;
+        const profileNicknameEl = document.getElementById('profileNickname');
+if (currentUser && currentUser.animal) {
+    const emoji = currentUser.animal.split(' ')[0] || '👤';
+    profileNicknameEl.innerHTML = `${emoji} ${currentUser.nickname}`;
+} else if (currentUser) {
+    profileNicknameEl.textContent = currentUser.nickname;
+}
         document.getElementById('profileSchool').textContent = currentUser.school;
         document.getElementById('profileMajor').textContent = currentUser.major;
         document.getElementById('profileGrade').textContent = currentUser.grade;
