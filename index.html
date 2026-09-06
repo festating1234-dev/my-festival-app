@@ -312,59 +312,235 @@
             font-weight: 700;
             border: 1px solid rgba(251,191,36,0.2);
         }
-        .calendar-wrap { background: rgba(255,255,255,0.04); border-radius: 20px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .cal-header button { background: none; border: none; color: #fff; font-size: 0.9rem; padding: 4px 12px; cursor: pointer; border-radius: 30px; background: rgba(255,255,255,0.05); }
-        .cal-header .month { font-weight: 700; font-size: 0.95rem; color: #fbbf24; }
-        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.55rem; color: #666; margin-bottom: 4px; }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; position: relative; }
-        .cal-cell {
-            aspect-ratio: 1/1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            font-size: 0.65rem;
-            color: #ccc;
-            cursor: pointer;
-            transition: 0.2s;
-            background: rgba(255,255,255,0.02);
-            position: relative;
-            padding: 2px 0;
-            min-height: 50px;
-            z-index: 1;
-        }
-        .cal-cell.has-event { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.1); }
-        .cal-cell .dot { width: 4px; height: 4px; background: #fbbf24; border-radius: 50%; margin-top: 1px; }
-        .cal-cell.other-month { opacity: 0.2; }
-        .cal-cell:active { transform: scale(0.92); }
-        .cal-cell .event-badge {
-            position: absolute;
-            top: -2px; right: -2px;
-            background: #a855f7;
-            color: #fff;
-            font-size: 0.35rem;
-            padding: 1px 4px;
-            border-radius: 30px;
-            font-weight: 700;
-        }
-        .cal-cell .school-labels {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1px;
-            margin-top: 1px;
-        }
-        .cal-cell .school-label {
-            font-size: 0.4rem;
-            background: rgba(255,255,255,0.06);
-            padding: 0 3px;
-            border-radius: 3px;
-            color: #888;
-            white-space: nowrap;
-            line-height: 1.2;
-        }
+       /* ===== 새 축제 달력 ===== */
+.festival-calendar-wrap {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.festival-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.festival-calendar-header .month {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fbbf24;
+}
+.festival-calendar-header button {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: 0.2s;
+}
+.festival-calendar-header button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.festival-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.festival-calendar-grid .day-header {
+    text-align: center;
+    font-size: 0.65rem;
+    color: #666;
+    padding: 6px 0;
+    font-weight: 600;
+}
+.festival-calendar-grid .day-cell {
+    aspect-ratio: 4 / 5;
+    min-height: 90px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.festival-calendar-grid .day-cell.today {
+    border-color: rgba(96, 165, 250, 0.5);
+    background: rgba(96, 165, 250, 0.05);
+}
+.festival-calendar-grid .day-cell .date-num {
+    font-size: 0.65rem;
+    color: #ccc;
+    font-weight: 600;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+}
+.festival-calendar-grid .day-cell .event-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 20px;
+    position: relative;
+}
+.festival-calendar-grid .day-cell .event-bar {
+    font-size: 0.45rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: 0.15s;
+    border-left: 2px solid transparent;
+    color: #ddd;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    height: 18px;
+    line-height: 18px;
+    flex-shrink: 0;
+}
+.festival-calendar-grid .day-cell .event-bar.multi-day-start {
+    border-radius: 4px 0 0 4px;
+    margin-right: -2px;
+}
+.festival-calendar-grid .day-cell .event-bar.multi-day-middle {
+    border-radius: 0;
+    margin-left: -2px;
+    margin-right: -2px;
+}
+.festival-calendar-grid .day-cell .event-bar.multi-day-end {
+    border-radius: 0 4px 4px 0;
+    margin-left: -2px;
+}
+.festival-calendar-grid .day-cell .event-bar:hover {
+    filter: brightness(1.2);
+}
+.festival-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px 0 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.festival-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.55rem;
+    color: #aaa;
+}
+.festival-legend .legend-item .color-dot {
+    width: 12px;
+    height: 4px;
+    border-radius: 4px;
+}
+
+/* ===== 축제 상세 모달 ===== */
+.festival-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+.festival-modal-overlay.active {
+    display: flex;
+}
+.festival-modal-box {
+    background: #1c1c2e;
+    border-radius: 24px;
+    max-width: 400px;
+    width: 92%;
+    padding: 24px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+.festival-modal-box .close-btn {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 1.2rem;
+    color: #666;
+    cursor: pointer;
+    transition: 0.2s;
+    background: none;
+    border: none;
+}
+.festival-modal-box .close-btn:hover {
+    color: #fff;
+}
+.festival-modal-box h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 4px;
+}
+.festival-modal-box .modal-sub {
+    color: #888;
+    font-size: 0.7rem;
+    margin-bottom: 12px;
+}
+.festival-modal-box .modal-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.8rem;
+}
+.festival-modal-box .modal-row .label {
+    color: #888;
+}
+.festival-modal-box .modal-row .value {
+    color: #fff;
+    font-weight: 500;
+}
+.festival-modal-box .modal-row .ticket-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 30px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+.festival-modal-box .modal-row .ticket-badge.need {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.festival-modal-box .modal-row .ticket-badge.free {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+.festival-modal-box .modal-row .ticket-badge.unknown {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+.festival-modal-box .modal-lineup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+.festival-modal-box .modal-lineup .artist-tag {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 4px 12px;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
         .report-area {
             display: flex;
             align-items: center;
@@ -1739,150 +1915,258 @@ async function renderProfiles() {
     // ================================================================
     // 7. 캘린더
     // ================================================================
-    const festivalEvents = [
-        { date: '2026-09-02', school: '아주대', detail: '대동제', lineup: '동아리 공연' },
-        { date: '2026-09-03', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-06', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-07', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-08', school: '경희대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-11', school: '신촌연합', detail: '신촌 대학가 축제', lineup: '다수 대학 참여' },
-        { date: '2026-09-12', school: '한양사이버', detail: 'HYCU BIG FESTIVAL', lineup: '추후 공개' },
-        { date: '2026-09-17', school: '동국대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-09-25', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-26', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-27', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-28', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-09-29', school: '서울대', detail: '대동제 (Art Week)', lineup: '추후 공개' },
-        { date: '2026-10-01', school: '고려대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-02', school: '연세대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-08', school: '성균관대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-09', school: '한양대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-15', school: '중앙대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-16', school: '서강대', detail: '대동제', lineup: '추후 공개' },
-        { date: '2026-10-22', school: '건양대', detail: 'KY FESTA', lineup: '추후 공개' },
-        { date: '2026-10-30', school: '동국대(경주)', detail: 'APEC 메모리얼 페스타', lineup: 'K-POP 콘서트' }
-    ];
+    // ============================================================
+//  새 축제 달력 (기존 함수 완전 대체)
+// ============================================================
 
-    function renderCalendar(year, month) {
-        const grid = document.getElementById('calGrid');
-        document.getElementById('calMonth').textContent = `${year}년 ${month+1}월`;
+const FESTIVAL_EVENTS = [
+    {
+        id: 1,
+        school: '이화여자대학교',
+        title: '대동제',
+        startDate: '2026-09-24',
+        endDate: '2026-09-26',
+        color: '#60a5fa',
+        bgColor: 'rgba(96, 165, 250, 0.25)',
+        ticket: '불필요',
+        lineup: ['잔나비', '실리카겔', '장기하와 얼굴들']
+    },
+    {
+        id: 2,
+        school: '연세대학교',
+        title: '아카라카',
+        startDate: '2026-09-25',
+        endDate: '2026-09-27',
+        color: '#34d399',
+        bgColor: 'rgba(52, 211, 153, 0.25)',
+        ticket: '필요',
+        lineup: ['아이유', '싸이', '악뮤']
+    },
+    {
+        id: 3,
+        school: '홍익대학교',
+        title: '홍대 앞 축제',
+        startDate: '2026-09-26',
+        endDate: '2026-09-26',
+        color: '#f472b6',
+        bgColor: 'rgba(244, 114, 182, 0.25)',
+        ticket: '불필요',
+        lineup: ['로컬크루', '언니네이발관']
+    },
+    {
+        id: 4,
+        school: '서울대학교',
+        title: '대동제',
+        startDate: '2026-10-01',
+        endDate: '2026-10-03',
+        color: '#a78bfa',
+        bgColor: 'rgba(167, 139, 250, 0.25)',
+        ticket: '정보없음',
+        lineup: ['박재범', '다이나믹듀오']
+    },
+    {
+        id: 5,
+        school: '고려대학교',
+        title: '대동제',
+        startDate: '2026-10-05',
+        endDate: '2026-10-07',
+        color: '#fbbf24',
+        bgColor: 'rgba(251, 191, 36, 0.25)',
+        ticket: '불필요',
+        lineup: ['BTS', '블랙핑크']
+    }
+];
 
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        grid.innerHTML = '';
+let festivalCurrentYear = 2026;
+let festivalCurrentMonth = 8; // 9월
 
-        const eventsByDate = {};
-        festivalEvents.forEach(e => {
-            if (!eventsByDate[e.date]) eventsByDate[e.date] = [];
-            eventsByDate[e.date].push(e);
-        });
+function getSchoolColor(school) {
+    const colors = {
+        '이화여자대학교': { bg: 'rgba(96, 165, 250, 0.25)', border: '#60a5fa' },
+        '연세대학교': { bg: 'rgba(52, 211, 153, 0.25)', border: '#34d399' },
+        '홍익대학교': { bg: 'rgba(244, 114, 182, 0.25)', border: '#f472b6' },
+        '서울대학교': { bg: 'rgba(167, 139, 250, 0.25)', border: '#a78bfa' },
+        '고려대학교': { bg: 'rgba(251, 191, 36, 0.25)', border: '#fbbf24' }
+    };
+    return colors[school] || { bg: 'rgba(255,255,255,0.1)', border: '#888' };
+}
 
-        for (let i = 0; i < firstDay; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'cal-cell other-month';
-            grid.appendChild(empty);
+function renderFestivalCalendar() {
+    const grid = document.getElementById('festivalCalendarGrid');
+    if (!grid) return;
+
+    const label = document.getElementById('festivalMonthLabel');
+    if (label) label.textContent = festivalCurrentYear + '년 ' + (festivalCurrentMonth + 1) + '월';
+
+    const firstDay = new Date(festivalCurrentYear, festivalCurrentMonth, 1).getDay();
+    const daysInMonth = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+    // 월별 이벤트 필터링
+    const eventsByDate = {};
+    FESTIVAL_EVENTS.forEach(ev => {
+        const start = new Date(ev.startDate);
+        const end = new Date(ev.endDate);
+        const monthStart = new Date(festivalCurrentYear, festivalCurrentMonth, 1);
+        const monthEnd = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0);
+        const effStart = new Date(Math.max(start, monthStart));
+        const effEnd = new Date(Math.min(end, monthEnd));
+        for (let d = new Date(effStart); d <= effEnd; d.setDate(d.getDate() + 1)) {
+            const ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            if (!eventsByDate[ds]) eventsByDate[ds] = [];
+            eventsByDate[ds].push(ev);
         }
+    });
 
-        for (let d = 1; d <= daysInMonth; d++) {
-            const cell = document.createElement('div');
-            cell.className = 'cal-cell';
-            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const events = eventsByDate[dateStr] || [];
-            if (events.length > 0) {
-                cell.classList.add('has-event');
-                const dot = document.createElement('div');
-                dot.className = 'dot';
-                cell.appendChild(document.createTextNode(d));
-                cell.appendChild(dot);
-
-                const labelsDiv = document.createElement('div');
-                labelsDiv.className = 'school-labels';
-                events.slice(0, 4).forEach(e => {
-                    const label = document.createElement('span');
-                    label.className = 'school-label';
-                    let shortName = e.school;
-                    if (shortName.includes('(')) shortName = shortName.replace(/\(.*\)/, '');
-                    if (shortName.length > 4) {
-                        if (shortName.includes('대')) shortName = shortName.slice(0, shortName.indexOf('대')+1);
-                        else shortName = shortName.slice(0, 4);
-                    }
-                    label.textContent = shortName;
-                    labelsDiv.appendChild(label);
-                });
-                if (events.length > 4) {
-                    const more = document.createElement('span');
-                    more.className = 'school-label';
-                    more.textContent = `+${events.length - 4}`;
-                    labelsDiv.appendChild(more);
+    function assignTracks(dateEvents) {
+        if (!dateEvents || dateEvents.length === 0) return [];
+        const sorted = [...dateEvents].sort((a, b) => a.startDate.localeCompare(b.startDate));
+        const tracks = [];
+        sorted.forEach(ev => {
+            let placed = false;
+            for (let t = 0; t < tracks.length; t++) {
+                const last = tracks[t][tracks[t].length - 1];
+                if (new Date(last.endDate) < new Date(ev.startDate)) {
+                    tracks[t].push(ev);
+                    placed = true;
+                    break;
                 }
-                cell.appendChild(labelsDiv);
-
-                if (events.length > 1) {
-                    const badge = document.createElement('span');
-                    badge.className = 'event-badge';
-                    badge.textContent = events.length;
-                    cell.appendChild(badge);
-                }
-            } else {
-                cell.textContent = d;
             }
-            cell.addEventListener('click', function() {
-                const evs = eventsByDate[dateStr] || [];
-                if (evs.length > 0) showDayEvents(evs);
-                else showToast('📅 이 날은 축제가 없어요.');
-            });
-            grid.appendChild(cell);
+            if (!placed) tracks.push([ev]);
+        });
+        return tracks;
+    }
+
+    grid.innerHTML = '';
+    for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'day-cell';
+        empty.style.opacity = '0.2';
+        grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const dayEvents = eventsByDate[dateStr] || [];
+        const isToday = dateStr === todayStr;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell' + (isToday ? ' today' : '');
+
+        const num = document.createElement('div');
+        num.className = 'date-num';
+        num.textContent = d;
+        cell.appendChild(num);
+
+        const eventArea = document.createElement('div');
+        eventArea.className = 'event-area';
+
+        if (dayEvents.length > 0) {
+            const tracks = assignTracks(dayEvents);
+            const maxTracks = Math.min(tracks.length, 3);
+            for (let t = 0; t < maxTracks; t++) {
+                tracks[t].forEach(ev => {
+                    const bar = document.createElement('div');
+                    bar.className = 'event-bar';
+                    const color = getSchoolColor(ev.school);
+                    bar.style.backgroundColor = color.bg;
+                    bar.style.borderLeftColor = color.border;
+
+                    const isStart = ev.startDate === dateStr;
+                    const isEnd = ev.endDate === dateStr;
+                    if (isStart && !isEnd) bar.classList.add('multi-day-start');
+                    else if (!isStart && !isEnd) bar.classList.add('multi-day-middle');
+                    else if (!isStart && isEnd) bar.classList.add('multi-day-end');
+
+                    bar.textContent = isStart ? ev.school : '';
+                    bar.title = ev.school + ' (' + ev.startDate + ' ~ ' + ev.endDate + ')';
+                    bar.addEventListener('click', (function(e) {
+                        return function(event) {
+                            event.stopPropagation();
+                            openFestivalModal(e);
+                        };
+                    })(ev));
+                    eventArea.appendChild(bar);
+                });
+            }
+            if (tracks.length > 3) {
+                const more = document.createElement('div');
+                more.className = 'event-bar';
+                more.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                more.style.borderLeftColor = 'rgba(255,255,255,0.1)';
+                more.textContent = '+' + (tracks.length - 3) + '개 더보기';
+                more.style.fontSize = '0.4rem';
+                more.style.color = '#888';
+                more.style.cursor = 'default';
+                eventArea.appendChild(more);
+            }
         }
+
+        cell.appendChild(eventArea);
+        grid.appendChild(cell);
     }
 
-    function showDayEvents(events) {
-        const list = document.getElementById('eventList');
-        list.innerHTML = '';
-        events.forEach(e => {
-            const item = document.createElement('div');
-            item.className = 'cal-event-item';
-            item.innerHTML = `
-                <div>
-                    <div class="school-name">${e.school}</div>
-                    <div class="event-detail">${e.detail} ${e.lineup ? '· '+e.lineup : ''}</div>
-                </div>
-                <i class="fas fa-chevron-right" style="color:#666; font-size:0.6rem;"></i>
-            `;
-            item.addEventListener('click', function() {
-                showEventDetail([e]);
-            });
-            list.appendChild(item);
-        });
+    // 범례
+    const legend = document.getElementById('festivalLegend');
+    if (legend) {
+        const schools = [...new Set(FESTIVAL_EVENTS.map(ev => ev.school))];
+        legend.innerHTML = schools.map(s => {
+            const c = getSchoolColor(s);
+            return '<div class="legend-item"><span class="color-dot" style="background:' + c.bg + '; border:1px solid ' + c.border + ';"></span> ' + s + '</div>';
+        }).join('');
     }
+}
 
-    function showEventDetail(events) {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        let html = `<h2>📅 축제 상세</h2><div class="subtitle">확정된 라인업은 추후 업데이트됩니다</div>`;
-        events.forEach(ev => {
-            html += `
-                <div class="detail-item"><strong>🏫 학교</strong> ${ev.school}</div>
-                <div class="detail-item"><strong>📆 날짜</strong> ${ev.date}</div>
-                <div class="detail-item"><strong>📌 내용</strong> ${ev.detail}</div>
-                <div class="detail-item"><strong>🎤 라인업</strong> ${ev.lineup || '추후 공개'}</div>
-                <hr style="border-color:rgba(255,255,255,0.05); margin:8px 0;">
-            `;
-        });
-        html += `<button class="btn-sm primary" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>`;
-        content.innerHTML = html;
-        modal.classList.add('active');
+function openFestivalModal(ev) {
+    const overlay = document.getElementById('festivalModalOverlay');
+    if (!overlay) return;
+    document.getElementById('festivalModalSchool').textContent = ev.school;
+    document.getElementById('festivalModalDate').textContent = ev.startDate + ' ~ ' + ev.endDate;
+    document.getElementById('festivalModalTitle').textContent = ev.title || '대동제';
+
+    const ticketEl = document.getElementById('festivalModalTicket');
+    let cls = 'ticket-badge';
+    if (ev.ticket === '필요') cls += ' need';
+    else if (ev.ticket === '불필요') cls += ' free';
+    else cls += ' unknown';
+    ticketEl.innerHTML = '<span class="' + cls + '">' + (ev.ticket || '정보없음') + '</span>';
+
+    const lineupEl = document.getElementById('festivalModalLineup');
+    if (ev.lineup && ev.lineup.length > 0) {
+        lineupEl.innerHTML = ev.lineup.map(a => '<span class="artist-tag">' + a + '</span>').join('');
+    } else {
+        lineupEl.innerHTML = '<span style="color:#888; font-size:0.7rem;">추후 공개</span>';
     }
+    overlay.classList.add('active');
+}
 
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        if (currentMonth === 0) { currentMonth = 11; currentYear--; } else { currentMonth--; }
-        renderCalendar(currentYear, currentMonth);
-        document.getElementById('eventList').innerHTML = '<div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>';
+function closeFestivalModal() {
+    const overlay = document.getElementById('festivalModalOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// 이벤트 바인딩
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('festivalPrevMonth')?.addEventListener('click', function() {
+        if (festivalCurrentMonth === 0) { festivalCurrentMonth = 11; festivalCurrentYear--; }
+        else { festivalCurrentMonth--; }
+        renderFestivalCalendar();
     });
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        if (currentMonth === 11) { currentMonth = 0; currentYear++; } else { currentMonth++; }
-        renderCalendar(currentYear, currentMonth);
-        document.getElementById('eventList').innerHTML = '<div style="text-align:center; color:#666; font-size:0.6rem; padding:8px 0;">날짜를 선택하면 축제 목록이 나타납니다</div>';
+    document.getElementById('festivalNextMonth')?.addEventListener('click', function() {
+        if (festivalCurrentMonth === 11) { festivalCurrentMonth = 0; festivalCurrentYear++; }
+        else { festivalCurrentMonth++; }
+        renderFestivalCalendar();
     });
+    document.getElementById('festivalModalClose')?.addEventListener('click', closeFestivalModal);
+    document.getElementById('festivalModalOverlay')?.addEventListener('click', function(e) {
+        if (e.target === this) closeFestivalModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeFestivalModal();
+    });
+    renderFestivalCalendar();
+});
 
     // ================================================================
     // 8. 제보 / 문의 / 환불
@@ -3830,7 +4114,7 @@ function openEditProfile() {
         await fetchProfiles();
         renderProfiles();  // ← 이 줄은 유지 (비로그인 시 필요)
     }
-    renderCalendar(currentYear, currentMonth);
+    renderFestivalCalendar();
     // renderProfiles();  // ← ★★★ 이 줄을 삭제! ★★★
     updateLikedBtn();
     updateUI();
