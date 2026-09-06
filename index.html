@@ -1582,27 +1582,30 @@ function renderProfiles() {
 
         // ★ 카드 HTML (수정된 순서)
         card.innerHTML = `
-            <span class="emoji-big">${p.emoji}</span>
-            <span class="card-type-badge">${typeLabel}</span>
-            ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-            ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-            <div class="info-line">
-                ${genderText} · ${schoolDisplay} · ${majorDisplay}
-            </div>
-            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-                ${p.grade} · ${p.age}세 · ${p.height}cm
-            </div>
-            <div class="preview">${p.preview || detailDisplay}</div>
-            ${moreNotice}
-            <div class="meta">
-                <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-                <span>
-                    <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-                       onclick="event.stopPropagation(); toggleLike(${p.id})"
-                       title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-                </span>
-            </div>
-        `;
+    <span class="emoji-big">${p.emoji}</span>
+    <span class="card-type-badge">${typeLabel}</span>
+    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+    <div class="info-line">
+        ${schoolDisplay} / ${majorDisplay}
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${genderText} / ${p.height}cm
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${p.grade} / ${p.age}세
+    </div>
+    <div class="preview">${p.preview || detailDisplay}</div>
+    ${moreNotice}
+    <div class="meta">
+        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+        <span>
+            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+               onclick="event.stopPropagation(); toggleLike(${p.id})"
+               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+        </span>
+    </div>
+`;
         card.addEventListener('click', () => showProfileDetail(p));
         grid.appendChild(card);
     });
