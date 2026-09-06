@@ -1023,7 +1023,7 @@
             <div id="profileSection" class="hidden">
                 <div class="profile-card">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
-                        <div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">👤</div>
+                        <div id="profileAvatar" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">👤</div>
                         <div>
                             <div style="font-weight:700; font-size:1rem;"><span id="profileNickname">홍길동</span> <span id="userBadgeDisplay" class="badge-status unverified">미인증</span></div>
                             <div style="font-size:0.65rem; color:#888;"><span id="profileSchool">홍익대학교</span> · <span id="profileMajor">경영학과</span> · <span id="profileGrade">22학번</span></div>
@@ -1458,129 +1458,158 @@
     const bottomNotice = document.getElementById('bottomNotice');
     const genderFilter = document.getElementById('genderFilter');
 
-    function renderProfiles() {
-        let filtered = [...allProfiles];
+function renderProfiles() {
+    let filtered = [...allProfiles];
 
-        if (currentUserId) {
-            const myCards = filtered.filter(p => p.user_id === currentUserId);
-            const otherCards = filtered.filter(p => p.user_id !== currentUserId);
-            let filteredOthers = [...otherCards];
-            if (showLikedOnly) {
-                filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
-            }
-            if (showLikedByOnly) {
-                if (!isLoggedIn) {
-                    showToast('⚠️ 로그인 후 이용 가능합니다');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    renderProfiles();
-                    return;
-                }
-                if (!hasMyCard) {
-                    showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    renderProfiles();
-                    return;
-                }
-                if (cardVerificationStatus !== 'approved') {
-                    showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
-                    document.getElementById('showLikedByBtn').classList.remove('active');
-                    showLikedByOnly = false;
-                    document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
-                    document.querySelector('[data-tab="mypage"]').classList.add('active');
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    document.getElementById('page-mypage').classList.add('active');
-                    renderProfiles();
-                    return;
-                }
-                filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
-            }
-            filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
-        } else {
-            if (showLikedOnly) {
-                filtered = filtered.filter(p => likedIds.has(p.id));
-            }
-            if (showLikedByOnly) {
-                showLikedByOnly = false;
+    // 로그인 사용자 필터
+    if (currentUserId) {
+        const myCards = filtered.filter(p => p.user_id === currentUserId);
+        const otherCards = filtered.filter(p => p.user_id !== currentUserId);
+        let filteredOthers = [...otherCards];
+        if (showLikedOnly) {
+            filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
+        }
+        if (showLikedByOnly) {
+            if (!isLoggedIn) {
+                showToast('⚠️ 로그인 후 이용 가능합니다');
                 document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                renderProfiles();
+                return;
             }
-            filtered = filtered.filter(p => p.type === currentMode);
-        }
-
-        if (currentMode === 'same' && currentUser) {
-            const myCards = filtered.filter(p => p.user_id === currentUserId);
-            const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
-            filtered = [...myCards, ...others];
-            genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
-            genderFilter.disabled = true;
-        } else {
-            genderFilter.disabled = false;
-            const genderVal = genderFilter.value;
-            if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
-            else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
-        }
-
-        if (currentUser && currentUser.hide_same_school) {
-            filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
-        }
-
-        const sortVal = document.getElementById('sortFilter').value;
-        if (sortVal === 'popular') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-        else filtered.sort((a, b) => a.id - b.id);
-
-        const femaleCount = filtered.filter(p => p.gender === 'female').length;
-        const maleCount = filtered.filter(p => p.gender === 'male').length;
-        genderCount.textContent = `👩 ${femaleCount}명 · 👨 ${maleCount}명`;
-
-        if (isLoggedIn) {
-            bottomNotice.style.display = 'none';
-        } else {
-            bottomNotice.style.display = 'block';
-        }
-
-        grid.innerHTML = '';
-        filtered.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'note-card';
-            const isLiked = likedIds.has(p.id);
-            const isLikedBy = likedByIds.has(p.user_id);
-            const isMyCard = isLoggedIn && p.user_id === currentUserId;
-            const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
-            const canLike = hasMyCard && isLoggedIn && !isMyCard;
-
-            let schoolDisplay = p.school;
-            let majorDisplay = p.major;
-            if (p.user_id !== null) {
-                const owner = allUsers.find(u => u.id === p.user_id);
-                if (owner) {
-                    if (owner.hide_school) schoolDisplay = '학교 숨김';
-                    if (owner.hide_major) majorDisplay = '학과 숨김';
-                }
+            if (!hasMyCard) {
+                showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+                document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                renderProfiles();
+                return;
             }
-
-            card.innerHTML = `
-                <span class="emoji-big">${p.emoji}</span>
-                <span class="card-type-badge">${typeLabel}</span>
-                ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-                ${isLikedBy && !isMyCard ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-                <div class="info-line">
-                    ${schoolDisplay} · ${p.age}세 · ${p.gender === 'female' ? '♀' : '♂'} · ${p.height}cm
-                </div>
-                <div class="preview">${p.preview || p.detail.slice(0, 18) + '...'}</div>
-                <div class="meta">
-                    <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-                    <span>
-                        <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-                           onclick="event.stopPropagation(); toggleLike(${p.id})"
-                           title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-                    </span>
-                </div>
-            `;
-            card.addEventListener('click', () => showProfileDetail(p));
-            grid.appendChild(card);
-        });
+            if (cardVerificationStatus !== 'approved') {
+                showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
+                document.getElementById('showLikedByBtn').classList.remove('active');
+                showLikedByOnly = false;
+                document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-tab="mypage"]').classList.add('active');
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById('page-mypage').classList.add('active');
+                renderProfiles();
+                return;
+            }
+            filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
+        }
+        filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
+    } else {
+        if (showLikedOnly) {
+            filtered = filtered.filter(p => likedIds.has(p.id));
+        }
+        if (showLikedByOnly) {
+            showLikedByOnly = false;
+            document.getElementById('showLikedByBtn').classList.remove('active');
+        }
+        filtered = filtered.filter(p => p.type === currentMode);
     }
+
+    // 동성친구 모드
+    if (currentMode === 'same' && currentUser) {
+        const myCards = filtered.filter(p => p.user_id === currentUserId);
+        const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
+        filtered = [...myCards, ...others];
+        genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
+        genderFilter.disabled = true;
+    } else {
+        genderFilter.disabled = false;
+        const genderVal = genderFilter.value;
+        if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
+        else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
+    }
+
+    // 같은학교 숨기기
+    if (currentUser && currentUser.hide_same_school) {
+        filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
+    }
+
+    // 정렬
+    const sortVal = document.getElementById('sortFilter').value;
+    if (sortVal === 'popular') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+    else filtered.sort((a, b) => a.id - b.id);
+
+    // 성별 카운트
+    const femaleCount = filtered.filter(p => p.gender === 'female').length;
+    const maleCount = filtered.filter(p => p.gender === 'male').length;
+    genderCount.textContent = `👩 ${femaleCount}명 · 👨 ${maleCount}명`;
+
+    if (isLoggedIn) {
+        bottomNotice.style.display = 'none';
+    } else {
+        bottomNotice.style.display = 'block';
+    }
+
+    // ====== 카드 렌더링 (수정된 부분) ======
+    grid.innerHTML = '';
+    filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        const isLiked = likedIds.has(p.id);
+        const isLikedBy = likedByIds.has(p.user_id);
+        const isMyCard = isLoggedIn && p.user_id === currentUserId;
+        const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
+        const canLike = hasMyCard && isLoggedIn && !isMyCard;
+
+        // ★ 개인정보 숨기기 (schoolDisplay, majorDisplay 정의)
+        let schoolDisplay = p.school;
+        let majorDisplay = p.major;
+        if (p.user_id !== null) {
+            const owner = allUsers.find(u => u.id === p.user_id);
+            if (owner) {
+                if (owner.hide_school) schoolDisplay = '학교비공개';
+                if (owner.hide_major) majorDisplay = '계열비공개';
+            }
+        }
+
+        // ★ 자기소개 제한 (비로그인 시)
+        let detailDisplay = p.detail;
+        let moreNotice = '';
+        if (!isLoggedIn) {
+            if (p.detail && p.detail.length > 10) {
+                detailDisplay = p.detail.slice(0, 10) + '...';
+            }
+            moreNotice = '<div style="font-size:0.55rem; color:#fbbf24; margin-top:4px; text-align:center;">🔒 전체 내용은 회원가입 후 확인 가능</div>';
+        }
+
+        // ★ '나를찜' 배지 조건: 로그인 + 학생증 인증 + 내 카드 아님
+        const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
+        const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
+
+        // ★ 카드 HTML (수정된 순서)
+        card.innerHTML = `
+    <span class="emoji-big">${p.emoji}</span>
+    <span class="card-type-badge">${typeLabel}</span>
+    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+    <div class="info-line">
+        ${schoolDisplay} / ${majorDisplay}
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${genderText} / ${p.height}cm
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${p.grade} / ${p.age}세
+    </div>
+    <div class="preview">${p.preview || detailDisplay}</div>
+    ${moreNotice}
+    <div class="meta">
+        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+        <span>
+            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+               onclick="event.stopPropagation(); toggleLike(${p.id})"
+               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+        </span>
+    </div>
+`;
+        card.addEventListener('click', () => showProfileDetail(p));
+        grid.appendChild(card);
+    });
+}
 
     async function toggleLike(cardId) {
         if (!hasMyCard || !isLoggedIn) {
@@ -1903,16 +1932,18 @@ function showProfileDetail(profile) {
     if (profile.user_id !== null) {
         const owner = allUsers.find(u => u.id === profile.user_id);
         if (owner) {
-            if (owner.hide_school) schoolDisplay = '학교 숨김';
-            if (owner.hide_major) majorDisplay = '학과 숨김';
+            if (owner.hide_school) schoolDisplay = '학교비공개';
+            if (owner.hide_major) majorDisplay = '계열비공개';
         }
     }
 
-    // ★★★ 추가: 자기소개 내용 제한 ★★★
+    // 자기소개 제한 (비로그인 시)
     let detailDisplay = profile.detail;
     if (!isLoggedIn && profile.detail && profile.detail.length > 10) {
         detailDisplay = profile.detail.slice(0, 10) + '...<br><span style="color:#fbbf24; font-size:0.7rem;">🔒 전체 내용은 회원가입 후 확인 가능</span>';
     }
+
+    const genderText = profile.gender === 'female' ? '여성' : '남성';
 
     let showMatchBtn = false;
     if (isLoggedIn && !isMyCard && hasMyCard) {
@@ -1925,16 +1956,16 @@ function showProfileDetail(profile) {
         }
     }
 
+    // ★ 수정된 모달 HTML (MBTI 제거, 순서 변경)
     content.innerHTML = `
         <h2>💌 카드 상세</h2>
         <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
         <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
         ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
-        <div class="detail-item"><strong>학교</strong> ${schoolDisplay}</div>
-        <div class="detail-item"><strong>학번</strong> ${profile.grade}</div>
-        <div class="detail-item"><strong>나이/성별/키</strong> ${profile.age}세 / ${profile.gender === 'female' ? '여성' : '남성'} / ${profile.height}cm</div>
-        <div class="detail-item"><strong>MBTI</strong> ${profile.mbti}</div>
-        <div class="detail-item"><strong>자기소개</strong> ${detailDisplay}</div>   <!-- ★★★ 수정된 부분 ★★★ -->
+        <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
+        <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
+        <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
+        <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
         <hr class="divider">
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
             ${showMatchBtn ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
@@ -2657,90 +2688,108 @@ function showProfileDetail(profile) {
     // ================================================================
     // 13. 내정보 - 수정
     // ================================================================
-    function openEditProfile() {
-        if (!currentUser) return;
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>✏️ 프로필 수정</h2>
-            <div class="subtitle">기본 정보와 개인정보 숨기기 설정</div>
-            <form class="signup-form" onsubmit="handleEditProfile(event)">
-                <div class="form-group">
-                    <label>닮은꼴</label>
-                    <select id="editAnimal">
-                        <option value="🐶 강아지상" ${currentUser.animal === '🐶 강아지상' ? 'selected' : ''}>🐶 강아지상</option>
-                        <option value="🐱 고양이상" ${currentUser.animal === '🐱 고양이상' ? 'selected' : ''}>🐱 고양이상</option>
-                        <option value="🐰 토끼상" ${currentUser.animal === '🐰 토끼상' ? 'selected' : ''}>🐰 토끼상</option>
-                        <option value="🦊 여우상" ${currentUser.animal === '🦊 여우상' ? 'selected' : ''}>🦊 여우상</option>
-                        <option value="🐻 곰상" ${currentUser.animal === '🐻 곰상' ? 'selected' : ''}>🐻 곰상</option>
-                        <option value="🦕 공룡상" ${currentUser.animal === '🦕 공룡상' ? 'selected' : ''}>🦕 공룡상</option>
-                    </select>
+function openEditProfile() {
+    if (!currentUser) return;
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>✏️ 프로필 수정</h2>
+        <div class="subtitle">기본 정보와 개인정보 숨기기 설정</div>
+        <form class="signup-form" onsubmit="handleEditProfile(event)">
+            <div class="form-group">
+                <label>닮은꼴</label>
+                <select id="editAnimal">
+                    <option value="🐶 강아지상" ${currentUser.animal === '🐶 강아지상' ? 'selected' : ''}>🐶 강아지상</option>
+                    <option value="🐱 고양이상" ${currentUser.animal === '🐱 고양이상' ? 'selected' : ''}>🐱 고양이상</option>
+                    <option value="🐰 토끼상" ${currentUser.animal === '🐰 토끼상' ? 'selected' : ''}>🐰 토끼상</option>
+                    <option value="🦊 여우상" ${currentUser.animal === '🦊 여우상' ? 'selected' : ''}>🦊 여우상</option>
+                    <option value="🐻 곰상" ${currentUser.animal === '🐻 곰상' ? 'selected' : ''}>🐻 곰상</option>
+                    <option value="🦕 공룡상" ${currentUser.animal === '🦕 공룡상' ? 'selected' : ''}>🦕 공룡상</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>활동지역</label>
+                <select id="editRegion">
+                    <option ${currentUser.region === '서울특별시' ? 'selected' : ''}>서울특별시</option>
+                    <option ${currentUser.region === '부산광역시' ? 'selected' : ''}>부산광역시</option>
+                    <option ${currentUser.region === '대구광역시' ? 'selected' : ''}>대구광역시</option>
+                    <option ${currentUser.region === '인천광역시' ? 'selected' : ''}>인천광역시</option>
+                    <option ${currentUser.region === '광주광역시' ? 'selected' : ''}>광주광역시</option>
+                    <option ${currentUser.region === '대전광역시' ? 'selected' : ''}>대전광역시</option>
+                    <option ${currentUser.region === '울산광역시' ? 'selected' : ''}>울산광역시</option>
+                    <option ${currentUser.region === '세종특별자치시' ? 'selected' : ''}>세종특별자치시</option>
+                    <option ${currentUser.region === '경기도' ? 'selected' : ''}>경기도</option>
+                    <option ${currentUser.region === '강원도' ? 'selected' : ''}>강원도</option>
+                    <option ${currentUser.region === '충청북도' ? 'selected' : ''}>충청북도</option>
+                    <option ${currentUser.region === '충청남도' ? 'selected' : ''}>충청남도</option>
+                    <option ${currentUser.region === '전라북도' ? 'selected' : ''}>전라북도</option>
+                    <option ${currentUser.region === '전라남도' ? 'selected' : ''}>전라남도</option>
+                    <option ${currentUser.region === '경상북도' ? 'selected' : ''}>경상북도</option>
+                    <option ${currentUser.region === '경상남도' ? 'selected' : ''}>경상남도</option>
+                    <option ${currentUser.region === '제주특별자치도' ? 'selected' : ''}>제주특별자치도</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>자기소개 (20자 이상)</label>
+                <textarea id="editIntro" style="min-height:80px;" required minlength="20">${currentUser.intro || ''}</textarea>
+                <div style="font-size:0.55rem; color:#888; text-align:right; margin-top:2px;">
+                    <span id="editIntroCount">${(currentUser.intro || '').length}</span> / 최소 20자
                 </div>
-                <div class="form-group">
-                    <label>활동지역</label>
-                    <select id="editRegion">
-                        <option ${currentUser.region === '서울특별시' ? 'selected' : ''}>서울특별시</option>
-                        <option ${currentUser.region === '부산광역시' ? 'selected' : ''}>부산광역시</option>
-                        <option ${currentUser.region === '대구광역시' ? 'selected' : ''}>대구광역시</option>
-                        <option ${currentUser.region === '인천광역시' ? 'selected' : ''}>인천광역시</option>
-                        <option ${currentUser.region === '광주광역시' ? 'selected' : ''}>광주광역시</option>
-                        <option ${currentUser.region === '대전광역시' ? 'selected' : ''}>대전광역시</option>
-                        <option ${currentUser.region === '울산광역시' ? 'selected' : ''}>울산광역시</option>
-                        <option ${currentUser.region === '세종특별자치시' ? 'selected' : ''}>세종특별자치시</option>
-                        <option ${currentUser.region === '경기도' ? 'selected' : ''}>경기도</option>
-                        <option ${currentUser.region === '강원도' ? 'selected' : ''}>강원도</option>
-                        <option ${currentUser.region === '충청북도' ? 'selected' : ''}>충청북도</option>
-                        <option ${currentUser.region === '충청남도' ? 'selected' : ''}>충청남도</option>
-                        <option ${currentUser.region === '전라북도' ? 'selected' : ''}>전라북도</option>
-                        <option ${currentUser.region === '전라남도' ? 'selected' : ''}>전라남도</option>
-                        <option ${currentUser.region === '경상북도' ? 'selected' : ''}>경상북도</option>
-                        <option ${currentUser.region === '경상남도' ? 'selected' : ''}>경상남도</option>
-                        <option ${currentUser.region === '제주특별자치도' ? 'selected' : ''}>제주특별자치도</option>
-                    </select>
+            </div>
+
+            <!-- ★ 추가된 안내 문구 ★ -->
+            <div style="margin:12px 0; font-size:0.55rem; color:#888; text-align:center;">
+                💡 키, 성별, 전화번호를 수정하고 싶다면 <span style="color:#fbbf24; cursor:pointer; text-decoration:underline;" onclick="closeModal(); openInquiry();">문의하기</span> 기능을 사용해 주세요.
+            </div>
+
+            <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
+
+            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
+            <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
+                    <div class="toggle-knob"></div>
                 </div>
-                <div class="form-group">
-                    <label>자기소개</label>
-                    <textarea id="editIntro" style="min-height:80px;">${currentUser.intro || ''}</textarea>
+                <label>대학교 숨기기</label>
+                <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+            </div>
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
+                    <div class="toggle-knob"></div>
                 </div>
+                <label>학과계열 숨기기</label>
+                <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+            </div>
 
-                <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
-
-                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
-                <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
-
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>대학교 숨기기</label>
-                    <span class="toggle-description">(내 카드에 학교명이 표시되지 않음)</span>
+            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
+            <div class="toggle-container">
+                <div class="toggle-switch ${currentUser.hide_same_school ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
+                    <div class="toggle-knob"></div>
                 </div>
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>학과계열 숨기기</label>
-                    <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
-                </div>
+                <label>같은학교 학생에게 내 카드 숨기기</label>
+                <span class="toggle-description">(on: 같은학교 카드가 서로 보이지 않음)</span>
+            </div>
 
-                <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
-                <div class="toggle-container">
-                    <div class="toggle-switch ${currentUser.hide_same_school ? 'active' : ''}" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
-                        <div class="toggle-knob"></div>
-                    </div>
-                    <label>같은학교 학생에게 내 카드 숨기기</label>
-                    <span class="toggle-description">(on: 같은학교 카드가 서로 보이지 않음)</span>
-                </div>
+            <button type="submit" class="btn-primary" style="width:100%; margin-top:12px;">수정 완료</button>
+        </form>
+    `;
+    modal.classList.add('active');
 
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:12px;">수정 완료</button>
-            </form>
-        `;
-        modal.classList.add('active');
-
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
+    // ★ 자기소개 글자수 실시간 체크 (모달 열린 후 이벤트 등록) ★
+    const editIntro = document.getElementById('editIntro');
+    const editIntroCount = document.getElementById('editIntroCount');
+    if (editIntro && editIntroCount) {
+        editIntro.addEventListener('input', function() {
+            editIntroCount.textContent = this.value.length;
+        });
     }
+
+    // ★ 토글 상태 동기화 ★
+    document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
+    document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
+    document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
+}
 
     async function toggleSwitch(field) {
         if (!currentUser) return;
@@ -3074,107 +3123,129 @@ function showProfileDetail(profile) {
     // 15. 인증 시스템
     // ================================================================
     function updateUI() {
-        if (!currentUser) {
-            document.getElementById('authSection').classList.remove('hidden');
-            document.getElementById('profileSection').classList.add('hidden');
-            return;
-        }
-        document.getElementById('authSection').classList.add('hidden');
-        document.getElementById('profileSection').classList.remove('hidden');
-
-        const badge = document.getElementById('userBadgeDisplay');
-        const hasEmail = isEmailVerified;
-        const hasCard = cardVerificationStatus === 'approved';
-
-        if (hasEmail && hasCard) {
-            badge.textContent = '⭐ 인증완료';
-            badge.className = 'badge-status verified';
-        } else if (hasEmail || hasCard) {
-            badge.textContent = '⭐ 부분인증';
-            badge.className = 'badge-status verified';
-        } else {
-            badge.textContent = '미인증';
-            badge.className = 'badge-status unverified';
-        }
-
-        document.getElementById('profileNickname').textContent = currentUser.nickname;
-        document.getElementById('profileSchool').textContent = currentUser.school;
-        document.getElementById('profileMajor').textContent = currentUser.major;
-        document.getElementById('profileGrade').textContent = currentUser.grade;
-        document.getElementById('profileAge').textContent = currentUser.age + '세';
-        document.getElementById('profileHeight').textContent = currentUser.height + ' cm';
-        document.getElementById('profileGender').textContent = currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성';
-        document.getElementById('profileMajor2').textContent = currentUser.major;
-        document.getElementById('profileAnimal').textContent = currentUser.animal;
-        document.getElementById('profileRegion').textContent = currentUser.region;
-        document.getElementById('profileIntro').textContent = currentUser.intro || '';
-        document.getElementById('profilePhone').textContent = currentUser.phone || '-';
-        document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
-        document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
-
-        document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
-        document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
-        document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
-
-        document.getElementById('toggleHideSchool').classList.toggle('active', currentUser.hide_school);
-        document.getElementById('toggleHideMajor').classList.toggle('active', currentUser.hide_major);
-        document.getElementById('toggleHideSameSchool').classList.toggle('active', currentUser.hide_same_school);
-
-        const emailStatus = document.getElementById('emailStatus');
-        const emailBox = document.getElementById('emailVerifyBox');
-        if (isEmailVerified) {
-            emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
-            emailBox.classList.add('success');
-        } else {
-            emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
-            emailBox.classList.remove('success');
-        }
-
-        const cardStatus = document.getElementById('cardStatus');
-        const cardBox = document.getElementById('cardVerifyBox');
-        const rejectReason = document.getElementById('cardRejectReason');
-        if (cardVerificationStatus === 'pending') {
-            cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
-            cardBox.classList.remove('success', 'rejected');
-            rejectReason.style.display = 'none';
-        } else if (cardVerificationStatus === 'approved') {
-            cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
-            cardBox.classList.add('success');
-            cardBox.classList.remove('rejected');
-            rejectReason.style.display = 'none';
-        } else if (cardVerificationStatus === 'rejected') {
-            cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
-            cardBox.classList.remove('success');
-            cardBox.classList.add('rejected');
-            rejectReason.style.display = 'block';
-        } else {
-            cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
-            cardBox.classList.remove('success', 'rejected');
-            rejectReason.style.display = 'none';
-        }
-
-        const benefit = document.getElementById('benefitDisplay');
-        let html = '';
-        if (isEmailVerified) {
-            html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
-        } else {
-            html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
-        }
-        if (cardVerificationStatus === 'approved') {
-            html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
-        } else {
-            html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
-        }
-        benefit.innerHTML = html;
-
-        if (isAdmin) {
-            const pending = allUsers.filter(u => u.card_status === 'pending').length;
-            document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('adminPanel').classList.remove('hidden');
-        } else {
-            document.getElementById('adminPanel').classList.add('hidden');
-        }
+    if (!currentUser) {
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('profileSection').classList.add('hidden');
+        return;
     }
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('profileSection').classList.remove('hidden');
+
+    // ===== 1. 프로필 아바타를 동물 이모지로 변경 =====
+    const avatarDiv = document.querySelector('.profile-card > div > div:first-child');
+    if (avatarDiv && currentUser && currentUser.animal) {
+        const emoji = currentUser.animal.split(' ')[0] || '👤';
+        avatarDiv.textContent = emoji;
+        avatarDiv.style.fontSize = '1.8rem';
+    } else if (avatarDiv) {
+        avatarDiv.textContent = '👤';
+        avatarDiv.style.fontSize = '1.4rem';
+    }
+
+    // ===== 2. 닉네임은 순수 텍스트로만 표시 =====
+    document.getElementById('profileNickname').textContent = currentUser.nickname;
+
+    // ===== 3. 인증 상태 배지 =====
+    const badge = document.getElementById('userBadgeDisplay');
+    const hasEmail = isEmailVerified;
+    const hasCard = cardVerificationStatus === 'approved';
+
+    if (hasEmail && hasCard) {
+        badge.textContent = '⭐ 인증완료';
+        badge.className = 'badge-status verified';
+    } else if (hasEmail || hasCard) {
+        badge.textContent = '⭐ 부분인증';
+        badge.className = 'badge-status verified';
+    } else {
+        badge.textContent = '미인증';
+        badge.className = 'badge-status unverified';
+    }
+
+    // ===== 4. 사용자 기본 정보 =====
+    document.getElementById('profileSchool').textContent = currentUser.school;
+    document.getElementById('profileMajor').textContent = currentUser.major;
+    document.getElementById('profileGrade').textContent = currentUser.grade;
+    document.getElementById('profileAge').textContent = currentUser.age + '세';
+    document.getElementById('profileHeight').textContent = currentUser.height + ' cm';
+    document.getElementById('profileGender').textContent = currentUser.gender === 'female' ? '♀️ 여성' : '♂️ 남성';
+    document.getElementById('profileMajor2').textContent = currentUser.major;
+    document.getElementById('profileAnimal').textContent = currentUser.animal;
+    document.getElementById('profileRegion').textContent = currentUser.region;
+    document.getElementById('profileIntro').textContent = currentUser.intro || '';
+    document.getElementById('profilePhone').textContent = currentUser.phone || '-';
+    document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
+    document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
+
+    // ===== 5. 개인정보 숨기기 상태 =====
+    document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
+    document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
+    document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
+
+    // ===== 6. 토글 버튼 상태 동기화 =====
+    const toggleSchool = document.getElementById('toggleHideSchool');
+    const toggleMajor = document.getElementById('toggleHideMajor');
+    const toggleSame = document.getElementById('toggleHideSameSchool');
+    if (toggleSchool) toggleSchool.classList.toggle('active', currentUser.hide_school);
+    if (toggleMajor) toggleMajor.classList.toggle('active', currentUser.hide_major);
+    if (toggleSame) toggleSame.classList.toggle('active', currentUser.hide_same_school);
+
+    // ===== 7. 이메일 인증 상태 =====
+    const emailStatus = document.getElementById('emailStatus');
+    const emailBox = document.getElementById('emailVerifyBox');
+    if (isEmailVerified) {
+        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
+        if (emailBox) emailBox.classList.add('success');
+    } else {
+        emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
+        if (emailBox) emailBox.classList.remove('success');
+    }
+
+    // ===== 8. 학생증 인증 상태 =====
+    const cardStatus = document.getElementById('cardStatus');
+    const cardBox = document.getElementById('cardVerifyBox');
+    const rejectReason = document.getElementById('cardRejectReason');
+    if (cardVerificationStatus === 'pending') {
+        cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
+        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    } else if (cardVerificationStatus === 'approved') {
+        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
+        if (cardBox) { cardBox.classList.add('success'); cardBox.classList.remove('rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    } else if (cardVerificationStatus === 'rejected') {
+        cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
+        if (cardBox) { cardBox.classList.remove('success'); cardBox.classList.add('rejected'); }
+        if (rejectReason) rejectReason.style.display = 'block';
+    } else {
+        cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
+        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (rejectReason) rejectReason.style.display = 'none';
+    }
+
+    // ===== 9. 혜택 표시 =====
+    const benefit = document.getElementById('benefitDisplay');
+    let html = '';
+    if (isEmailVerified) {
+        html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
+    } else {
+        html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
+    }
+    if (cardVerificationStatus === 'approved') {
+        html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
+    } else {
+        html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
+    }
+    benefit.innerHTML = html;
+
+    // ===== 10. 관리자 패널 =====
+    if (isAdmin) {
+        const pending = allUsers.filter(u => u.card_status === 'pending').length;
+        document.getElementById('pendingCount').textContent = pending;
+        document.getElementById('adminPanel').classList.remove('hidden');
+    } else {
+        document.getElementById('adminPanel').classList.add('hidden');
+    }
+}
 
     async function verifyEmail() {
         if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
