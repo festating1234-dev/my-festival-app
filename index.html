@@ -2792,45 +2792,65 @@ function openEditProfile() {
 }
 
     async function toggleSwitch(field) {
-        if (!currentUser) return;
-        if (field === 'hide_school') {
-            currentUser.hide_school = !currentUser.hide_school;
-            if (currentUser.hide_school && currentUser.hide_major) {
-                currentUser.hide_major = false;
-                document.getElementById('toggleHideMajor').classList.remove('active');
-            }
-            document.getElementById('toggleHideSchool').classList.toggle('active');
-        } else if (field === 'hide_major') {
-            currentUser.hide_major = !currentUser.hide_major;
-            if (currentUser.hide_major && currentUser.hide_school) {
-                currentUser.hide_school = false;
-                document.getElementById('toggleHideSchool').classList.remove('active');
-            }
-            document.getElementById('toggleHideMajor').classList.toggle('active');
-        } else if (field === 'hide_same_school') {
-            currentUser.hide_same_school = !currentUser.hide_same_school;
-            document.getElementById('toggleHideSameSchool').classList.toggle('active');
+    if (!currentUser) return;
+
+    // 1. 필드 값 토글
+    if (field === 'hide_school') {
+        currentUser.hide_school = !currentUser.hide_school;
+        if (currentUser.hide_school && currentUser.hide_major) {
+            currentUser.hide_major = false;
+            document.getElementById('toggleHideMajor').classList.remove('active');
         }
-        // 서버에 업데이트
-        try {
-            await fetch(`/api/users/${currentUser.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    hide_school: currentUser.hide_school,
-                    hide_major: currentUser.hide_major,
-                    hide_same_school: currentUser.hide_same_school
-                })
-            });
-        } catch (error) {
-            console.error('설정 저장 오류:', error);
+        document.getElementById('toggleHideSchool').classList.toggle('active');
+    } else if (field === 'hide_major') {
+        currentUser.hide_major = !currentUser.hide_major;
+        if (currentUser.hide_major && currentUser.hide_school) {
+            currentUser.hide_school = false;
+            document.getElementById('toggleHideSchool').classList.remove('active');
         }
-        updateUI();
-        renderProfiles();
-        document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
-        document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
-        document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
+        document.getElementById('toggleHideMajor').classList.toggle('active');
+    } else if (field === 'hide_same_school') {
+        currentUser.hide_same_school = !currentUser.hide_same_school;
+        document.getElementById('toggleHideSameSchool').classList.toggle('active');
     }
+
+    // 2. 서버에 저장
+    try {
+        await fetch(`/api/users/${currentUser.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                hide_school: currentUser.hide_school,
+                hide_major: currentUser.hide_major,
+                hide_same_school: currentUser.hide_same_school
+            })
+        });
+
+        // ★★★ 3. allUsers 배열도 최신으로 갱신 ★★★
+        const userIndex = allUsers.findIndex(u => u.id === currentUser.id);
+        if (userIndex !== -1) {
+            allUsers[userIndex].hide_school = currentUser.hide_school;
+            allUsers[userIndex].hide_major = currentUser.hide_major;
+            allUsers[userIndex].hide_same_school = currentUser.hide_same_school;
+        }
+
+    } catch (error) {
+        console.error('설정 저장 오류:', error);
+        showToast('⚠️ 설정 저장 중 오류가 발생했습니다.');
+        return;
+    }
+
+    // 4. UI 업데이트
+    updateUI();
+    renderProfiles();
+
+    // 5. 화면에 표시된 상태 텍스트 업데이트
+    document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
+    document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
+    document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
+
+    showToast('✅ 개인정보 숨기기 설정이 저장되었습니다.');
+}
 
     async function handleEditProfile(e) {
         e.preventDefault();
