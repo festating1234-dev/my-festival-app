@@ -2075,7 +2075,7 @@ function renderFestivalCalendar() {
     const today = new Date();
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-    // 월별 이벤트 필터링
+    // ===== 1. 월별 이벤트 필터링 =====
     const eventsByDate = {};
     FESTIVAL_EVENTS.forEach(ev => {
         const start = new Date(ev.startDate);
@@ -2091,9 +2091,10 @@ function renderFestivalCalendar() {
         }
     });
 
+    // ===== 2. 그리드 생성 =====
     grid.innerHTML = '';
 
-    // 빈 셀
+    // 빈 셀 (이전 달)
     for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement('div');
         empty.className = 'day-cell';
@@ -2101,9 +2102,8 @@ function renderFestivalCalendar() {
         grid.appendChild(empty);
     }
 
-    // 날짜 셀
+    // ===== 3. 날짜 셀 생성 =====
     for (let d = 1; d <= daysInMonth; d++) {
-        // ★★★ dateStr 올바르게 생성 ★★★
         const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         const dayEvents = eventsByDate[dateStr] || [];
         const isToday = dateStr === todayStr;
@@ -2112,11 +2112,13 @@ function renderFestivalCalendar() {
         cell.className = 'day-cell' + (isToday ? ' today' : '');
         cell.dataset.date = dateStr;
 
+        // 날짜 숫자
         const num = document.createElement('div');
         num.className = 'date-num';
         num.textContent = d;
         cell.appendChild(num);
 
+        // 이벤트 영역 (학교명 텍스트 나열)
         const eventArea = document.createElement('div');
         eventArea.className = 'event-area';
 
@@ -2131,6 +2133,7 @@ function renderFestivalCalendar() {
 
         cell.appendChild(eventArea);
 
+        // 날짜 칸 클릭 이벤트
         cell.addEventListener('click', function() {
             if (dayEvents.length > 0) {
                 openFestivalModal(dayEvents, dateStr);
@@ -2142,7 +2145,7 @@ function renderFestivalCalendar() {
         grid.appendChild(cell);
     }
 
-    // 하단 학교 목록
+    // ===== 4. 하단 학교 목록 렌더링 =====
     renderFestivalSchoolList();
 }
 
