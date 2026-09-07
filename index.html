@@ -2205,21 +2205,6 @@ function renderFestivalSchoolList() {
     if (calendarWrap) calendarWrap.insertAdjacentHTML('beforeend', html);
 }
 
-
-// 날짜 칸 클릭 시 dateStr 전달
-cell.addEventListener('click', function() {
-    if (dayEvents.length > 0) {
-        // ★ openFestivalModal(dayEvents, dateStr) 호출
-        openFestivalModal(dayEvents, dateStr);
-    } else {
-        showToast('📅 이 날은 축제가 없어요.');
-    }
-});
-
-        cell.appendChild(eventArea);
-        grid.appendChild(cell);
-
-
 function openFestivalModal(events, clickedDate) {
     const overlay = document.getElementById('festivalModalOverlay');
     if (!overlay) return;
