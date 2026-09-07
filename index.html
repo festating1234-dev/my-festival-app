@@ -2069,12 +2069,13 @@ function renderFestivalCalendar() {
     const label = document.getElementById('festivalMonthLabel');
     if (label) label.textContent = festivalCurrentYear + '년 ' + (festivalCurrentMonth + 1) + '월';
 
+    // ★★★ 필수 변수 정의 ★★★
     const firstDay = new Date(festivalCurrentYear, festivalCurrentMonth, 1).getDay();
     const daysInMonth = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0).getDate();
     const today = new Date();
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-    // ===== 1. 월별 이벤트 필터링 =====
+    // 월별 이벤트 필터링
     const eventsByDate = {};
     FESTIVAL_EVENTS.forEach(ev => {
         const start = new Date(ev.startDate);
@@ -2089,6 +2090,61 @@ function renderFestivalCalendar() {
             eventsByDate[ds].push(ev);
         }
     });
+
+    grid.innerHTML = '';
+
+    // 빈 셀
+    for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'day-cell';
+        empty.style.opacity = '0.2';
+        grid.appendChild(empty);
+    }
+
+    // 날짜 셀
+    for (let d = 1; d <= daysInMonth; d++) {
+        // ★★★ dateStr 올바르게 생성 ★★★
+        const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const dayEvents = eventsByDate[dateStr] || [];
+        const isToday = dateStr === todayStr;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell' + (isToday ? ' today' : '');
+        cell.dataset.date = dateStr;
+
+        const num = document.createElement('div');
+        num.className = 'date-num';
+        num.textContent = d;
+        cell.appendChild(num);
+
+        const eventArea = document.createElement('div');
+        eventArea.className = 'event-area';
+
+        if (dayEvents.length > 0) {
+            const sortedEvents = [...dayEvents].sort((a, b) => a.school.localeCompare(b.school, 'ko'));
+            const schoolNames = sortedEvents.map(ev => ev.school).join(' · ');
+            const textSpan = document.createElement('div');
+            textSpan.className = 'school-list';
+            textSpan.textContent = schoolNames;
+            eventArea.appendChild(textSpan);
+        }
+
+        cell.appendChild(eventArea);
+
+        cell.addEventListener('click', function() {
+            if (dayEvents.length > 0) {
+                openFestivalModal(dayEvents, dateStr);
+            } else {
+                showToast('📅 이 날은 축제가 없어요.');
+            }
+        });
+
+        grid.appendChild(cell);
+    }
+
+    // 하단 학교 목록
+    renderFestivalSchoolList();
+}
 
 function renderFestivalSchoolList() {
     const existingList = document.getElementById('festivalSchoolListContainer');
@@ -2234,7 +2290,7 @@ function renderFestivalSchoolList() {
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+       const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         const dayEvents = eventsByDate[dateStr] || [];
         const isToday = dateStr === todayStr;
 
