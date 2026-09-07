@@ -1108,11 +1108,11 @@
     line-height: 1.4;
     margin-top: 2px;
     word-break: break-all;
-    max-height: 3.5em;
+    max-height: 5em;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
 }
     </style>
@@ -1198,9 +1198,6 @@
 
         <!-- ★★★ 이게 가장 중요! ★★★ -->
         <div class="festival-calendar-grid" id="festivalCalendarGrid"></div>
-
-        <!-- 범례 -->
-        <div class="festival-legend" id="festivalLegend"></div>
 
         <!-- 제보하기 -->
         <div class="report-area" style="margin-top:12px;">
@@ -2077,7 +2074,7 @@ function renderFestivalCalendar() {
     const today = new Date();
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-    // 월별 이벤트 필터링
+    // ===== 1. 월별 이벤트 필터링 =====
     const eventsByDate = {};
     FESTIVAL_EVENTS.forEach(ev => {
         const start = new Date(ev.startDate);
@@ -2092,6 +2089,122 @@ function renderFestivalCalendar() {
             eventsByDate[ds].push(ev);
         }
     });
+
+function renderFestivalSchoolList() {
+    const existingList = document.getElementById('festivalSchoolListContainer');
+    if (existingList) existingList.remove();
+
+    const monthEvents = FESTIVAL_EVENTS.filter(ev => {
+        const start = new Date(ev.startDate);
+        const end = new Date(ev.endDate);
+        const monthStart = new Date(festivalCurrentYear, festivalCurrentMonth, 1);
+        const monthEnd = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0);
+        return !(end < monthStart || start > monthEnd);
+    });
+
+    if (monthEvents.length === 0) return;
+
+    const schoolMap = {};
+    monthEvents.forEach(ev => {
+        if (!schoolMap[ev.school]) {
+            schoolMap[ev.school] = { start: ev.startDate, end: ev.endDate };
+        } else {
+            if (ev.startDate < schoolMap[ev.school].start) schoolMap[ev.school].start = ev.startDate;
+            if (ev.endDate > schoolMap[ev.school].end) schoolMap[ev.school].end = ev.endDate;
+        }
+    });
+
+    const sortedSchools = Object.keys(schoolMap).sort((a, b) => a.localeCompare(b, 'ko'));
+
+    let html = '<div id="festivalSchoolListContainer" style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">';
+    html += '<div style="font-size:0.65rem; color:#888; margin-bottom:8px;">📋 이번 달 축제 일정</div>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:4px 12px;">';
+
+    sortedSchools.forEach(school => {
+        const range = schoolMap[school];
+        const startParts = range.start.split('-');
+        const endParts = range.end.split('-');
+        const startMonth = parseInt(startParts[1]);
+        const startDay = parseInt(startParts[2]);
+        const endMonth = parseInt(endParts[1]);
+        const endDay = parseInt(endParts[2]);
+        let dateDisplay;
+        if (startMonth === endMonth) {
+            dateDisplay = startMonth + '/' + startDay + '~' + endDay;
+        } else {
+            dateDisplay = startMonth + '/' + startDay + '~' + endMonth + '/' + endDay;
+        }
+        html += `<div style="font-size:0.55rem; color:#ccc; white-space:nowrap;">
+            <span style="color:#888;">${school}</span>
+            <span style="color:#666;">: ${dateDisplay}</span>
+        </div>`;
+    });
+
+    html += '</div></div>';
+
+    const calendarWrap = document.querySelector('.festival-calendar-wrap');
+    if (calendarWrap) calendarWrap.insertAdjacentHTML('beforeend', html);
+}
+
+    // ===== 2. 그리드 생성 =====
+    grid.innerHTML = '';
+
+    // 빈 셀 (이전 달)
+    for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'day-cell';
+        empty.style.opacity = '0.2';
+        grid.appendChild(empty);
+    }
+
+    // ===== 3. 날짜 셀 생성 =====
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = festivalCurrentYear + '-' + String(festivalCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const dayEvents = eventsByDate[dateStr] || [];
+        const isToday = dateStr === todayStr;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell' + (isToday ? ' today' : '');
+        cell.dataset.date = dateStr;
+
+        // 날짜 숫자
+        const num = document.createElement('div');
+        num.className = 'date-num';
+        num.textContent = d;
+        cell.appendChild(num);
+
+        // ★★★ 이벤트 영역 (학교명 텍스트 나열) ★★★
+        const eventArea = document.createElement('div');
+        eventArea.className = 'event-area';
+
+        if (dayEvents.length > 0) {
+            // 가나다순 정렬
+            const sortedEvents = [...dayEvents].sort((a, b) => a.school.localeCompare(b.school, 'ko'));
+            // 모든 학교명을 ' · '으로 연결
+            const schoolNames = sortedEvents.map(ev => ev.school).join(' · ');
+            const textSpan = document.createElement('div');
+            textSpan.className = 'school-list';
+            textSpan.textContent = schoolNames;
+            eventArea.appendChild(textSpan);
+        }
+
+        cell.appendChild(eventArea);
+
+        // ★★★ 날짜 칸 클릭 이벤트 ★★★
+        cell.addEventListener('click', function() {
+            if (dayEvents.length > 0) {
+                openFestivalModal(dayEvents, dateStr);  // ← 날짜 전달!
+            } else {
+                showToast('📅 이 날은 축제가 없어요.');
+            }
+        });
+
+        grid.appendChild(cell);
+    }
+
+    // ===== 4. 하단 학교 목록 렌더링 =====
+    renderFestivalSchoolList();
+}
 
     function assignTracks(dateEvents) {
         if (!dateEvents || dateEvents.length === 0) return [];
