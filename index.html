@@ -2281,13 +2281,12 @@ cell.addEventListener('click', function() {
 
     // 범례
     const legend = document.getElementById('festivalLegend');
-    if (legend) {
-        const schools = [...new Set(FESTIVAL_EVENTS.map(ev => ev.school))];
-        legend.innerHTML = schools.map(s => {
-            const c = getSchoolColor(s);
-            return '<div class="legend-item"><span class="color-dot" style="background:' + c.bg + '; border:1px solid ' + c.border + ';"></span> ' + s + '</div>';
-        }).join('');
-    }
+   if (legend) {
+    const schools = [...new Set(FESTIVAL_EVENTS.map(ev => ev.school))];
+    legend.innerHTML = schools.map(s => {
+        const c = getSchoolColor(s);
+        return '<div class="legend-item"><span class="color-dot" style="background:' + c.bg + '; border:1px solid ' + c.border + ';"></span>';
+    }).join('');
 }
 
 function openFestivalModal(events, clickedDate) {
