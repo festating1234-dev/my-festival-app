@@ -2273,26 +2273,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openInquiry() {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>📞 문의하기</h2>
-            <div class="subtitle">궁금한 점이 있으시면 아래로 연락주세요</div>
-            <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:10px 0; text-align:center;">
-                <div style="font-size:1.2rem; margin-bottom:4px;">💬</div>
-                <div style="font-weight:700; font-size:1rem; color:#fff;">카카오톡 ID: <span style="color:#fbbf24;">festivalting</span></div>
-                <div style="font-size:0.7rem; color:#888; margin-top:4px;">운영시간: 평일 10:00 ~ 18:00</div>
-            </div>
-            <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; text-align:center; border:1px solid rgba(251,191,36,0.08);">
-                <div style="font-size:0.75rem; color:#aaa;">📋 <strong>구글 폼</strong>으로도 문의 가능합니다</div>
-                <button class="btn-sm primary" onclick="window.open('https://forms.gle/예시링크','_blank')" style="margin-top:6px;">
-                    <i class="fas fa-external-link-alt"></i> 구글 폼 열기
-                </button>
-            </div>
-            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
-        `;
-        modal.classList.add('active');
-    }
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>📞 문의하기</h2>
+        <div class="subtitle">궁금한 점이 있으시면 아래로 연락주세요</div>
+        <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:10px 0; text-align:center;">
+            <div style="font-size:1.2rem; margin-bottom:4px;">💬</div>
+            <div style="font-weight:700; font-size:1rem; color:#fff;">카카오톡 ID: <span style="color:#fbbf24;">festivalting</span></div>
+            <div style="font-size:0.7rem; color:#888; margin-top:4px;">운영시간: 평일 10:00 ~ 18:00</div>
+        </div>
+        <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; text-align:center; border:1px solid rgba(251,191,36,0.1);">
+            <div style="font-size:0.75rem; color:#aaa;">📋 <strong>구글 폼</strong>으로도 문의 가능합니다</div>
+            <button class="btn-sm primary" onclick="window.open('https://forms.gle/예시링크','_blank')" style="margin-top:6px;">
+                <i class="fas fa-external-link-alt"></i> 구글 폼 열기
+            </button>
+        </div>
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+    `;
+    modal.classList.add('active');
+}
 
     function openRefundModal() {
         const modal = document.getElementById('commonModal');
