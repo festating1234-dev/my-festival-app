@@ -2260,26 +2260,6 @@ function renderFestivalSchoolList() {
 
     // ===== 4. 하단 학교 목록 렌더링 =====
     renderFestivalSchoolList();
-}
-
-    function assignTracks(dateEvents) {
-        if (!dateEvents || dateEvents.length === 0) return [];
-        const sorted = [...dateEvents].sort((a, b) => a.startDate.localeCompare(b.startDate));
-        const tracks = [];
-        sorted.forEach(ev => {
-            let placed = false;
-            for (let t = 0; t < tracks.length; t++) {
-                const last = tracks[t][tracks[t].length - 1];
-                if (new Date(last.endDate) < new Date(ev.startDate)) {
-                    tracks[t].push(ev);
-                    placed = true;
-                    break;
-                }
-            }
-            if (!placed) tracks.push([ev]);
-        });
-        return tracks;
-    }
 
     grid.innerHTML = '';
     for (let i = 0; i < firstDay; i++) {
