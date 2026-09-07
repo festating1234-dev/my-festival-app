@@ -2405,11 +2405,12 @@ function showProfileDetailFromMatching(cardId) {
         showToast('⚠️ 카드를 찾을 수 없습니다.');
         return;
     }
-    // 매칭 중인 상태임을 표시하는 플래그 전달
     showProfileDetail(profile, true);
 }
 
-// ★★★★★ 여기에 추가! ★★★★★
+// ★★★ 전역 노출 (이 줄이 핵심!) ★★★
+window.showProfileDetailFromMatching = showProfileDetailFromMatching;
+
 function showContactInfo(phone, school) {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
@@ -2427,6 +2428,9 @@ function showContactInfo(phone, school) {
     `;
     modal.classList.add('active');
 }
+
+// ★★★ 전역 노출 (이 줄이 핵심!) ★★★
+window.showContactInfo = showContactInfo;
 
     // 자기소개 제한 (비로그인 시)
     let detailDisplay = profile.detail;
