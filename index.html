@@ -2218,17 +2218,7 @@ cell.addEventListener('click', function() {
 
         cell.appendChild(eventArea);
         grid.appendChild(cell);
-    }
 
-    // 범례
-    const legend = document.getElementById('festivalLegend');
-   if (legend) {
-    const schools = [...new Set(FESTIVAL_EVENTS.map(ev => ev.school))];
-    legend.innerHTML = schools.map(s => {
-        const c = getSchoolColor(s);
-        return '<div class="legend-item"><span class="color-dot" style="background:' + c.bg + '; border:1px solid ' + c.border + ';"></span>';
-    }).join('');
-}
 
 function openFestivalModal(events, clickedDate) {
     const overlay = document.getElementById('festivalModalOverlay');
