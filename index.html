@@ -1311,9 +1311,9 @@
     <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증</div>
     <div class="desc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
     <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
-        <button class="btn-sm primary" onclick="openEmailVerificationModal()">
-            <i class="fas fa-envelope"></i> 이메일 인증하러 가기
-        </button>
+        <button class="btn-sm primary" id="emailVerifyBtn" onclick="openEmailVerificationModal()">
+    <i class="fas fa-envelope"></i> 이메일 인증하러 가기
+</button>
     </div>
     <div id="emailStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
         <span style="color:#888;">⏳ 미인증</span>
@@ -3721,9 +3721,9 @@ function openEditProfile() {
     }
 
     // ================================================================
-    // 15. 인증 시스템
-    // ================================================================
-    function updateUI() {
+// 15. 인증 시스템
+// ================================================================
+function updateUI() {
     if (!currentUser) {
         document.getElementById('authSection').classList.remove('hidden');
         document.getElementById('profileSection').classList.add('hidden');
@@ -3790,15 +3790,21 @@ function openEditProfile() {
     if (toggleMajor) toggleMajor.classList.toggle('active', currentUser.hide_major);
     if (toggleSame) toggleSame.classList.toggle('active', currentUser.hide_same_school);
 
-    // ===== 7. 이메일 인증 상태 =====
+    // ===== 7. 이메일 인증 상태 (버튼 제어 포함) =====
     const emailStatus = document.getElementById('emailStatus');
     const emailBox = document.getElementById('emailVerifyBox');
+    const emailVerifyBtn = document.getElementById('emailVerifyBtn');
+
     if (isEmailVerified) {
         emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
         if (emailBox) emailBox.classList.add('success');
+        // ★★★ 인증 완료 시 버튼 숨기기 ★★★
+        if (emailVerifyBtn) emailVerifyBtn.style.display = 'none';
     } else {
         emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
         if (emailBox) emailBox.classList.remove('success');
+        // ★★★ 미인증 시 버튼 보이기 ★★★
+        if (emailVerifyBtn) emailVerifyBtn.style.display = 'inline-flex';
     }
 
     // ===== 8. 학생증 인증 상태 =====
