@@ -2376,9 +2376,10 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.add('active');
     }
 
-    // ================================================================
-    // 9. 프로필 상세 + 매칭 신청
-    // ================================================================
+// ================================================================
+//  9. 프로필 상세 + 매칭 신청
+// ================================================================
+
 function showProfileDetail(profile, isFromMatching = false) {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
@@ -2397,40 +2398,6 @@ function showProfileDetail(profile, isFromMatching = false) {
             if (owner.hide_major) majorDisplay = '계열비공개';
         }
     }
-
-    // 매칭 현황에서 카드 확인용 (매칭신청 버튼 없음)
-function showProfileDetailFromMatching(cardId) {
-    const profile = allProfiles.find(p => p.id === cardId);
-    if (!profile) {
-        showToast('⚠️ 카드를 찾을 수 없습니다.');
-        return;
-    }
-    showProfileDetail(profile, true);
-}
-
-// ★★★ 전역 노출 (이 줄이 핵심!) ★★★
-window.showProfileDetailFromMatching = showProfileDetailFromMatching;
-
-function showContactInfo(phone, school) {
-    const modal = document.getElementById('commonModal');
-    const content = document.getElementById('modalContent');
-    content.innerHTML = `
-        <h2>📞 연락처 확인</h2>
-        <div class="subtitle">매칭 성사된 상대방의 연락처입니다</div>
-        <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:12px 0; text-align:center;">
-            <div style="font-size:0.8rem; color:#888;">${school}</div>
-            <div style="font-size:1.4rem; font-weight:700; color:#fbbf24; margin-top:4px;">${phone}</div>
-        </div>
-        <div style="text-align:center; color:#4ade80; font-size:0.8rem; margin:8px 0;">
-            🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!
-        </div>
-        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
-    `;
-    modal.classList.add('active');
-}
-
-// ★★★ 전역 노출 (이 줄이 핵심!) ★★★
-window.showContactInfo = showContactInfo;
 
     // 자기소개 제한 (비로그인 시)
     let detailDisplay = profile.detail;
@@ -2451,7 +2418,6 @@ window.showContactInfo = showContactInfo;
         }
     }
 
-    // ★ 수정된 모달 HTML (MBTI 제거, 순서 변경)
     content.innerHTML = `
         <h2>💌 카드 상세</h2>
         <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
@@ -2479,6 +2445,38 @@ window.showContactInfo = showContactInfo;
     `;
     modal.classList.add('active');
 }
+
+// ===== 매칭 현황에서 카드 확인용 (매칭신청 버튼 없음) =====
+function showProfileDetailFromMatching(cardId) {
+    const profile = allProfiles.find(p => p.id === cardId);
+    if (!profile) {
+        showToast('⚠️ 카드를 찾을 수 없습니다.');
+        return;
+    }
+    showProfileDetail(profile, true);
+}
+window.showProfileDetailFromMatching = showProfileDetailFromMatching;
+
+// ===== 연락처 확인 =====
+function showContactInfo(phone, school) {
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>📞 연락처 확인</h2>
+        <div class="subtitle">매칭 성사된 상대방의 연락처입니다</div>
+        <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:12px 0; text-align:center;">
+            <div style="font-size:0.8rem; color:#888;">${school}</div>
+            <div style="font-size:1.4rem; font-weight:700; color:#fbbf24; margin-top:4px;">${phone}</div>
+        </div>
+        <div style="text-align:center; color:#4ade80; font-size:0.8rem; margin:8px 0;">
+            🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!
+        </div>
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+    `;
+    modal.classList.add('active');
+}
+window.showContactInfo = showContactInfo;
+
 
     // ================================================================
     // 10. 매칭 신청 (일반/슈퍼 선택)
