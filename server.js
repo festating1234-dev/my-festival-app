@@ -262,6 +262,54 @@ app.post('/api/send-verification', async (req, res) => {
     });
 });
 
+// 3. 인증번호 확인
+app.post('/api/verify-email-code', async (req, res) => {
+    const { userId, email, code } = req.body;
+
+    // 필수 값 확인
+    if (!userId || !email || !code) {
+        return res.status(400).json({ error: 'userId, email, code가 모두 필요합니다.' });
+    }
+
+    try {
+        // 인증번호 조회 (사용자 ID, 이메일, 코드, 미인증 상태)
+        const { data, error } = await supabase
+            .from('email_verifications')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('email', email)
+            .eq('code', code)
+            .eq('verified', false)
+            .single();
+
+        if (error || !data) {
+            return res.status(400).json({ error: '올바르지 않은 인증번호입니다.' });
+        }
+
+        // 만료 시간 확인
+        if (new Date(data.expires_at) < new Date()) {
+            return res.status(400).json({ error: '인증번호가 만료되었습니다. 다시 요청해주세요.' });
+        }
+
+        // 인증 완료 처리
+        await supabase
+            .from('email_verifications')
+            .update({ verified: true })
+            .eq('id', data.id);
+
+        // users 테이블에 이메일 인증 상태 업데이트
+        await supabase
+            .from('users')
+            .update({ email_verified: true, email: email })
+            .eq('id', userId);
+
+        res.json({ success: true, message: '이메일 인증이 완료되었습니다!' });
+    } catch (err) {
+        console.error('Verify code error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 1-4. 특정 사용자 정보 조회 (★ 추가됨)
 app.get('/api/users/:id', async (req, res) => {
     const { id } = req.params;
