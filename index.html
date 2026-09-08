@@ -1344,19 +1344,22 @@
                 </div>
 
                 <div id="adminPanel" class="admin-panel hidden">
-                    <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
-                    <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
-                    <div class="admin-buttons">
-                        <button class="btn-sm success" onclick="adminApproveCard()"><i class="fas fa-check"></i> 인증승인</button>
-                        <button class="btn-sm danger" onclick="adminRejectCard()"><i class="fas fa-times"></i> 인증반려</button>
-                        <button class="btn-sm" onclick="adminAddDummy()"><i class="fas fa-user-plus"></i> 더미추가</button>
-                        <button class="btn-sm" onclick="adminViewUsers()"><i class="fas fa-users"></i> 회원조회</button>
-                        <button class="btn-sm danger" onclick="adminBanUser()"><i class="fas fa-ban"></i> 이용정지</button>
-                    </div>
-                    <div style="margin-top:6px; font-size:0.55rem; color:#666;">
-                        📌 학생증 인증 대기: <span id="pendingCount">0</span>건
-                    </div>
-                </div>
+    <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
+    <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
+    <div class="admin-buttons">
+        <button class="btn-sm" onclick="adminAddDummy()"><i class="fas fa-user-plus"></i> 더미추가</button>
+        <button class="btn-sm" onclick="adminViewUsers()"><i class="fas fa-users"></i> 회원조회</button>
+        <button class="btn-sm danger" onclick="adminBanUser()"><i class="fas fa-ban"></i> 이용정지</button>
+    </div>
+    <div style="margin-top:8px; font-size:0.55rem; color:#666;">
+        📌 학생증 인증 대기: <span id="pendingCount">0</span>건
+    </div>
+
+    <!-- ★★★ 대기 목록 표시 영역 ★★★ -->
+    <div id="pendingList" style="margin-top:12px;">
+        <!-- JavaScript에서 렌더링 -->
+    </div>
+</div>
 
                 <div style="text-align:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04);">
                     <button class="btn-sm danger" onclick="confirmWithdraw()"><i class="fas fa-trash-alt"></i> 탈퇴하기</button>
@@ -3845,13 +3848,15 @@ function updateUI() {
     benefit.innerHTML = html;
 
     // ===== 10. 관리자 패널 =====
-    if (isAdmin) {
-        const pending = allUsers.filter(u => u.card_status === 'pending').length;
-        document.getElementById('pendingCount').textContent = pending;
-        document.getElementById('adminPanel').classList.remove('hidden');
-    } else {
-        document.getElementById('adminPanel').classList.add('hidden');
-    }
+if (isAdmin) {
+    const pending = allUsers.filter(u => u.card_status === 'pending').length;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('adminPanel').classList.remove('hidden');
+    // ★★★ 대기 목록 렌더링 ★★★
+    renderPendingList();
+} else {
+    document.getElementById('adminPanel').classList.add('hidden');
+}
 }
 
     // ===== 이메일 인증 관련 함수 (새로운 버전) =====
@@ -4038,59 +4043,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
     // 16. 관리자 기능
     // ================================================================
-    async function adminApproveCard() {
-        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-        const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
-        if (pendingUsers.length === 0) {
-            showToast('⚠️ 승인 대기 중인 인증이 없습니다.');
-            return;
-        }
-        const target = pendingUsers[0];
-        target.card_status = 'approved';
-        if (currentUserId === target.id) {
-            cardVerificationStatus = 'approved';
-        }
-        try {
-            await fetch(`/api/users/${target.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ card_status: 'approved' })
-            });
-            await fetchUsers();
-            updateUI();
-            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
-            showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-        }
-    }
+    // 관리자 승인 (개별 사용자 ID를 인자로 받음)
+async function adminApproveCard(userId) {
+    if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
 
-    async function adminRejectCard() {
-        if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-        const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
-        if (pendingUsers.length === 0) {
-            showToast('⚠️ 반려할 인증이 없습니다.');
-            return;
-        }
-        const target = pendingUsers[0];
-        target.card_status = 'rejected';
-        if (currentUserId === target.id) {
-            cardVerificationStatus = 'rejected';
-        }
-        try {
-            await fetch(`/api/users/${target.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ card_status: 'rejected' })
-            });
+    try {
+        const res = await fetch(`/api/admin/card/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'approved' })
+        });
+        if (res.ok) {
             await fetchUsers();
+            await fetchProfiles();
             updateUI();
-            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
-            showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
+            showToast(`✅ 학생증 인증이 승인되었습니다.`);
+        } else {
+            const data = await res.json();
+            showToast('❌ ' + data.error);
         }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
     }
+}
+
+// 관리자 반려 (개별 사용자 ID를 인자로 받음)
+async function adminRejectCard(userId) {
+    if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
+
+    try {
+        const res = await fetch(`/api/admin/card/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'rejected' })
+        });
+        if (res.ok) {
+            await fetchUsers();
+            await fetchProfiles();
+            updateUI();
+            showToast(`❌ 학생증 인증이 반려되었습니다.`);
+        } else {
+            const data = await res.json();
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
 
     async function fetchUsers() {
     try {
@@ -4155,6 +4154,53 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('🚫 이용정지 처리 완료');
         }
     }
+
+    // ===== 관리자: 학생증 인증 대기 목록 렌더링 =====
+function renderPendingList() {
+    const container = document.getElementById('pendingList');
+    if (!container) return;
+
+    const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
+
+    if (pendingUsers.length === 0) {
+        container.innerHTML = '<div style="color:#666; font-size:0.7rem; padding:8px 0; text-align:center;">⏳ 대기 중인 인증이 없습니다.</div>';
+        return;
+    }
+
+    let html = '';
+    pendingUsers.forEach(user => {
+        const profile = allProfiles.find(p => p.user_id === user.id);
+        const major = profile ? profile.major : '정보 없음';
+        const grade = profile ? profile.grade : '정보 없음';
+        const school = user.school || '정보 없음';
+        const imageUrl = user.card_image_url || '';
+
+        html += `
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                    <div style="flex:1; min-width:150px;">
+                        <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">${user.nickname}</div>
+                        <div style="font-size:0.65rem; color:#aaa; margin-top:2px;">
+                            🏫 ${school} · 📚 ${major} · 🎓 ${grade}
+                        </div>
+                        <div style="font-size:0.55rem; color:#666; margin-top:2px;">
+                            📅 신청일: ${user.created_at ? user.created_at.slice(0, 10) : '알 수 없음'}
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                        ${imageUrl ? `<img src="${imageUrl}" alt="학생증" style="width:80px; height:60px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">` : '<div style="color:#666; font-size:0.5rem;">이미지 없음</div>'}
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn-sm success" onclick="adminApproveCard(${user.id})" style="font-size:0.5rem; padding:2px 10px;">✅ 승인</button>
+                            <button class="btn-sm danger" onclick="adminRejectCard(${user.id})" style="font-size:0.5rem; padding:2px 10px;">❌ 반려</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
 
     // ================================================================
     // 17. 이상형 찾기
