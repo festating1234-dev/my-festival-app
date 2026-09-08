@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +14,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// ---------------------- Multer 설정 (파일 업로드) ----------------------
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 제한
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('이미지 파일만 업로드 가능합니다.'));
+        }
+    }
+});
 
 // ---------------------- Supabase 클라이언트 ----------------------
 const supabase = createClient(
@@ -380,6 +395,83 @@ app.get('/api/users', async (req, res) => {
     } catch (err) {
         console.error('Users fetch error:', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  학생증 인증 관련 API
+// ============================================================
+
+// 1. 학생증 이미지 업로드
+app.post('/api/upload-card', upload.single('cardImage'), async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+    if (!req.file) {
+        return res.status(400).json({ error: '이미지 파일이 필요합니다.' });
+    }
+
+    try {
+        const ext = path.extname(req.file.originalname);
+        const fileName = `${uuidv4()}${ext}`;
+        const filePath = `${userId}/${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from('student-cards')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                cacheControl: '3600'
+            });
+
+        if (error) throw error;
+
+        const publicUrl = supabase.storage
+            .from('student-cards')
+            .getPublicUrl(filePath).data.publicUrl;
+
+        // users 테이블에 card_status 및 card_image_url 업데이트
+        await supabase
+            .from('users')
+            .update({ 
+                card_status: 'pending',
+                card_image_url: publicUrl
+            })
+            .eq('id', userId);
+
+        res.json({ 
+            success: true, 
+            message: '학생증이 제출되었습니다. 관리자 확인 후 승인됩니다.',
+            imageUrl: publicUrl
+        });
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ error: '업로드 중 오류가 발생했습니다.' });
+    }
+});
+
+// 2. 관리자 승인/반려
+app.put('/api/admin/card/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: '유효하지 않은 상태입니다.' });
+    }
+
+    try {
+        const { error } = await supabase
+            .from('users')
+            .update({ card_status: status })
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: `학생증이 ${status === 'approved' ? '승인' : '반려'}되었습니다.` });
+    } catch (error) {
+        console.error('Admin approve error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
