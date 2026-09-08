@@ -159,6 +159,18 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
+// 1-7. 모든 사용자 목록 조회
+app.get('/api/users', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('users').select('*');
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error('Users fetch error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ============================================================
 //  2.  프로필(카드) 관련 API
 // ============================================================
