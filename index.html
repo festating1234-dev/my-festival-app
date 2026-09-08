@@ -1627,7 +1627,7 @@
     const myCards = allProfiles.filter(p => p.user_id === currentUserId);
     const myCardIds = myCards.map(c => c.id);
 
-    // 보낸 매칭 (내가 보낸, 대기 중)
+    // 보낸 매칭 (내가 보낸, 대기 중) - 변경 없음
     matchingData.sent = allMatches
         .filter(m => m.from_user_id === currentUserId && m.status === 'pending')
         .map(m => {
@@ -1636,39 +1636,40 @@
             const owner = allUsers.find(u => u.id === card.user_id);
             return {
                 id: m.id,
-                cardId: card.id,
+                cardId: card.id,  // 상대방 카드 ID (정상)
                 type: m.type || 'normal',
                 school: owner ? owner.school : '알 수 없음',
                 major: owner ? owner.major : '알 수 없음',
                 age: card.age || '?',
                 gender: card.gender || '?',
-                matchType: card.type || 'solo', // 'solo', 'group', 'same'
+                matchType: card.type || 'solo',
                 createdAt: m.created_at
             };
         }).filter(Boolean);
 
-    // 받은 매칭 (상대가 보낸, 대기 중)
+    // 받은 매칭 (상대가 보낸, 대기 중) - ★ 수정 필요 ★
     matchingData.received = allMatches
         .filter(m => myCardIds.includes(m.to_card_id) && m.status === 'pending')
         .map(m => {
             const fromUser = allUsers.find(u => u.id === m.from_user_id);
-            const card = allProfiles.find(p => p.id === m.to_card_id);
-            if (!fromUser || !card) return null;
+            // ★ 상대방의 카드 중에서 매칭 타입에 맞는 카드 찾기 ★
+            const targetCard = allProfiles.find(p => p.user_id === m.from_user_id && p.type === m.matchType);
+            if (!fromUser || !targetCard) return null;
             return {
                 id: m.id,
-                cardId: card.id,
+                cardId: targetCard.id,  // ★ 상대방 카드 ID로 변경!
                 type: m.type || 'normal',
                 school: fromUser.school || '알 수 없음',
                 major: fromUser.major || '알 수 없음',
                 age: fromUser.age || '?',
                 gender: fromUser.gender || '?',
-                matchType: card.type || 'solo',
+                matchType: targetCard.type || 'solo',
                 fromUserId: m.from_user_id,
                 createdAt: m.created_at
             };
         }).filter(Boolean);
 
-    // 성사된 매칭
+    // 성사된 매칭 - ★ 수정 필요 ★
     matchingData.matched = allMatches
         .filter(m => (m.from_user_id === currentUserId || myCardIds.includes(m.to_card_id)) && m.status === 'accepted')
         .map(m => {
@@ -1676,17 +1677,18 @@
                 allProfiles.find(p => p.id === m.to_card_id)?.user_id :
                 m.from_user_id;
             const otherUser = allUsers.find(u => u.id === otherId);
-            const card = allProfiles.find(p => p.id === m.to_card_id);
-            if (!otherUser || !card) return null;
+            // ★ 상대방의 카드 중에서 매칭 타입에 맞는 카드 찾기 ★
+            const otherCard = allProfiles.find(p => p.user_id === otherId && p.type === m.matchType);
+            if (!otherUser || !otherCard) return null;
             return {
                 id: m.id,
-                cardId: card.id,
+                cardId: otherCard.id,  // ★ 상대방 카드 ID로 변경!
                 type: m.type || 'normal',
                 school: otherUser.school || '알 수 없음',
                 major: otherUser.major || '알 수 없음',
                 age: otherUser.age || '?',
                 gender: otherUser.gender || '?',
-                matchType: card.type || 'solo',
+                matchType: otherCard.type || 'solo',
                 otherUserId: otherId,
                 phone: otherUser.phone || '번호 없음',
                 createdAt: m.created_at
