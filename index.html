@@ -2701,30 +2701,30 @@ window.showContactInfo = showContactInfo;
     // 12. 내정보 - 로그인/회원가입 (Supabase API 연동)
     // ================================================================
     function openLoginModal() {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>🔐 로그인</h2>
-            <div class="subtitle">가입한 아이디로 로그인해주세요</div>
-            <form class="signup-form" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> 아이디 (닉네임)</label>
-                    <input type="text" id="loginNickname" placeholder="닉네임 입력" required>
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> 비밀번호</label>
-                    <input type="password" id="loginPassword" placeholder="비밀번호 입력" required>
-                </div>
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:8px;">
-                    <i class="fas fa-sign-in-alt"></i> 로그인
-                </button>
-                <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
-                    계정이 없으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openSignupModal();">회원가입</span>
-                </div>
-            </form>
-        `;
-        modal.classList.add('active');
-    }
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>🔐 로그인</h2>
+        <div class="subtitle">가입한 아이디로 로그인해주세요</div>
+        <form class="signup-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> 아이디</label>
+                <input type="text" id="loginNickname" placeholder="아이디 입력" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> 비밀번호</label>
+                <input type="password" id="loginPassword" placeholder="비밀번호 입력" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%; margin-top:8px;">
+                <i class="fas fa-sign-in-alt"></i> 로그인
+            </button>
+            <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
+                계정이 없으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openSignupModal();">회원가입</span>
+            </div>
+        </form>
+    `;
+    modal.classList.add('active');
+}
 
     async function handleLogin(e) {
         e.preventDefault();
@@ -2754,158 +2754,158 @@ window.showContactInfo = showContactInfo;
     }
 
     function openSignupModal() {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        const uniOptions = KOREAN_UNIVERSITIES.map(u => `<option value="${u}">`).join('');
-        content.innerHTML = `
-            <h2>📝 회원가입</h2>
-            <div class="subtitle">학교 정보를 입력하고 가입해주세요</div>
-            <form class="signup-form" onsubmit="handleSignup(event)">
-                <div class="referral-area">
-                    <div class="referral-title"><i class="fas fa-user-tag"></i> 아이디 (닉네임)</div>
-                    <div class="referral-desc">한 번 만든 닉네임은 변경할 수 없어요</div>
-                    <div class="nickname-check">
-                        <input type="text" id="signupNickname" placeholder="닉네임 입력" required>
-                        <button type="button" class="btn-sm" onclick="checkNickname()">중복확인</button>
-                    </div>
-                    <div id="nicknameStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    const uniOptions = KOREAN_UNIVERSITIES.map(u => `<option value="${u}">`).join('');
+    content.innerHTML = `
+        <h2>📝 회원가입</h2>
+        <div class="subtitle">학교 정보를 입력하고 가입해주세요</div>
+        <form class="signup-form" onsubmit="handleSignup(event)">
+            <div class="referral-area">
+                <div class="referral-title"><i class="fas fa-user-tag"></i> 아이디</div>
+                <div class="referral-desc">한 번 만든 아이디는 변경할 수 없어요</div>
+                <div class="nickname-check">
+                    <input type="text" id="signupNickname" placeholder="아이디 입력" required>
+                    <button type="button" class="btn-sm" onclick="checkNickname()">중복확인</button>
+                </div>
+                <div id="nicknameStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
 
-                    <div style="margin-top:8px;">
-                        <div style="font-size:0.7rem; color:#fbbf24;">🌟 추천인 (선택)</div>
-                        <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">친구의 닉네임을 입력하면 서로 혜택을 받을 수 있어요!</div>
-                        <div class="referral-input-wrap">
-                            <input type="text" id="signupReferral" placeholder="추천인 닉네임 입력">
-                        </div>
+                <div style="margin-top:8px;">
+                    <div style="font-size:0.7rem; color:#fbbf24;">🌟 추천인 (선택)</div>
+                    <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">친구의 아이디를 입력하면 서로 혜택을 받을 수 있어요!</div>
+                    <div class="referral-input-wrap">
+                        <input type="text" id="signupReferral" placeholder="추천인 아이디 입력">
                     </div>
                 </div>
+            </div>
 
-                <div class="row-half">
-                    <div class="form-group">
-                        <label><i class="fas fa-lock"></i> 비밀번호 (6자 이상, 영문+숫자)</label>
-                        <input type="password" id="signupPassword" placeholder="비밀번호 입력" required minlength="6">
-                        <div id="passwordHint" class="password-hint">6자 이상, 영문과 숫자를 포함해야 합니다</div>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-check"></i> 비밀번호 재입력</label>
-                        <input type="password" id="signupPasswordConfirm" placeholder="비밀번호 다시 입력" required>
-                        <div id="passwordMatchHint" class="password-match-hint"></div>
-                    </div>
-                </div>
-
+            <div class="row-half">
                 <div class="form-group">
-                    <label><i class="fas fa-university"></i> 대학교 <span style="font-size:0.6rem; color:#888;">(검색어 입력 시 자동완성)</span></label>
-                    <input type="text" id="signupSchool" list="universityList" placeholder="예: 서울대학교" required autocomplete="off">
-                    <datalist id="universityList">${uniOptions}</datalist>
-                    <div id="schoolHint" class="school-hint">OO학교 서식으로 작성해 주세요</div>
-                </div>
-                <div class="row-half">
-                    <div class="form-group">
-                        <label>학과계열</label>
-                        <select id="signupMajor" required>
-                            <option value="">선택</option>
-                            <option>이공계열</option><option>어문계열</option>
-                            <option>상경계열</option><option>예체능</option>
-                            <option>메디컬</option><option>서비스</option><option>기타계열</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>성별</label>
-                        <select id="signupGender" required>
-                            <option value="">선택</option>
-                            <option>남성</option><option>여성</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row-half">
-                    <div class="form-group">
-                        <label>나이</label>
-                        <div class="age-grade-input-wrap">
-                            <input type="text" id="signupAge" placeholder="예: 22살" required maxlength="4" oninput="formatAgeField(this)">
-                        </div>
-                        <div id="ageHint" class="field-hint">18~33세까지 입력 가능합니다</div>
-                    </div>
-                    <div class="form-group">
-                        <label>학번</label>
-                        <div class="age-grade-input-wrap">
-                            <input type="text" id="signupGrade" placeholder="예: 22학번" required maxlength="5" oninput="formatGradeField(this)">
-                        </div>
-                        <div id="gradeHint" class="field-hint">10~30학번까지 입력 가능합니다</div>
-                    </div>
+                    <label><i class="fas fa-lock"></i> 비밀번호 (6자 이상, 영문+숫자)</label>
+                    <input type="password" id="signupPassword" placeholder="비밀번호 입력" required minlength="6">
+                    <div id="passwordHint" class="password-hint">6자 이상, 영문과 숫자를 포함해야 합니다</div>
                 </div>
                 <div class="form-group">
-                    <label>키 (cm)</label>
-                    <input type="number" id="signupHeight" placeholder="예: 175" required min="100" max="220" oninput="validateHeight(this)">
-                    <div id="heightHint" class="field-hint">100~220cm까지 입력 가능합니다</div>
+                    <label><i class="fas fa-check"></i> 비밀번호 재입력</label>
+                    <input type="password" id="signupPasswordConfirm" placeholder="비밀번호 다시 입력" required>
+                    <div id="passwordMatchHint" class="password-match-hint"></div>
                 </div>
-                <div class="row-half">
-                    <div class="form-group">
-                        <label>닮은꼴</label>
-                        <select id="signupAnimal" required>
-                            <option value="">선택</option>
-                            <option value="🐶 강아지상">🐶 강아지상</option>
-                            <option value="🐱 고양이상">🐱 고양이상</option>
-                            <option value="🐰 토끼상">🐰 토끼상</option>
-                            <option value="🦊 여우상">🦊 여우상</option>
-                            <option value="🐻 곰상">🐻 곰상</option>
-                            <option value="🦕 공룡상">🦕 공룡상</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>활동지역</label>
-                        <select id="signupRegion" required>
-                            <option value="">선택</option>
-                            <option>서울특별시</option><option>부산광역시</option><option>대구광역시</option>
-                            <option>인천광역시</option><option>광주광역시</option><option>대전광역시</option>
-                            <option>울산광역시</option><option>세종특별자치시</option>
-                            <option>경기도</option><option>강원도</option><option>충청북도</option>
-                            <option>충청남도</option><option>전라북도</option><option>전라남도</option>
-                            <option>경상북도</option><option>경상남도</option><option>제주특별자치도</option>
-                        </select>
-                    </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-university"></i> 대학교 <span style="font-size:0.6rem; color:#888;">(검색어 입력 시 자동완성)</span></label>
+                <input type="text" id="signupSchool" list="universityList" placeholder="예: 서울대학교" required autocomplete="off">
+                <datalist id="universityList">${uniOptions}</datalist>
+                <div id="schoolHint" class="school-hint">OO학교 서식으로 작성해 주세요</div>
+            </div>
+            <div class="row-half">
+                <div class="form-group">
+                    <label>학과계열</label>
+                    <select id="signupMajor" required>
+                        <option value="">선택</option>
+                        <option>이공계열</option><option>어문계열</option>
+                        <option>상경계열</option><option>예체능</option>
+                        <option>메디컬</option><option>서비스</option><option>기타계열</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-phone"></i> 휴대폰 번호</label>
-                    <div class="phone-prefix-input">
-                        <span class="prefix">010-</span>
-                        <input type="text" id="signupPhone" placeholder="0000-0000" maxlength="9" oninput="formatPhoneInput(this)">
+                    <label>성별</label>
+                    <select id="signupGender" required>
+                        <option value="">선택</option>
+                        <option>남성</option><option>여성</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row-half">
+                <div class="form-group">
+                    <label>나이</label>
+                    <div class="age-grade-input-wrap">
+                        <input type="text" id="signupAge" placeholder="예: 22살" required maxlength="4" oninput="formatAgeField(this)">
                     </div>
+                    <div id="ageHint" class="field-hint">18~33세까지 입력 가능합니다</div>
                 </div>
                 <div class="form-group">
-                    <label>자기소개 (20자 이상)</label>
-                    <textarea id="signupIntro" placeholder="예: 안녕하세요! 저는 영문학과를 다니고 있는 23살입니다. 저희 과 부스에서 빙수 파는데 같이 먹으러 갈래요?" required minlength="20"></textarea>
-                    <div class="char-count"><span id="introCharCount">0</span> / 최소 20자</div>
+                    <label>학번</label>
+                    <div class="age-grade-input-wrap">
+                        <input type="text" id="signupGrade" placeholder="예: 22학번" required maxlength="5" oninput="formatGradeField(this)">
+                    </div>
+                    <div id="gradeHint" class="field-hint">10~30학번까지 입력 가능합니다</div>
                 </div>
-
-                <div style="margin:8px 0; font-size:0.7rem; color:#fbbf24; text-align:center;">
-                    💡 가입 후 학교메일, 학생증 인증시 추가 혜택이 있어요!
+            </div>
+            <div class="form-group">
+                <label>키 (cm)</label>
+                <input type="number" id="signupHeight" placeholder="예: 175" required min="100" max="220" oninput="validateHeight(this)">
+                <div id="heightHint" class="field-hint">100~220cm까지 입력 가능합니다</div>
+            </div>
+            <div class="row-half">
+                <div class="form-group">
+                    <label>닮은꼴</label>
+                    <select id="signupAnimal" required>
+                        <option value="">선택</option>
+                        <option value="🐶 강아지상">🐶 강아지상</option>
+                        <option value="🐱 고양이상">🐱 고양이상</option>
+                        <option value="🐰 토끼상">🐰 토끼상</option>
+                        <option value="🦊 여우상">🦊 여우상</option>
+                        <option value="🐻 곰상">🐻 곰상</option>
+                        <option value="🦕 공룡상">🦕 공룡상</option>
+                    </select>
                 </div>
-
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:4px;">
-                    <i class="fas fa-user-plus"></i> 회원가입 완료
-                </button>
-                <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
-                    이미 계정이 있으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openLoginModal();">로그인</span>
+                <div class="form-group">
+                    <label>활동지역</label>
+                    <select id="signupRegion" required>
+                        <option value="">선택</option>
+                        <option>서울특별시</option><option>부산광역시</option><option>대구광역시</option>
+                        <option>인천광역시</option><option>광주광역시</option><option>대전광역시</option>
+                        <option>울산광역시</option><option>세종특별자치시</option>
+                        <option>경기도</option><option>강원도</option><option>충청북도</option>
+                        <option>충청남도</option><option>전라북도</option><option>전라남도</option>
+                        <option>경상북도</option><option>경상남도</option><option>제주특별자치도</option>
+                    </select>
                 </div>
-            </form>
-        `;
-        modal.classList.add('active');
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-phone"></i> 휴대폰 번호</label>
+                <div class="phone-prefix-input">
+                    <span class="prefix">010-</span>
+                    <input type="text" id="signupPhone" placeholder="0000-0000" maxlength="9" oninput="formatPhoneInput(this)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>자기소개 (20자 이상)</label>
+                <textarea id="signupIntro" placeholder="예: 안녕하세요! 저는 영문학과를 다니고 있는 23살입니다. 저희 과 부스에서 빙수 파는데 같이 먹으러 갈래요?" required minlength="20"></textarea>
+                <div class="char-count"><span id="introCharCount">0</span> / 최소 20자</div>
+            </div>
 
-        document.getElementById('signupPassword').addEventListener('input', function() {
-            validatePassword(this.value);
-        });
-        document.getElementById('signupPasswordConfirm').addEventListener('input', function() {
-            checkPasswordMatch();
-        });
-        document.getElementById('signupPasswordConfirm').addEventListener('blur', function() {
-            checkPasswordMatch();
-        });
-        document.getElementById('signupSchool').addEventListener('input', function() {
-            validateSchool(this.value);
-        });
-        document.getElementById('signupIntro').addEventListener('input', function() {
-            document.getElementById('introCharCount').textContent = this.value.length;
-        });
-    }
+            <div style="margin:8px 0; font-size:0.7rem; color:#fbbf24; text-align:center;">
+                💡 가입 후 학교메일, 학생증 인증시 추가 혜택이 있어요!
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%; margin-top:4px;">
+                <i class="fas fa-user-plus"></i> 회원가입 완료
+            </button>
+            <div style="text-align:center; margin-top:8px; font-size:0.65rem; color:#666;">
+                이미 계정이 있으신가요? <span style="color:#a855f7; cursor:pointer;" onclick="closeModal(); openLoginModal();">로그인</span>
+            </div>
+        </form>
+    `;
+    modal.classList.add('active');
+
+    document.getElementById('signupPassword').addEventListener('input', function() {
+        validatePassword(this.value);
+    });
+    document.getElementById('signupPasswordConfirm').addEventListener('input', function() {
+        checkPasswordMatch();
+    });
+    document.getElementById('signupPasswordConfirm').addEventListener('blur', function() {
+        checkPasswordMatch();
+    });
+    document.getElementById('signupSchool').addEventListener('input', function() {
+        validateSchool(this.value);
+    });
+    document.getElementById('signupIntro').addEventListener('input', function() {
+        document.getElementById('introCharCount').textContent = this.value.length;
+    });
+}
 
     function formatAgeField(input) {
         let val = input.value.replace(/[^0-9]/g, '');
@@ -3048,31 +3048,31 @@ window.showContactInfo = showContactInfo;
     let nicknameValid = false;
 
     function checkNickname() {
-        const nick = document.getElementById('signupNickname')?.value.trim();
-        if (!nick) { showToast('⚠️ 닉네임을 입력해주세요'); return; }
-        if (nick.length < 2) {
-            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 2자 이상 입력해주세요</span>';
-            nicknameValid = false;
-            return;
-        }
-        // 서버에서 닉네임 중복 확인
-        fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nick)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.exists) {
-                    document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 이미 사용 중인 닉네임입니다</span>';
-                    nicknameValid = false;
-                } else {
-                    document.getElementById('nicknameStatus').innerHTML = '<span style="color:#4ade80;">✅ 사용 가능한 닉네임입니다</span>';
-                    nicknameValid = true;
-                }
-            })
-            .catch(() => {
-                document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">⚠️ 중복 확인 중 오류가 발생했습니다</span>';
-                nicknameValid = false;
-            });
-        nicknameChecked = true;
+    const nick = document.getElementById('signupNickname')?.value.trim();
+    if (!nick) { showToast('⚠️ 아이디를 입력해주세요'); return; }
+    if (nick.length < 2) {
+        document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 2자 이상 입력해주세요</span>';
+        nicknameValid = false;
+        return;
     }
+    // 서버에서 아이디 중복 확인
+    fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nick)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.exists) {
+                document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">❌ 이미 사용 중인 아이디입니다</span>';
+                nicknameValid = false;
+            } else {
+                document.getElementById('nicknameStatus').innerHTML = '<span style="color:#4ade80;">✅ 사용 가능한 아이디입니다</span>';
+                nicknameValid = true;
+            }
+        })
+        .catch(() => {
+            document.getElementById('nicknameStatus').innerHTML = '<span style="color:#f87171;">⚠️ 중복 확인 중 오류가 발생했습니다</span>';
+            nicknameValid = false;
+        });
+    nicknameChecked = true;
+}
 
     async function handleSignup(e) {
         e.preventDefault();
