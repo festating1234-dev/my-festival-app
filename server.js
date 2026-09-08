@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -165,7 +166,7 @@ app.post('/api/check-email-domain', async (req, res) => {
     }
 });
 
-// 2. 인증번호 발송
+// 2. 인증번호 발송 (실제 이메일 발송)
 app.post('/api/send-verification', async (req, res) => {
     const { email, userId, school } = req.body;
     
@@ -195,7 +196,7 @@ app.post('/api/send-verification', async (req, res) => {
 
     // 6자리 인증번호 생성
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // 기존 인증번호 삭제 (갱신)
     await supabase
@@ -214,55 +215,51 @@ app.post('/api/send-verification', async (req, res) => {
         return res.status(500).json({ error: '인증번호 저장 중 오류가 발생했습니다.' });
     }
 
-    // TODO: 실제 이메일 발송 로직 (Mailtrap, Nodemailer 등)
-    console.log(`📧 인증번호 발송: ${email} → ${code}`);
+    // ===== ★★★ 실제 이메일 발송 (nodemailer + Mailtrap) ★★★ =====
+    try {
+        const transporter = nodemailer.createTransport({
+            host: process.env.MAILTRAP_HOST,
+            port: parseInt(process.env.MAILTRAP_PORT) || 2525,
+            auth: {
+                user: process.env.MAILTRAP_USER,
+                pass: process.env.MAILTRAP_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: '"페스타팅" <noreply@festating.com>',
+            to: email,
+            subject: '[페스타팅] 이메일 인증번호',
+            html: `
+                <div style="font-family: 'Noto Sans KR', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f5f5f5; border-radius: 10px;">
+                    <h2 style="color: #a855f7;">🎉 페스타팅 이메일 인증</h2>
+                    <p style="color: #333;">안녕하세요! 페스타팅입니다.</p>
+                    <p style="color: #333;">아래 인증번호를 입력하시면 이메일 인증이 완료됩니다.</p>
+                    <div style="text-align: center; padding: 16px; background: white; border-radius: 8px; margin: 16px 0;">
+                        <span style="font-size: 28px; font-weight: 700; color: #a855f7; letter-spacing: 6px;">${code}</span>
+                    </div>
+                    <p style="color: #888; font-size: 12px;">⏰ 이 인증번호는 10분 후에 만료됩니다.</p>
+                    <p style="color: #888; font-size: 12px;">문의사항이 있으시면 카카오톡 ID: <strong>festivalting</strong>으로 연락주세요.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
+                    <p style="color: #aaa; font-size: 11px; text-align: center;">본 메일은 발신 전용입니다. 회신하실 필요가 없습니다.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`📧 인증번호 발송 완료: ${email} → ${code}`);
+
+    } catch (emailError) {
+        console.error('Email send error:', emailError);
+        return res.status(500).json({ 
+            error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.' 
+        });
+    }
 
     res.json({ 
         success: true, 
-        message: '인증번호가 이메일로 발송되었습니다.',
-        code // 개발용, 실제로는 제거
+        message: '인증번호가 이메일로 발송되었습니다.'
     });
-});
-
-// 3. 인증번호 확인
-app.post('/api/verify-email-code', async (req, res) => {
-    const { userId, email, code } = req.body;
-
-    try {
-        const { data, error } = await supabase
-            .from('email_verifications')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('email', email)
-            .eq('code', code)
-            .eq('verified', false)
-            .single();
-
-        if (error || !data) {
-            return res.status(400).json({ error: '올바르지 않은 인증번호입니다.' });
-        }
-
-        if (new Date(data.expires_at) < new Date()) {
-            return res.status(400).json({ error: '인증번호가 만료되었습니다. 다시 요청해주세요.' });
-        }
-
-        // 인증 완료 처리
-        await supabase
-            .from('email_verifications')
-            .update({ verified: true })
-            .eq('id', data.id);
-
-        // users 테이블에 이메일 인증 상태 업데이트
-        await supabase
-            .from('users')
-            .update({ email_verified: true, email: email })
-            .eq('id', userId);
-
-        res.json({ success: true, message: '이메일 인증이 완료되었습니다!' });
-    } catch (err) {
-        console.error('Verify code error:', err);
-        res.status(500).json({ error: err.message });
-    }
 });
 
 // 1-4. 특정 사용자 정보 조회 (★ 추가됨)
