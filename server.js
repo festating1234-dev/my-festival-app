@@ -98,6 +98,167 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// ============================================================
+//  이메일 인증 관련 API
+// ============================================================
+
+// 1. 이메일 도메인 검증
+app.post('/api/check-email-domain', async (req, res) => {
+    const { email, school } = req.body;
+    if (!email || !school) {
+        return res.status(400).json({ error: '이메일과 학교 정보가 필요합니다.' });
+    }
+    
+    const domain = email.split('@')[1];
+    if (!domain) {
+        return res.status(400).json({ error: '올바른 이메일 형식이 아닙니다.' });
+    }
+
+    try {
+        // 1. 도메인이 DB에 있는지 확인
+        const { data: domainData, error: domainError } = await supabase
+            .from('university_domains')
+            .select('school_name')
+            .eq('domain', domain)
+            .single();
+
+        if (domainError || !domainData) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: '학교 이메일 도메인이 아닙니다. 해외대학은 문의해주세요.' 
+            });
+        }
+
+        // 2. 가입한 학교와 도메인의 학교가 일치하는지 확인
+        if (domainData.school_name !== school) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: '가입시 입력한 학교정보와 이메일 도메인이 일치하지 않습니다.' 
+            });
+        }
+
+        // 3. 이미 인증된 이메일인지 확인
+        const { data: existing, error: existError } = await supabase
+            .from('email_verifications')
+            .select('id')
+            .eq('email', email)
+            .eq('verified', true)
+            .single();
+
+        if (existing) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: '이미 인증된 이메일 주소입니다.' 
+            });
+        }
+
+        res.json({ valid: true, school: domainData.school_name });
+    } catch (err) {
+        console.error('Email domain check error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. 인증번호 발송
+app.post('/api/send-verification', async (req, res) => {
+    const { email, userId, school } = req.body;
+    
+    // 이메일 도메인 검증
+    const domain = email.split('@')[1];
+    const { data: domainData, error: domainError } = await supabase
+        .from('university_domains')
+        .select('school_name')
+        .eq('domain', domain)
+        .single();
+
+    if (domainError || !domainData || domainData.school_name !== school) {
+        return res.status(400).json({ error: '학교 이메일이 아닙니다.' });
+    }
+
+    // 이미 인증된 이메일인지 확인
+    const { data: existing } = await supabase
+        .from('email_verifications')
+        .select('id')
+        .eq('email', email)
+        .eq('verified', true)
+        .single();
+
+    if (existing) {
+        return res.status(400).json({ error: '이미 인증된 이메일입니다.' });
+    }
+
+    // 6자리 인증번호 생성
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
+
+    // 기존 인증번호 삭제 (갱신)
+    await supabase
+        .from('email_verifications')
+        .delete()
+        .eq('user_id', userId)
+        .eq('email', email);
+
+    // 새 인증번호 저장
+    const { error: insertError } = await supabase
+        .from('email_verifications')
+        .insert([{ user_id: userId, email, code, expires_at: expiresAt }]);
+
+    if (insertError) {
+        console.error('Insert error:', insertError);
+        return res.status(500).json({ error: '인증번호 저장 중 오류가 발생했습니다.' });
+    }
+
+    // TODO: 실제 이메일 발송 로직 (Mailtrap, Nodemailer 등)
+    console.log(`📧 인증번호 발송: ${email} → ${code}`);
+
+    res.json({ 
+        success: true, 
+        message: '인증번호가 이메일로 발송되었습니다.',
+        code // 개발용, 실제로는 제거
+    });
+});
+
+// 3. 인증번호 확인
+app.post('/api/verify-email-code', async (req, res) => {
+    const { userId, email, code } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('email_verifications')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('email', email)
+            .eq('code', code)
+            .eq('verified', false)
+            .single();
+
+        if (error || !data) {
+            return res.status(400).json({ error: '올바르지 않은 인증번호입니다.' });
+        }
+
+        if (new Date(data.expires_at) < new Date()) {
+            return res.status(400).json({ error: '인증번호가 만료되었습니다. 다시 요청해주세요.' });
+        }
+
+        // 인증 완료 처리
+        await supabase
+            .from('email_verifications')
+            .update({ verified: true })
+            .eq('id', data.id);
+
+        // users 테이블에 이메일 인증 상태 업데이트
+        await supabase
+            .from('users')
+            .update({ email_verified: true, email: email })
+            .eq('id', userId);
+
+        res.json({ success: true, message: '이메일 인증이 완료되었습니다!' });
+    } catch (err) {
+        console.error('Verify code error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 1-4. 특정 사용자 정보 조회 (★ 추가됨)
 app.get('/api/users/:id', async (req, res) => {
     const { id } = req.params;
