@@ -4007,57 +4007,77 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
     async function submitCardVerification() {
-        if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
-        const input = document.getElementById('cardInput');
-        if (input.files.length === 0) {
-            showToast('⚠️ 학생증 사진을 선택하세요.');
-            return;
-        }
-        if (cardVerificationStatus === 'approved') {
-            showToast('⚠️ 이미 인증이 완료되었습니다.');
-            return;
-        }
-        if (cardVerificationStatus === 'pending') {
-            showToast('⚠️ 이미 관리자 확인 중입니다.');
-            return;
-        }
-        // 실제로는 파일을 업로드해야 하지만, 여기서는 상태만 변경
-        cardVerificationStatus = 'pending';
-        currentUser.card_status = 'pending';
-        try {
-            await fetch(`/api/users/${currentUserId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ card_status: 'pending' })
-            });
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+    const input = document.getElementById('cardInput');
+    if (input.files.length === 0) {
+        showToast('⚠️ 학생증 사진을 선택하세요.');
+        return;
+    }
+    if (cardVerificationStatus === 'approved') {
+        showToast('⚠️ 이미 인증이 완료되었습니다.');
+        return;
+    }
+    if (cardVerificationStatus === 'pending') {
+        showToast('⚠️ 이미 관리자 확인 중입니다.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('cardImage', input.files[0]);
+    formData.append('userId', currentUser.id);
+
+    try {
+        const res = await fetch('/api/upload-card', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            cardVerificationStatus = 'pending';
+            currentUser.card_status = 'pending';
             updateUI();
             showToast('📤 학생증 인증이 제출되었습니다. 관리자 확인 후 승인여부가 결정됩니다.');
             if (isAdmin) {
-                document.getElementById('pendingCount').textContent = allUsers.filter(u => u.card_status === 'pending').length;
+                const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
+                document.getElementById('pendingCount').textContent = pendingUsers.length;
             }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
+        } else {
+            showToast('❌ ' + data.error);
         }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Upload error:', error);
     }
+}
 
     // ================================================================
     // 16. 관리자 기능
     // ================================================================
     // 관리자 승인 (개별 사용자 ID를 인자로 받음)
-async function adminApproveCard(userId) {
+async function adminApproveCard() {
     if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-
+    
+    const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
+    if (pendingUsers.length === 0) {
+        showToast('⚠️ 승인 대기 중인 인증이 없습니다.');
+        return;
+    }
+    const target = pendingUsers[0];
+    
     try {
-        const res = await fetch(`/api/admin/card/${userId}`, {
+        const res = await fetch(`/api/admin/card/${target.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'approved' })
         });
         if (res.ok) {
             await fetchUsers();
-            await fetchProfiles();
             updateUI();
-            showToast(`✅ 학생증 인증이 승인되었습니다.`);
+            showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
         } else {
             const data = await res.json();
             showToast('❌ ' + data.error);
@@ -4068,20 +4088,26 @@ async function adminApproveCard(userId) {
 }
 
 // 관리자 반려 (개별 사용자 ID를 인자로 받음)
-async function adminRejectCard(userId) {
+async function adminRejectCard() {
     if (!isAdmin) { showToast('⚠️ 관리자 권한이 필요합니다.'); return; }
-
+    
+    const pendingUsers = allUsers.filter(u => u.card_status === 'pending');
+    if (pendingUsers.length === 0) {
+        showToast('⚠️ 반려할 인증이 없습니다.');
+        return;
+    }
+    const target = pendingUsers[0];
+    
     try {
-        const res = await fetch(`/api/admin/card/${userId}`, {
+        const res = await fetch(`/api/admin/card/${target.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'rejected' })
         });
         if (res.ok) {
             await fetchUsers();
-            await fetchProfiles();
             updateUI();
-            showToast(`❌ 학생증 인증이 반려되었습니다.`);
+            showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
         } else {
             const data = await res.json();
             showToast('❌ ' + data.error);
