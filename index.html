@@ -1627,13 +1627,6 @@
     const myCards = allProfiles.filter(p => p.user_id === currentUserId);
     const myCardIds = myCards.map(c => c.id);
 
-    // ★ 디버깅 로그 추가 ★
-    console.log('===== updateMatchingData 디버깅 =====');
-    console.log('currentUserId:', currentUserId);
-    console.log('내 카드 목록 (myCards):', myCards);
-    console.log('내 카드 ID 목록 (myCardIds):', myCardIds);
-    console.log('전체 매칭 데이터 (allMatches):', allMatches);
-
     // 보낸 매칭
     matchingData.sent = allMatches
         .filter(m => m.from_user_id === currentUserId && m.status === 'pending')
@@ -1654,20 +1647,13 @@
             };
         }).filter(Boolean);
 
-    // ★ 받은 매칭 (디버깅 로그 추가) ★
-    const receivedMatches = allMatches.filter(m => myCardIds.includes(m.to_card_id) && m.status === 'pending');
-    console.log('받은 매칭 원본 (receivedMatches):', receivedMatches);
-
-    matchingData.received = receivedMatches
+    // 받은 매칭
+    matchingData.received = allMatches
+        .filter(m => myCardIds.includes(m.to_card_id) && m.status === 'pending')
         .map(m => {
             const fromUser = allUsers.find(u => u.id === m.from_user_id);
-            // 상대방의 카드 찾기
             const targetCard = allProfiles.find(p => p.user_id === m.from_user_id);
-            if (!fromUser || !targetCard) {
-                console.log('⚠️ 사용자 또는 카드를 찾을 수 없음:', m.from_user_id);
-                return null;
-            }
-            console.log('상대방 정보:', fromUser.nickname, '카드:', targetCard);
+            if (!fromUser || !targetCard) return null;
             return {
                 id: m.id,
                 cardId: targetCard.id,
@@ -1681,8 +1667,6 @@
                 createdAt: m.created_at
             };
         }).filter(Boolean);
-
-    console.log('처리된 받은 매칭 (matchingData.received):', matchingData.received);
 
     // 성사된 매칭
     matchingData.matched = allMatches
@@ -1708,8 +1692,6 @@
                 createdAt: m.created_at
             };
         }).filter(Boolean);
-
-    console.log('===== 디버깅 종료 =====');
 }
 
     function saveAllData() {
