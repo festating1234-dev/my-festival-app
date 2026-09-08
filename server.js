@@ -105,22 +105,30 @@ app.post('/api/login', async (req, res) => {
 // 1. 이메일 도메인 검증
 app.post('/api/check-email-domain', async (req, res) => {
     const { email, school } = req.body;
+    
+    console.log('📧 받은 email:', email);
+    console.log('🏫 받은 school:', school);
+
     if (!email || !school) {
         return res.status(400).json({ error: '이메일과 학교 정보가 필요합니다.' });
     }
     
     const domain = email.split('@')[1];
+    console.log('🌐 추출된 domain:', domain);
+
     if (!domain) {
         return res.status(400).json({ error: '올바른 이메일 형식이 아닙니다.' });
     }
 
     try {
-        // 1. 도메인이 DB에 있는지 확인
         const { data: domainData, error: domainError } = await supabase
             .from('university_domains')
             .select('school_name')
             .eq('domain', domain)
             .single();
+
+        console.log('📊 domainData:', domainData);
+        console.log('❌ domainError:', domainError);
 
         if (domainError || !domainData) {
             return res.status(400).json({ 
@@ -129,7 +137,6 @@ app.post('/api/check-email-domain', async (req, res) => {
             });
         }
 
-        // 2. 가입한 학교와 도메인의 학교가 일치하는지 확인
         if (domainData.school_name !== school) {
             return res.status(400).json({ 
                 valid: false, 
@@ -137,7 +144,6 @@ app.post('/api/check-email-domain', async (req, res) => {
             });
         }
 
-        // 3. 이미 인증된 이메일인지 확인
         const { data: existing, error: existError } = await supabase
             .from('email_verifications')
             .select('id')
