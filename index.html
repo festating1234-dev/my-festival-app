@@ -1308,15 +1308,17 @@
                     <h3 style="font-size:0.9rem; margin-bottom:8px; color:#fbbf24;"><i class="fas fa-shield-alt"></i> 학생 인증</h3>
 
                     <div class="verify-box" id="emailVerifyBox">
-                        <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증 (@*.ac.kr)</div>
-                        <div class="desc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
-                        <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
-                            <input type="email" class="input-email" id="emailInput" placeholder="example@hongik.ac.kr" style="flex:1; min-width:120px;">
-                            <button class="btn-sm primary" onclick="verifyEmail()">인증하기</button>
-                        </div>
-                        <div id="emailStatus" style="margin-top:4px; font-size:0.7rem; color:#888;"></div>
-                    </div>
-
+    <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증</div>
+    <div class="desc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
+    <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+        <button class="btn-sm primary" onclick="openEmailVerificationModal()">
+            <i class="fas fa-envelope"></i> 이메일 인증하러 가기
+        </button>
+    </div>
+    <div id="emailStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
+        <span style="color:#888;">⏳ 미인증</span>
+    </div>
+</div>
                     <div class="verify-box" id="cardVerifyBox">
                         <div class="title"><i class="fas fa-id-card"></i> 학생증 인증 (관리자 확인)</div>
                         <div class="desc">인증 시 <strong>'나를 찜한 사람'</strong> 확인 가능!</div>
@@ -1382,6 +1384,49 @@
     <div class="modal-box">
         <span class="close-btn" id="modalCloseBtn">&times;</span>
         <div id="modalContent"></div>
+    </div>
+</div>
+
+<!-- 이메일 인증 모달 (새로 추가) -->
+<div class="modal-overlay" id="emailVerificationModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="emailVerificationClose">&times;</span>
+        <h2>📧 학교 이메일 인증</h2>
+        <div class="subtitle" id="emailVerificationSubtitle">학교 이메일로 인증번호를 받아주세요</div>
+
+        <!-- 1단계: 이메일 입력 -->
+        <div id="emailStep1">
+            <div class="form-group" style="margin-top:12px;">
+                <label>학교 이메일 주소</label>
+                <input type="email" id="emailVerificationInput" placeholder="example@snu.ac.kr" style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.9rem; outline:none;">
+                <div id="emailDomainHint" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
+            </div>
+            <button class="btn-primary" onclick="sendVerificationCode()" style="width:100%; margin-top:8px;">
+                <i class="fas fa-paper-plane"></i> 인증메일 보내기
+            </button>
+            <div style="text-align:center; margin-top:10px; font-size:0.6rem; color:#666;">
+                인증이 되지 않거나 해외대학 재학자는 
+                <span style="color:#fbbf24; cursor:pointer; text-decoration:underline;" onclick="closeModal(); openInquiry();">문의하기</span> 
+                버튼을 눌러주세요.
+            </div>
+        </div>
+
+        <!-- 2단계: 인증번호 입력 (처음에는 숨김) -->
+        <div id="emailStep2" style="display:none;">
+            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:12px; margin:12px 0; border:1px solid rgba(74,222,128,0.1);">
+                <div style="font-size:0.8rem; color:#4ade80;">✅ 인증번호가 <span id="emailDisplayForCode">example@snu.ac.kr</span>로 발송되었습니다.</div>
+            </div>
+            <div class="form-group">
+                <label>인증번호 (6자리)</label>
+                <input type="text" id="emailVerificationCode" placeholder="123456" maxlength="6" style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.9rem; outline:none; text-align:center; letter-spacing:4px;">
+            </div>
+            <button class="btn-primary" onclick="verifyEmailCode()" style="width:100%; margin-top:8px;">
+                <i class="fas fa-check"></i> 인증번호 확인
+            </button>
+            <div style="text-align:center; margin-top:8px; font-size:0.6rem; color:#666;">
+                <span style="cursor:pointer; color:#fbbf24;" onclick="resendVerificationCode()">인증번호 재발송</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -3803,41 +3848,152 @@ function openEditProfile() {
     }
 }
 
-    async function verifyEmail() {
-        if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
-        const email = document.getElementById('emailInput').value.trim();
-        if (!email.endsWith('.ac.kr')) {
-            showToast('❌ @*.ac.kr 형식의 이메일을 입력하세요.');
-            return;
-        }
-        if (isEmailVerified) {
-            showToast('⚠️ 이미 인증된 이메일입니다.');
-            return;
-        }
-        try {
-            const res = await fetch('/api/verify-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUserId, email })
-            });
-            if (res.ok) {
-                isEmailVerified = true;
-                currentUser.email_verified = true;
-                currentUser.free_tickets = (currentUser.free_tickets || 0) + 1;
-                await fetch(`/api/users/${currentUserId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email_verified: true, free_tickets: currentUser.free_tickets })
-                });
-                updateUI();
-                showToast('✅ 학교메일 인증 완료! 무료 매치권 1회가 지급되었습니다!');
-            } else {
-                showToast('❌ 인증 처리 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-        }
+    // ===== 이메일 인증 관련 함수 (새로운 버전) =====
+let emailVerificationData = {};
+
+function openEmailVerificationModal() {
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
     }
+    document.getElementById('emailVerificationModal').classList.add('active');
+    document.getElementById('emailStep1').style.display = 'block';
+    document.getElementById('emailStep2').style.display = 'none';
+    document.getElementById('emailVerificationInput').value = '';
+    document.getElementById('emailVerificationCode').value = '';
+    document.getElementById('emailDomainHint').textContent = '현재 학교: ' + currentUser.school;
+    emailVerificationData = {};
+}
+
+function closeEmailVerificationModal() {
+    document.getElementById('emailVerificationModal').classList.remove('active');
+}
+
+// 인증번호 발송
+async function sendVerificationCode() {
+    const email = document.getElementById('emailVerificationInput').value.trim();
+    if (!email) {
+        showToast('⚠️ 이메일 주소를 입력해주세요.');
+        return;
+    }
+    if (!email.includes('@')) {
+        showToast('⚠️ 올바른 이메일 형식이 아닙니다.');
+        return;
+    }
+
+    try {
+        // 1. 이메일 도메인 검증
+        const res = await fetch('/api/check-email-domain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, school: currentUser.school })
+        });
+        const data = await res.json();
+
+        if (!data.valid) {
+            showToast('❌ ' + data.message);
+            return;
+        }
+
+        // 2. 인증번호 발송 요청
+        const sendRes = await fetch('/api/send-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email, 
+                userId: currentUser.id, 
+                school: currentUser.school 
+            })
+        });
+        const sendData = await sendRes.json();
+
+        if (!sendRes.ok) {
+            showToast('❌ ' + sendData.error);
+            return;
+        }
+
+        // 2단계로 전환
+        document.getElementById('emailStep1').style.display = 'none';
+        document.getElementById('emailStep2').style.display = 'block';
+        document.getElementById('emailDisplayForCode').textContent = email;
+        emailVerificationData.email = email;
+        showToast('✅ 인증번호가 발송되었습니다! (콘솔에서 확인 가능)');
+        console.log('📧 인증번호:', sendData.code); // 개발용
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Send verification error:', error);
+    }
+}
+
+// 인증번호 확인
+async function verifyEmailCode() {
+    const code = document.getElementById('emailVerificationCode').value.trim();
+    if (!code || code.length !== 6) {
+        showToast('⚠️ 6자리 인증번호를 입력해주세요.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/verify-email-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: currentUser.id,
+                email: emailVerificationData.email,
+                code: code
+            })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            showToast('❌ ' + data.error);
+            return;
+        }
+
+        // 인증 성공
+        isEmailVerified = true;
+        currentUser.email_verified = true;
+        currentUser.free_tickets = (currentUser.free_tickets || 0) + 1;
+        await updateUI();
+        closeEmailVerificationModal();
+        showToast('🎉 학교메일 인증 완료! 무료 매치권 1회가 지급되었습니다!');
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Verify code error:', error);
+    }
+}
+
+// 인증번호 재발송
+async function resendVerificationCode() {
+    if (emailVerificationData.email) {
+        await sendVerificationCode();
+    }
+}
+
+// 모달 닫기 버튼 이벤트 (HTML에 이미 추가했지만, 혹시 모르니 한 번 더)
+document.addEventListener('DOMContentLoaded', function() {
+    const closeBtn = document.getElementById('emailVerificationClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeEmailVerificationModal);
+    const modalOverlay = document.getElementById('emailVerificationModal');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) closeEmailVerificationModal();
+        });
+    }
+    // Enter 키 지원
+    const input = document.getElementById('emailVerificationInput');
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendVerificationCode();
+        });
+    }
+    const codeInput = document.getElementById('emailVerificationCode');
+    if (codeInput) {
+        codeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verifyEmailCode();
+        });
+    }
+});
 
     async function submitCardVerification() {
         if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다'); return; }
