@@ -545,6 +545,36 @@
     color: #ccc;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* 알림 버튼 - 기본 (흑백) */
+.notification-btn {
+    color: #aaa !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    background: rgba(255,255,255,0.05) !important;
+}
+
+/* 알림 버튼 - 새 알림 있을 때 (노란색 강조) */
+.notification-btn.has-unread {
+    color: #fbbf24 !important;
+    border-color: rgba(251,191,36,0.3) !important;
+    background: rgba(251,191,36,0.1) !important;
+    box-shadow: 0 0 20px rgba(251,191,36,0.05);
+}
+
+.notification-btn .new-badge {
+    display: none;
+    font-size: 0.45rem;
+    background: #f87171;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 30px;
+    margin-left: 4px;
+}
+
+.notification-btn.has-unread .new-badge {
+    display: inline-block;
+}
+
         .report-area {
             display: flex;
             align-items: center;
@@ -1146,9 +1176,10 @@
         
         <!-- ★ 알림 버튼 (여기로 이동!) -->
         <button class="notification-btn" onclick="toggleNotificationModal()" style="position:relative; padding:4px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.05); color:#aaa; font-size:0.55rem; font-weight:600; cursor:pointer; transition:0.2s; white-space:nowrap;">
-            <i class="fas fa-bell"></i> 알림
-            <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
-        </button>
+    <i class="fas fa-bell"></i> 알림
+    <span class="new-badge">New</span>
+    <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
+</button>
     </div>
 
     <!-- ===== 2번째 줄: 나머지 버튼들 ===== -->
@@ -2162,20 +2193,36 @@ async function markAllNotificationsAsRead() {
 
 // 알림 배지 업데이트
 async function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    const btn = document.querySelector('.notification-btn');
+    
     if (!currentUser) {
-        document.getElementById('notificationBadge').style.display = 'none';
+        if (badge) badge.style.display = 'none';
+        if (btn) btn.classList.remove('has-unread');
         return;
     }
 
     try {
         const res = await fetch(`/api/notifications/unread-count?userId=${currentUser.id}`);
         const { count } = await res.json();
-        const badge = document.getElementById('notificationBadge');
-        if (count > 0) {
-            badge.style.display = 'inline-block';
-            badge.textContent = count > 9 ? '9+' : count;
-        } else {
-            badge.style.display = 'none';
+        
+        // 숫자 배지 표시
+        if (badge) {
+            if (count > 0) {
+                badge.style.display = 'inline-block';
+                badge.textContent = count > 9 ? '9+' : count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 버튼 스타일 변경 (New 표시)
+        if (btn) {
+            if (count > 0) {
+                btn.classList.add('has-unread');
+            } else {
+                btn.classList.remove('has-unread');
+            }
         }
     } catch (error) {
         console.error('Badge update error:', error);
