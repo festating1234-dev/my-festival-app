@@ -2195,18 +2195,25 @@ async function markAllNotificationsAsRead() {
 async function updateNotificationBadge() {
     const badge = document.getElementById('notificationBadge');
     const btn = document.querySelector('.notification-btn');
-    
+
+    // 로그인 안 되어 있으면 기본 상태로 초기화
     if (!currentUser) {
         if (badge) badge.style.display = 'none';
-        if (btn) btn.classList.remove('has-unread');
+        if (btn) {
+            btn.style.color = '#aaa';
+            btn.style.borderColor = 'rgba(255,255,255,0.08)';
+            btn.style.background = 'rgba(255,255,255,0.05)';
+            const newBadge = btn.querySelector('.new-badge');
+            if (newBadge) newBadge.style.display = 'none';
+        }
         return;
     }
 
     try {
         const res = await fetch(`/api/notifications/unread-count?userId=${currentUser.id}`);
         const { count } = await res.json();
-        
-        // 숫자 배지 표시
+
+        // 1. 숫자 배지 표시
         if (badge) {
             if (count > 0) {
                 badge.style.display = 'inline-block';
@@ -2216,12 +2223,22 @@ async function updateNotificationBadge() {
             }
         }
 
-        // 버튼 스타일 변경 (New 표시)
+        // 2. ★ 버튼 스타일 직접 조작 (CSS 우선순위 무시!)
         if (btn) {
             if (count > 0) {
-                btn.classList.add('has-unread');
+                // 알림 있음: 노란색 강조 + New 표시
+                btn.style.color = '#fbbf24';
+                btn.style.borderColor = 'rgba(251,191,36,0.3)';
+                btn.style.background = 'rgba(251,191,36,0.1)';
+                const newBadge = btn.querySelector('.new-badge');
+                if (newBadge) newBadge.style.display = 'inline-block';
             } else {
-                btn.classList.remove('has-unread');
+                // 알림 없음: 흑백/회색
+                btn.style.color = '#aaa';
+                btn.style.borderColor = 'rgba(255,255,255,0.08)';
+                btn.style.background = 'rgba(255,255,255,0.05)';
+                const newBadge = btn.querySelector('.new-badge');
+                if (newBadge) newBadge.style.display = 'none';
             }
         }
     } catch (error) {
