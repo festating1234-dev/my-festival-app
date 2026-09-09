@@ -782,12 +782,16 @@ app.post('/api/reports', async (req, res) => {
     }
 });
 
-// 2. 관리자용 신고 목록 조회 (선택)
+// 2. 관리자용 신고 목록 조회
 app.get('/api/admin/reports', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('reports')
-            .select('*, users(nickname, school)')
+            .select(`
+                *,
+                reporter:reporter_user_id(nickname, school),
+                target:target_user_id(nickname, school)
+            `)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
