@@ -748,6 +748,56 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ============================================================
+//  신고 관련 API
+// ============================================================
+
+// 1. 신고 접수
+app.post('/api/reports', async (req, res) => {
+    const { reporter_user_id, target_user_id, target_card_id, reason, description } = req.body;
+
+    if (!reporter_user_id || !target_user_id || !target_card_id || !reason) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('reports')
+            .insert([{
+                reporter_user_id,
+                target_user_id,
+                target_card_id,
+                reason,
+                description: description || null,
+                status: 'pending'
+            }])
+            .select();
+
+        if (error) throw error;
+
+        res.json({ success: true, message: '신고가 접수되었습니다.' });
+    } catch (error) {
+        console.error('Report error:', error);
+        res.status(500).json({ error: '신고 접수 중 오류가 발생했습니다.' });
+    }
+});
+
+// 2. 관리자용 신고 목록 조회 (선택)
+app.get('/api/admin/reports', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('reports')
+            .select('*, users(nickname, school)')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Admin reports error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ---------------------- 서버 실행 ----------------------
 app.listen(PORT, () => {
     console.log(`✅ 서버 실행 중! http://localhost:${PORT}`);

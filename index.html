@@ -1433,6 +1433,41 @@
     </div>
 </div>
 
+<!-- 신고 모달 -->
+<div class="modal-overlay" id="reportModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="reportModalClose">&times;</span>
+        <h2>🚨 신고하기</h2>
+        <div class="subtitle">신고 사유를 선택해 주세요</div>
+
+        <div style="margin:12px 0;">
+            <button class="btn-sm report-reason" onclick="submitReport(1)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">①</span> 허위 프로필 의심
+            </button>
+            <button class="btn-sm report-reason" onclick="submitReport(2)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">②</span> 욕설, 성적 발언 등 부적절한 소개문구
+            </button>
+            <button class="btn-sm report-reason" onclick="showReportCustomInput()" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">③</span> 직접 작성
+            </button>
+        </div>
+
+        <!-- 직접 작성 영역 (처음에는 숨김) -->
+        <div id="reportCustomArea" style="display:none;">
+            <div class="form-group">
+                <label>신고 사유를 직접 입력해주세요</label>
+                <textarea id="reportCustomInput" placeholder="신고 사유를 상세히 적어주세요..." style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.9rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="submitReport(3)" style="width:100%; margin-top:4px;">확인</button>
+        </div>
+
+        <div style="margin-top:12px; font-size:0.55rem; color:#666; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+            ⚠️ 신고 접수 시 운영진 확인 후 해당 카드 삭제 혹은 유저 정지 처리됩니다.<br>
+            장난성 신고를 지속적으로 시행시 제재될 수 있습니다.
+        </div>
+    </div>
+</div>
+
 <script>
     // ================================================================
     // 0. 한국 대학교 목록 (자동완성용)
@@ -1469,6 +1504,80 @@
         '한양대학교', '한영신학대학교', '한일장신대학교', '협성대학교', '호남대학교',
         '호서대학교', '홍익대학교', '화성대학교'
     ];
+
+    // ===== 신고 관련 함수 =====
+let reportTarget = null; // { cardId, targetUserId }
+
+function openReportModal(cardId, targetUserId) {
+    reportTarget = { cardId, targetUserId };
+    document.getElementById('reportModal').classList.add('active');
+    document.getElementById('reportCustomArea').style.display = 'none';
+    document.getElementById('reportCustomInput').value = '';
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').classList.remove('active');
+    reportTarget = null;
+}
+
+function showReportCustomInput() {
+    document.getElementById('reportCustomArea').style.display = 'block';
+}
+
+// 신고 제출
+async function submitReport(reasonCode) {
+    if (!reportTarget) {
+        showToast('⚠️ 오류가 발생했습니다. 다시 시도해주세요.');
+        return;
+    }
+
+    let reason = '';
+    let description = '';
+
+    if (reasonCode === 1) {
+        reason = '허위 프로필 의심';
+    } else if (reasonCode === 2) {
+        reason = '부적절한 소개문구';
+    } else if (reasonCode === 3) {
+        reason = '직접 작성';
+        description = document.getElementById('reportCustomInput').value.trim();
+        if (!description) {
+            showToast('⚠️ 신고 사유를 입력해주세요.');
+            return;
+        }
+    }
+
+    try {
+        const res = await fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reporter_user_id: currentUserId,
+                target_user_id: reportTarget.targetUserId,
+                target_card_id: reportTarget.cardId,
+                reason: reason,
+                description: description
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            closeReportModal();
+            showToast('✅ 신고가 접수되었습니다!');
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Report error:', error);
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
+document.getElementById('reportModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReportModal();
+});
 
     // ================================================================
     // 1. 초기 데이터 (localStorage 대신 서버에서 로드)
@@ -2505,9 +2614,16 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         <div style="font-size:0.6rem; color:#4ade80; margin-top:4px;">🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!</div>
     </div>
 ` : `
-    <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
+    <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+    <div style="font-size:0.6rem; color:#666;">
         <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
     </div>
+    ${!isMyCard && isLoggedIn ? `
+        <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">
+            🚨 신고
+        </button>
+    ` : ''}
+</div>
 `}
     `;
     modal.classList.add('active');
