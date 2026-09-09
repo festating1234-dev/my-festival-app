@@ -1582,6 +1582,16 @@ async function submitReport(reasonCode) {
     }
 }
 
+// 관리자용 카드보기 (신고 ID 전달)
+function showProfileDetailForAdmin(cardId, reportId) {
+    const profile = allProfiles.find(p => p.id === cardId);
+    if (!profile) {
+        showToast('⚠️ 카드를 찾을 수 없습니다.');
+        return;
+    }
+    showProfileDetail(profile, false, null, null, true, reportId);
+}
+
 // ===== 관리자: 신고 대상 카드 관리 액션 =====
 
 // 1. 카드 삭제 + 신고 반려 (자동)
