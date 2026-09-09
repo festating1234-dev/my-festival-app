@@ -1175,7 +1175,11 @@
         <span class="count-badge" id="genderCount">👩 0명 · 👨 0명</span>
         
         <!-- ★ 알림 버튼 (여기로 이동!) -->
-        <button class="notification-btn" onclick="toggleNotificationModal()" style="position:relative; padding:4px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.05); color:#aaa; font-size:0.55rem; font-weight:600; cursor:pointer; transition:0.2s; white-space:nowrap;">
+        <button class="notification-btn" onclick="toggleNotificationModal()">
+    <i class="fas fa-bell"></i> 알림
+    <span class="new-badge">New</span>
+    <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
+</button>
     <i class="fas fa-bell"></i> 알림
     <span class="new-badge">New</span>
     <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
@@ -2196,16 +2200,10 @@ async function updateNotificationBadge() {
     const badge = document.getElementById('notificationBadge');
     const btn = document.querySelector('.notification-btn');
 
-    // 로그인 안 되어 있으면 기본 상태로 초기화
+    // 로그인 안 되어 있으면 초기화
     if (!currentUser) {
         if (badge) badge.style.display = 'none';
-        if (btn) {
-            btn.style.setProperty('color', '#aaa', 'important');
-            btn.style.setProperty('border-color', 'rgba(255,255,255,0.08)', 'important');
-            btn.style.setProperty('background', 'rgba(255,255,255,0.05)', 'important');
-            const newBadge = btn.querySelector('.new-badge');
-            if (newBadge) newBadge.style.display = 'none';
-        }
+        if (btn) btn.classList.remove('has-unread');
         return;
     }
 
@@ -2213,7 +2211,7 @@ async function updateNotificationBadge() {
         const res = await fetch(`/api/notifications/unread-count?userId=${currentUser.id}`);
         const { count } = await res.json();
 
-        // 1. 숫자 배지 표시
+        // 숫자 배지 표시
         if (badge) {
             if (count > 0) {
                 badge.style.display = 'inline-block';
@@ -2223,22 +2221,12 @@ async function updateNotificationBadge() {
             }
         }
 
-        // 2. ★ !important를 사용한 버튼 스타일 직접 조작
+        // ★ 버튼에 'has-unread' 클래스 추가/제거 (CSS가 알아서 스타일링)
         if (btn) {
             if (count > 0) {
-                // 알림 있음: 노란색 강조 + New 표시
-                btn.style.setProperty('color', '#fbbf24', 'important');
-                btn.style.setProperty('border-color', 'rgba(251,191,36,0.3)', 'important');
-                btn.style.setProperty('background', 'rgba(251,191,36,0.1)', 'important');
-                const newBadge = btn.querySelector('.new-badge');
-                if (newBadge) newBadge.style.display = 'inline-block';
+                btn.classList.add('has-unread');
             } else {
-                // 알림 없음: 흑백/회색
-                btn.style.setProperty('color', '#aaa', 'important');
-                btn.style.setProperty('border-color', 'rgba(255,255,255,0.08)', 'important');
-                btn.style.setProperty('background', 'rgba(255,255,255,0.05)', 'important');
-                const newBadge = btn.querySelector('.new-badge');
-                if (newBadge) newBadge.style.display = 'none';
+                btn.classList.remove('has-unread');
             }
         }
     } catch (error) {
