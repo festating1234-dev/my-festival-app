@@ -1582,6 +1582,58 @@ async function submitReport(reasonCode) {
     }
 }
 
+// ===== 관리자: 신고 대상 카드 관리 액션 =====
+
+// 1. 카드 삭제 + 신고 반려 (자동)
+async function adminDeleteCardAndDismiss(cardId, reportId) {
+    if (!confirm('이 카드를 삭제하고 해당 신고를 반려 처리하시겠습니까?')) return;
+    try {
+        // 카드 삭제
+        const delRes = await fetch(`/api/profiles/${cardId}`, { method: 'DELETE' });
+        if (!delRes.ok) throw new Error('카드 삭제 실패');
+        // 신고 반려
+        const dismissRes = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
+        if (!dismissRes.ok) throw new Error('신고 반려 실패');
+        showToast('✅ 카드가 삭제되고 신고가 반려되었습니다.');
+        closeModal();
+        renderReportList(); // 목록 갱신
+        renderProfiles();   // 카드 목록 갱신
+    } catch (error) {
+        showToast('❌ ' + error.message);
+    }
+}
+
+// 2. 이용 정지 + 신고 반려
+async function adminBanUserAndDismiss(userId, reportId) {
+    if (!confirm('이 사용자를 이용 정지하고 해당 신고를 반려 처리하시겠습니까?')) return;
+    try {
+        const banRes = await fetch(`/api/admin/users/${userId}/ban`, { method: 'PUT' });
+        if (!banRes.ok) throw new Error('이용 정지 실패');
+        const dismissRes = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
+        if (!dismissRes.ok) throw new Error('신고 반려 실패');
+        showToast('✅ 사용자가 이용 정지되고 신고가 반려되었습니다.');
+        closeModal();
+        renderReportList();
+        renderProfiles();
+    } catch (error) {
+        showToast('❌ ' + error.message);
+    }
+}
+
+// 3. 신고만 반려
+async function adminDismissReport(reportId) {
+    if (!confirm('해당 신고를 반려하시겠습니까?')) return;
+    try {
+        const res = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
+        if (!res.ok) throw new Error('신고 반려 실패');
+        showToast('✅ 신고가 반려되었습니다.');
+        closeModal();
+        renderReportList();
+    } catch (error) {
+        showToast('❌ ' + error.message);
+    }
+}
+
 // 모달 닫기 이벤트
 document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
 document.getElementById('reportModal').addEventListener('click', function(e) {
@@ -2558,7 +2610,7 @@ document.addEventListener('DOMContentLoaded', function() {
 //  9. 프로필 상세 + 매칭 신청
 // ================================================================
 
-function showProfileDetail(profile, isFromMatching = false, phone = null, school = null) {
+function showProfileDetail(profile, isFromMatching = false, phone = null, school = null, isAdminMode = false, reportId = null) {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
     let typeLabel = '';
@@ -2642,6 +2694,17 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         ` : ''}
     </div>
 `}
+
+<!-- ★★★ 관리자 액션 버튼 (여기에 추가!) ★★★ -->
+        ${isAdminMode && isAdmin ? `
+            <hr class="divider">
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                <button class="btn-sm danger" onclick="adminDeleteCardAndDismiss(${profile.id}, ${reportId})">🗑️ 카드 삭제</button>
+                <button class="btn-sm danger" onclick="adminBanUserAndDismiss(${profile.user_id}, ${reportId})">🚫 이용 정지</button>
+                <button class="btn-sm" onclick="adminDismissReport(${reportId})">✅ 신고 반려</button>
+                <button class="btn-sm" onclick="closeModal()">닫기</button>
+            </div>
+        ` : ''}
     `;
     modal.classList.add('active');
 }
@@ -4363,7 +4426,6 @@ function renderPendingList() {
 
 // ===== 관리자: 신고 목록 렌더링 =====
 async function renderReportList() {
-    console.log('📋 renderReportList 함수 실행됨');
     const container = document.getElementById('reportListContainer');
     if (!container) return;
 
@@ -4396,6 +4458,9 @@ async function renderReportList() {
                                 → 🎯 대상: ${targetName} ${targetSchool ? '('+targetSchool+')' : ''}
                             </div>
                             ${r.description ? `<div style="font-size:0.55rem; color:#888; margin-top:2px;">📝 ${r.description}</div>` : ''}
+                            <div style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
+                                <button class="btn-sm" onclick="showProfileDetailForAdmin(${r.target_card_id}, ${r.id})">📋 카드보기</button>
+                            </div>
                         </div>
                         <div style="font-size:0.5rem; color:#666; text-align:right;">
                             📅 ${r.created_at ? r.created_at.slice(0, 10) : ''}
