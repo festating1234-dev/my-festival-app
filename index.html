@@ -1399,6 +1399,41 @@
     </div>
 </div>
 
+<!-- 신고 모달 -->
+<div class="modal-overlay" id="reportModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="reportModalClose">&times;</span>
+        <h2>🚨 신고하기</h2>
+        <div class="subtitle">신고 사유를 선택해 주세요</div>
+
+        <div style="margin:12px 0;">
+            <button class="btn-sm report-reason" onclick="submitReport(1)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">①</span> 허위 프로필 의심
+            </button>
+            <button class="btn-sm report-reason" onclick="submitReport(2)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">②</span> 욕설, 성적 발언 등 부적절한 소개문구
+            </button>
+            <button class="btn-sm report-reason" onclick="showReportCustomInput()" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">③</span> 직접 작성
+            </button>
+        </div>
+
+        <!-- 직접 작성 영역 (처음에는 숨김) -->
+        <div id="reportCustomArea" style="display:none;">
+            <div class="form-group">
+                <label>신고 사유를 직접 입력해주세요</label>
+                <textarea id="reportCustomInput" placeholder="신고 사유를 상세히 적어주세요..." style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.9rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="submitReport(3)" style="width:100%; margin-top:4px;">확인</button>
+        </div>
+
+        <div style="margin-top:12px; font-size:0.55rem; color:#666; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+            ⚠️ 신고 접수 시 운영진 확인 후 해당 카드 삭제 혹은 유저 정지 처리됩니다.<br>
+            장난성 신고를 지속적으로 시행시 제재될 수 있습니다.
+        </div>
+    </div>
+</div>
+
 <!-- 이메일 인증 모달 (새로 추가) -->
 <div class="modal-overlay" id="emailVerificationModal">
     <div class="modal-box" style="max-width: 400px;">
