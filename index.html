@@ -2021,11 +2021,23 @@ async function renderProfiles() {
     }
 
     function switchMode(mode) {
-        currentMode = mode;
-        document.querySelectorAll('#modeTabs button').forEach(b => b.classList.remove('active'));
-        document.querySelector(`#modeTabs button[data-mode="${mode}"]`).classList.add('active');
-        renderProfiles();
+    currentMode = mode;
+    document.querySelectorAll('#modeTabs button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`#modeTabs button[data-mode="${mode}"]`).classList.add('active');
+
+    // ★★★ 성별 필터 상태 관리 ★★★
+    if (mode === 'same' && currentUser) {
+        // 동성친구 모드: 현재 사용자 성별로 고정
+        genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
+        genderFilter.disabled = true;
+    } else {
+        // 둘이서 / 여럿이서 모드: 전체 성별로 초기화
+        genderFilter.value = 'all';
+        genderFilter.disabled = false;
     }
+
+    renderProfiles();
+}
 
     function applyFilters() { renderProfiles(); }
 
