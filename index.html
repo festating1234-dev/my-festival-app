@@ -2440,7 +2440,7 @@ document.addEventListener('DOMContentLoaded', function() {
 //  9. 프로필 상세 + 매칭 신청
 // ================================================================
 
-function showProfileDetail(profile, isFromMatching = false) {
+function showProfileDetail(profile, isFromMatching = false, phone = null, school = null) {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
     let typeLabel = '';
@@ -2498,44 +2498,32 @@ function showProfileDetail(profile, isFromMatching = false) {
             ${!showMatchBtn && !isMyCard && isLoggedIn && !isFromMatching ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
         </div>
         ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
-        <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
-            <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
-        </div>
+        ${isFromMatching && phone ? `
+    <div style="margin-top:8px; padding:12px; background:rgba(74,222,128,0.05); border-radius:12px; border:1px solid rgba(74,222,128,0.1); text-align:center;">
+        <div style="font-size:0.7rem; color:#888;">📞 연락처</div>
+        <div style="font-size:1.2rem; font-weight:700; color:#fbbf24; margin-top:2px;">${phone}</div>
+        <div style="font-size:0.6rem; color:#4ade80; margin-top:4px;">🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!</div>
+    </div>
+` : `
+    <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
+        <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
+    </div>
+`}
     `;
     modal.classList.add('active');
 }
 
-// ===== 매칭 현황에서 카드 확인용 (매칭신청 버튼 없음) =====
-function showProfileDetailFromMatching(cardId) {
+// ===== 매칭 현황에서 카드 확인용 (매칭신청 버튼 없음 + 연락처 표시) =====
+function showProfileDetailFromMatching(cardId, phone = null, school = null) {
     const profile = allProfiles.find(p => p.id === cardId);
     if (!profile) {
         showToast('⚠️ 카드를 찾을 수 없습니다.');
         return;
     }
-    showProfileDetail(profile, true);
+    // 매칭 중인 상태임을 표시하는 플래그와 연락처 정보 전달
+    showProfileDetail(profile, true, phone, school);
 }
 window.showProfileDetailFromMatching = showProfileDetailFromMatching;
-
-// ===== 연락처 확인 =====
-function showContactInfo(phone, school) {
-    const modal = document.getElementById('commonModal');
-    const content = document.getElementById('modalContent');
-    content.innerHTML = `
-        <h2>📞 연락처 확인</h2>
-        <div class="subtitle">매칭 성사된 상대방의 연락처입니다</div>
-        <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:12px 0; text-align:center;">
-            <div style="font-size:0.8rem; color:#888;">${school}</div>
-            <div style="font-size:1.4rem; font-weight:700; color:#fbbf24; margin-top:4px;">${phone}</div>
-        </div>
-        <div style="text-align:center; color:#4ade80; font-size:0.8rem; margin:8px 0;">
-            🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!
-        </div>
-        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
-    `;
-    modal.classList.add('active');
-}
-window.showContactInfo = showContactInfo;
-
 
     // ================================================================
     // 10. 매칭 신청 (일반/슈퍼 선택)
@@ -2709,7 +2697,7 @@ window.showContactInfo = showContactInfo;
                 <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
                     <button class="btn-sm success" onclick="respondMatching(${m.id}, true)">수락</button>
                     <button class="btn-sm danger" onclick="respondMatching(${m.id}, false)">거절</button>
-                    <button class="btn-sm" onclick="showProfileDetailFromMatching(${m.cardId})">📋 매칭 카드 확인하기</button>
+                    <button class="btn-sm primary" onclick="showProfileDetailFromMatching(${m.cardId}, '${m.phone}', '${m.school}')">📞 연락처 확인하기</button>
                 </div>
             </div>
         `;
@@ -2718,18 +2706,19 @@ window.showContactInfo = showContactInfo;
     // 성사된 매칭
     const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m => {
         const display = getDisplayInfo({ school: m.school, major: m.major, hide_school: false, hide_major: false });
-        return `
-            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:10px; margin-bottom:6px; border:1px solid rgba(74,222,128,0.1);">
-                <div style="font-size:0.6rem; color:#888; margin-bottom:2px;">${matchTypeMap[m.matchType] || '기타'}</div>
-                <div style="font-weight:700; font-size:0.8rem;">✅ ${display.school} / ${display.major} / ${m.age}세</div>
-                <div style="font-size:0.65rem; color:#4ade80;">🎉 매칭이 성공하였어요! (${typeLabelMap[m.type] || m.type})</div>
-                <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-                    <button class="btn-sm" onclick="showProfileDetailFromMatching(${m.cardId})">📋 매칭 카드 확인하기</button>
-                    <button class="btn-sm primary" onclick="showContactInfo('${m.phone}', '${m.school}')">📞 연락처 확인하기</button>
-                </div>
-                <div style="font-size:0.55rem; color:#666; margin-top:4px;">성사일: ${m.createdAt}</div>
+        const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m => {
+    // ...
+    return `
+        <div style="...">
+            <div style="...">✅ ${display.school} / ${display.major} / ${m.age}세</div>
+            <div style="...">🎉 매칭이 성공하였어요! (${typeLabelMap[m.type] || m.type})</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                <button class="btn-sm primary" onclick="showProfileDetailFromMatching(${m.cardId}, '${m.phone}', '${m.school}')">📞 연락처 확인하기</button>
             </div>
-        `;
+            <div style="font-size:0.55rem; color:#666; margin-top:4px;">성사일: ${m.createdAt}</div>
+        </div>
+    `;
+}).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">성사된 매칭이 없습니다</div>';
     }).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">성사된 매칭이 없습니다</div>';
 
     content.innerHTML = `
