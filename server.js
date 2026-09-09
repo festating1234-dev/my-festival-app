@@ -796,6 +796,45 @@ app.get('/api/admin/reports', async (req, res) => {
 });
 
 // ============================================================
+//  관리자: 이용 정지 / 신고 반려 API
+// ============================================================
+
+// 1. 사용자 이용 정지
+app.put('/api/admin/users/:id/ban', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('users')
+            .update({ is_banned: true })
+            .eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: '사용자가 이용 정지되었습니다.' });
+    } catch (error) {
+        console.error('Ban user error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 신고 반려 (status를 'dismissed'로 변경)
+app.put('/api/admin/reports/:id/dismiss', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('reports')
+            .update({ status: 'dismissed' })
+            .eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: '신고가 반려되었습니다.' });
+    } catch (error) {
+        console.error('Dismiss report error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 카드 삭제 (이미 있음 - DELETE /api/profiles/:id)
+// 이미 존재하므로 추가 불필요
+
+// ============================================================
 //  ★★★ 이 부분은 반드시 파일의 가장 마지막에 위치! ★★★
 //  모든 API 이외의 요청은 index.html (SPA)
 // ============================================================
