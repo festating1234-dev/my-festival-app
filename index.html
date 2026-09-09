@@ -2751,17 +2751,16 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
         <hr class="divider">
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            ${showMatchBtn && !isFromMatching && !isAdminMode ? `<button class="btn-sm primary" onclick="openMatchingTypeSelection(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>` : ''}
-            ${isMyCard ? `
-                <button class="btn-sm" onclick="closeModal(); openCardRegisterForm('${profile.type}')" style="flex:1;"><i class="fas fa-edit"></i> 수정</button>
-                <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
-            ` : ''}
-            ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-            ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode ? `
-                <button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>
-            ` : ''}
-            <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
-        </div>
+    ${isMyCard ? `
+        <button class="btn-sm" onclick="closeModal(); openCardRegisterForm('${profile.type}')" style="flex:1;"><i class="fas fa-edit"></i> 수정</button>
+        <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
+    ` : ''}
+    ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
+    ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode ? `
+        <button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>
+    ` : ''}
+    <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
+</div>
         ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '' : ''}
         ${isLoggedIn && !isMyCard && (currentMode === 'solo' || currentMode === 'group') && currentUser && profile.gender === currentUser.gender ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
         ${isAdminMode && isAdmin ? `
