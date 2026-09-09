@@ -742,10 +742,10 @@ app.get('/api/test', (req, res) => {
 });
 
 // ============================================================
-//  신고 관련 API  (★ 모든 API는 먼저 정의)
+//  신고 관련 API
 // ============================================================
 
-// 1. 신고 접수 (중복 체크 추가)
+// 1. 신고 접수 (중복 체크 포함)
 app.post('/api/reports', async (req, res) => {
     const { reporter_user_id, target_user_id, target_card_id, reason, description } = req.body;
 
@@ -790,7 +790,28 @@ app.post('/api/reports', async (req, res) => {
     }
 });
 
-// 2. 관리자용 신고 목록 조회
+// 2. 중복 신고 확인 (신고 버튼 클릭 시 바로 체크)
+app.get('/api/reports/check-duplicate', async (req, res) => {
+    const { reporter_user_id, target_card_id } = req.query;
+    if (!reporter_user_id || !target_card_id) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+    try {
+        const { data, error } = await supabase
+            .from('reports')
+            .select('id')
+            .eq('reporter_user_id', reporter_user_id)
+            .eq('target_card_id', target_card_id)
+            .maybeSingle();
+        if (error) throw error;
+        res.json({ duplicate: !!data });
+    } catch (error) {
+        console.error('Check duplicate error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 관리자용 신고 목록 조회
 app.get('/api/admin/reports', async (req, res) => {
     try {
         const { data, error } = await supabase
