@@ -2061,7 +2061,7 @@ async function loadNotifications() {
             const time = new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             html += `
-                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}')">
+                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}')"
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="flex:1;">
                             <div style="font-weight:600; font-size:0.8rem; color:${isUnread ? '#fbbf24' : '#aaa'};">${n.title}</div>
@@ -2082,7 +2082,7 @@ async function loadNotifications() {
 }
 
 // 알림 클릭 처리
-async function handleNotificationClick(notificationId, link) {
+async function handleNotificationClick(notificationId, link, type) {
     // 읽음 처리
     try {
         await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
@@ -2092,9 +2092,47 @@ async function handleNotificationClick(notificationId, link) {
 
     closeNotificationModal();
 
-    // 링크로 이동
+    // ===== 🆕 '찜' 알림 특별 처리 =====
+    if (type === 'liked') {
+        // 1. 학생증 인증 확인
+        if (cardVerificationStatus !== 'approved') {
+            showToast('⚠️ 나를 찜한 카드는 학생증 인증 후에 확인할 수 있어요.');
+            // 내정보 탭으로 이동 (인증 유도)
+            document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-tab="mypage"]')?.classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-mypage')?.classList.add('active');
+            updateNotificationBadge();
+            return;
+        }
+
+        // 2. 내 카드 등록 확인
+        if (!hasMyCard) {
+            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+            updateNotificationBadge();
+            return;
+        }
+
+        // 3. '나를찜한' 필터 활성화
+        showLikedByOnly = true;
+        showLikedOnly = false;
+        document.getElementById('showLikedByBtn')?.classList.add('active');
+        document.getElementById('showLikedBtn')?.classList.remove('active');
+
+        // 4. 친구찾기 탭으로 이동
+        document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tab="find"]')?.classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-find')?.classList.add('active');
+
+        // 5. 카드 목록 다시 그리기 (필터 적용)
+        renderProfiles();
+        updateNotificationBadge();
+        return;
+    }
+
+    // ===== 기존 링크 이동 로직 (찜이 아닌 다른 알림들) =====
     if (link) {
-        // link는 'matching', 'mypage', 'find' 등
         const tabMap = {
             'matching': 'find',
             'mypage': 'mypage',
@@ -2106,7 +2144,6 @@ async function handleNotificationClick(notificationId, link) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(`page-${tab}`)?.classList.add('active');
 
-        // 매칭 현황 탭은 추가 이동
         if (link === 'matching') {
             setTimeout(() => openMatchingStatus(), 300);
         }
