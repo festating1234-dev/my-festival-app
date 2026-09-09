@@ -1512,6 +1512,21 @@
     </div>
 </div>
 
+<!-- 카드 등록 필요 모달 -->
+<div class="modal-overlay" id="cardRequiredModal">
+    <div class="modal-box" style="max-width: 360px; text-align:center;">
+        <span class="close-btn" id="cardRequiredClose">&times;</span>
+        <div style="font-size:3rem; margin:8px 0;">📇</div>
+        <h2 style="color:#fbbf24;">내 카드를 등록해야 매칭 신청이 가능해요!</h2>
+        <div style="margin:16px 0;">
+            <button class="btn-primary" onclick="closeModal(); openCardManagement();" style="width:100%;">
+                <i class="fas fa-plus"></i> 내 카드 등록하기
+            </button>
+        </div>
+        <button class="btn-sm" onclick="closeModal()" style="width:100%;">닫기</button>
+    </div>
+</div>
+
 <script>
     // ================================================================
     // 0. 한국 대학교 목록 (자동완성용)
@@ -2701,7 +2716,6 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         }
     }
 
-    // 자기소개 제한 (비로그인 시)
     let detailDisplay = profile.detail;
     if (!isLoggedIn && profile.detail && profile.detail.length > 10) {
         detailDisplay = profile.detail.slice(0, 10) + '...<br><span style="color:#fbbf24; font-size:0.7rem;">🔒 전체 내용은 회원가입 후 확인 가능</span>';
@@ -2737,10 +2751,13 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
                 <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
             ` : ''}
             ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-            ${!showMatchBtn && !isMyCard && isLoggedIn && !isFromMatching && !isAdminMode ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
-            ${!showMatchBtn && !isMyCard && isLoggedIn && !isAdminMode ? `<button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>` : `<button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>`}
+            ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode ? `
+                <button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>
+            ` : ''}
+            <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
         </div>
-        ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' && !isAdminMode ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
+        ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '' : ''}
+        ${isLoggedIn && !isMyCard && (currentMode === 'solo' || currentMode === 'group') && currentUser && profile.gender === currentUser.gender ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
         ${isAdminMode && isAdmin ? `
             <hr class="divider">
             <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-top:8px; border-left:3px solid #f87171;">
@@ -2798,6 +2815,18 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
     // ================================================================
     // 10. 매칭 신청 (일반/슈퍼 선택)
     // ================================================================
+    function handleMatchingRequest(cardId) {
+    if (!isLoggedIn) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+    if (!hasMyCard) {
+        document.getElementById('cardRequiredModal').classList.add('active');
+        return;
+    }
+    openMatchingTypeSelection(cardId);
+}
+    
     function openMatchingTypeSelection(cardId) {
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
