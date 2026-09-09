@@ -753,7 +753,33 @@ app.get('/api/test', (req, res) => {
 //  신고 관련 API
 // ============================================================
 
-// 1. 신고 접수 (중복 체크 포함)
+// 1. 중복 신고 확인 (신고 버튼 클릭 시 바로 체크)
+app.get('/api/reports/check-duplicate', async (req, res) => {
+    const { reporter_user_id, target_card_id } = req.query;
+
+    if (!reporter_user_id || !target_card_id) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // ★ .maybeSingle() 대신 select + limit(1) 사용
+        const { data, error } = await supabase
+            .from('reports')
+            .select('id')
+            .eq('reporter_user_id', reporter_user_id)
+            .eq('target_card_id', target_card_id)
+            .limit(1);
+
+        if (error) throw error;
+
+        res.json({ duplicate: data && data.length > 0 });
+    } catch (error) {
+        console.error('Check duplicate error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 신고 접수 (중복 체크 포함)
 app.post('/api/reports', async (req, res) => {
     const { reporter_user_id, target_user_id, target_card_id, reason, description } = req.body;
 
@@ -762,17 +788,17 @@ app.post('/api/reports', async (req, res) => {
     }
 
     try {
-        // ★★★ 중복 신고 체크 ★★★
+        // ★ 중복 신고 체크 (select + limit(1))
         const { data: existing, error: checkError } = await supabase
             .from('reports')
             .select('id')
             .eq('reporter_user_id', reporter_user_id)
             .eq('target_card_id', target_card_id)
-            .maybeSingle();
+            .limit(1);
 
         if (checkError) throw checkError;
 
-        if (existing) {
+        if (existing && existing.length > 0) {
             return res.status(400).json({ error: '이미 신고한 카드입니다.' });
         }
 
@@ -795,27 +821,6 @@ app.post('/api/reports', async (req, res) => {
     } catch (error) {
         console.error('Report error:', error);
         res.status(500).json({ error: '신고 접수 중 오류가 발생했습니다.' });
-    }
-});
-
-// 2. 중복 신고 확인 (신고 버튼 클릭 시 바로 체크)
-app.get('/api/reports/check-duplicate', async (req, res) => {
-    const { reporter_user_id, target_card_id } = req.query;
-    if (!reporter_user_id || !target_card_id) {
-        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
-    }
-    try {
-        const { data, error } = await supabase
-            .from('reports')
-            .select('id')
-            .eq('reporter_user_id', reporter_user_id)
-            .eq('target_card_id', target_card_id)
-            .maybeSingle();
-        if (error) throw error;
-        res.json({ duplicate: !!data });
-    } catch (error) {
-        console.error('Check duplicate error:', error);
-        res.status(500).json({ error: error.message });
     }
 });
 
