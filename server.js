@@ -861,6 +861,147 @@ app.get('/api/admin/reports', async (req, res) => {
 });
 
 // ============================================================
+//  알림 관련 API 
+// ============================================================
+
+// 1. 사용자 알림 목록 조회 (최신순)
+app.get('/api/notifications', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Notifications fetch error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 읽지 않은 알림 개수 조회
+app.get('/api/notifications/unread-count', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { count, error } = await supabase
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('is_read', false);
+
+        if (error) throw error;
+        res.json({ count });
+    } catch (error) {
+        console.error('Unread count error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 알림 읽음 처리 (단일)
+app.put('/api/notifications/:id/read', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Read notification error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 모든 알림 읽음 처리
+app.put('/api/notifications/read-all', async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', userId)
+            .eq('is_read', false);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Read all notifications error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. 관리자 공지 발송
+app.post('/api/admin/notifications', async (req, res) => {
+    const { userIds, title, message, link } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: '수신자 목록이 필요합니다.' });
+    }
+    if (!title || !message) {
+        return res.status(400).json({ error: '제목과 내용이 필요합니다.' });
+    }
+
+    try {
+        const notifications = userIds.map(userId => ({
+            user_id: userId,
+            type: 'admin_notice',
+            title,
+            message,
+            link: link || null,
+            is_read: false
+        }));
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert(notifications)
+            .select();
+
+        if (error) throw error;
+        res.json({ success: true, count: data.length });
+    } catch (error) {
+        console.error('Admin notice error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 0. 단일 알림 생성 (시스템 내부용)
+app.post('/api/notifications', async (req, res) => {
+    const { user_id, type, title, message, link } = req.body;
+    if (!user_id || !type || !title || !message) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert([{ user_id, type, title, message, link: link || null, is_read: false }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (error) {
+        console.error('Create notification error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  관리자: 이용 정지 / 정지 관리 API
 // ============================================================
 
