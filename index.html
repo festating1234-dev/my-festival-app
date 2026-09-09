@@ -1343,31 +1343,34 @@
                     </div>
                 </div>
 
-                <div id="adminPanel" class="admin-panel hidden">
+               <div id="adminPanel" class="admin-panel hidden">
     <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
     <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
     <div class="admin-buttons">
         <button class="btn-sm" onclick="adminAddDummy()"><i class="fas fa-user-plus"></i> 더미추가</button>
         <button class="btn-sm" onclick="adminViewUsers()"><i class="fas fa-users"></i> 회원조회</button>
-        <button class="btn-sm danger" onclick="adminBanUser()"><i class="fas fa-ban"></i> 이용정지</button>
     </div>
     <div style="margin-top:8px; font-size:0.55rem; color:#666;">
         📌 학생증 인증 대기: <span id="pendingCount">0</span>건
     </div>
 
-    <!-- ★★★ 대기 목록 표시 영역 ★★★ -->
+    <!-- 학생증 인증 대기 목록 -->
     <div id="pendingList" style="margin-top:12px;">
         <!-- JavaScript에서 렌더링 -->
     </div>
 
-    <div id="pendingList" style="margin-top:12px;">
-    <!-- JavaScript에서 렌더링 -->
-</div>
+    <!-- 신고 목록 -->
+    <div id="reportListContainer" style="margin-top:12px;">
+        <!-- JavaScript에서 렌더링 -->
+    </div>
 
-<!-- ★★★ 여기에 신고 목록 표시 영역 추가! ★★★ -->
-<div id="reportListContainer" style="margin-top:12px;">
-    <!-- JavaScript에서 렌더링 -->
-</div>
+    <!-- ★★★ 정지 계정 관리 섹션 ★★★ -->
+    <div id="bannedUsersSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
+        <div style="font-weight:700; font-size:0.85rem; color:#f87171; margin-bottom:8px;">🚫 정지 계정 관리</div>
+        <div id="bannedUsersList">
+            <!-- JavaScript에서 렌더링 -->
+        </div>
+    </div>
 </div>
 
                 <div style="text-align:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04);">
@@ -1430,6 +1433,36 @@
         <div style="margin-top:12px; font-size:0.55rem; color:#666; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
             ⚠️ 신고 접수 시 운영진 확인 후 해당 카드 삭제 혹은 유저 정지 처리됩니다.<br>
             장난성 신고를 지속적으로 시행시 제재될 수 있습니다.
+        </div>
+    </div>
+</div>
+
+<!-- 정지 사유 선택 모달 -->
+<div class="modal-overlay" id="banReasonModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="banReasonClose">&times;</span>
+        <h2>🚫 정지 사유를 선택해 주세요</h2>
+        <div class="subtitle">해당 사용자를 정지합니다. 모든 카드가 삭제됩니다.</div>
+
+        <div style="margin:12px 0;">
+            <button class="btn-sm ban-reason-btn" onclick="confirmBan(1)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">①</span> 허위 프로필 의심
+            </button>
+            <button class="btn-sm ban-reason-btn" onclick="confirmBan(2)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">②</span> 욕설 또는 성적인 자기소개
+            </button>
+            <button class="btn-sm ban-reason-btn" onclick="showBanCustomInput()" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">③</span> 기타 직접 입력
+            </button>
+        </div>
+
+        <!-- 직접 입력 영역 (처음에는 숨김) -->
+        <div id="banCustomArea" style="display:none;">
+            <div class="form-group">
+                <label>정지 사유를 직접 입력해주세요</label>
+                <textarea id="banCustomInput" placeholder="정지 사유를 상세히 적어주세요..." style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.9rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="confirmBan(3)" style="width:100%; margin-top:4px;">확인</button>
         </div>
     </div>
 </div>
@@ -1690,20 +1723,174 @@ async function adminDeleteCardAndDismiss(cardId, reportId) {
     }
 }
 
-// 2. 이용 정지 + 신고 반려
-async function adminBanUserAndDismiss(userId, reportId) {
-    if (!confirm('이 사용자를 이용 정지하고 해당 신고를 반려 처리하시겠습니까?')) return;
+// ===== 정지 사유 선택 모달 =====
+let banTarget = null; // { userId, reportId }
+
+function openBanReasonModal(userId, reportId) {
+    banTarget = { userId, reportId };
+    document.getElementById('banReasonModal').classList.add('active');
+    document.getElementById('banCustomArea').style.display = 'none';
+    document.getElementById('banCustomInput').value = '';
+}
+
+function closeBanReasonModal() {
+    document.getElementById('banReasonModal').classList.remove('active');
+    banTarget = null;
+}
+
+function showBanCustomInput() {
+    document.getElementById('banCustomArea').style.display = 'block';
+}
+
+// 정지 실행
+async function confirmBan(reasonCode) {
+    if (!banTarget) {
+        showToast('⚠️ 오류가 발생했습니다. 다시 시도해주세요.');
+        return;
+    }
+
+    let reason = '';
+    if (reasonCode === 1) reason = '허위 프로필 의심';
+    else if (reasonCode === 2) reason = '욕설 또는 성적인 자기소개';
+    else if (reasonCode === 3) {
+        reason = document.getElementById('banCustomInput').value.trim();
+        if (!reason) {
+            showToast('⚠️ 정지 사유를 입력해주세요.');
+            return;
+        }
+    }
+
+    if (!confirm(`"${reason}" 사유로 해당 사용자를 정지하시겠습니까?\n모든 카드가 삭제됩니다.`)) return;
+
     try {
-        const banRes = await fetch(`/api/admin/users/${userId}/ban`, { method: 'PUT' });
-        if (!banRes.ok) throw new Error('이용 정지 실패');
-        const dismissRes = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
-        if (!dismissRes.ok) throw new Error('신고 반려 실패');
-        showToast('✅ 사용자가 이용 정지되고 신고가 반려되었습니다.');
-        closeModal();
-        renderReportList();
-        renderProfiles();
+        const res = await fetch(`/api/admin/users/${banTarget.userId}/ban`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            closeBanReasonModal();
+            closeModal();
+            showToast(`✅ 사용자가 정지되었습니다. (정지 사유: ${reason})`);
+            renderReportList();
+            renderBannedUsersList();
+            renderProfiles();
+        } else {
+            showToast('❌ ' + data.error);
+        }
     } catch (error) {
-        showToast('❌ ' + error.message);
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Ban error:', error);
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('banReasonClose').addEventListener('click', closeBanReasonModal);
+document.getElementById('banReasonModal').addEventListener('click', function(e) {
+    if (e.target === this) closeBanReasonModal();
+});
+
+// ===== 관리자: 정지 계정 목록 렌더링 =====
+async function renderBannedUsersList() {
+    const container = document.getElementById('bannedUsersList');
+    if (!container) return;
+
+    try {
+        const res = await fetch('/api/admin/banned-users');
+        if (!res.ok) throw new Error('정지 계정 목록 로드 실패');
+        const users = await res.json();
+
+        if (users.length === 0) {
+            container.innerHTML = '<div style="color:#666; font-size:0.7rem; padding:8px 0; text-align:center;">📭 정지된 계정이 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        users.forEach(user => {
+            const expiryDate = user.ban_expires_at ? new Date(user.ban_expires_at).toLocaleDateString() : '없음';
+            const cards = user.profiles || [];
+            const cardList = cards.map(c => `${c.type === 'solo' ? '💕' : c.type === 'group' ? '🍻' : '👬'} ${c.school} (${c.created_at ? c.created_at.slice(0,10) : ''})`).join(', ') || '등록된 카드 없음';
+
+            html += `
+                <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:10px; margin-bottom:8px; border:1px solid rgba(239,68,68,0.1);">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">${user.nickname}</div>
+                            <div style="font-size:0.6rem; color:#aaa;">
+                                📅 정지 해제 예정일: ${expiryDate}
+                            </div>
+                            <div style="font-size:0.6rem; color:#f87171;">
+                                📌 사유: ${user.ban_reason || '없음'}
+                            </div>
+                            <div style="font-size:0.55rem; color:#888; margin-top:2px;">
+                                📇 카드: ${cardList}
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:flex-start;">
+                            <button class="btn-sm" onclick="changeBanDuration(${user.id}, 1)" style="font-size:0.5rem;">+1일</button>
+                            <button class="btn-sm" onclick="changeBanDuration(${user.id}, -1)" style="font-size:0.5rem;">-1일</button>
+                            <button class="btn-sm" onclick="changeBanDuration(${user.id}, 7)" style="font-size:0.5rem;">+7일</button>
+                            <button class="btn-sm" onclick="changeBanDuration(${user.id}, -7)" style="font-size:0.5rem;">-7일</button>
+                            <button class="btn-sm success" onclick="unbanUser(${user.id})" style="font-size:0.5rem;">✅ 정지해제</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Banned users error:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.6rem;">⚠️ 정지 계정 목록을 불러오는데 실패했습니다.</div>';
+    }
+}
+
+// ===== 정지 기간 변경 =====
+async function changeBanDuration(userId, days) {
+    if (!confirm(`정지 기간을 ${days > 0 ? days + '일 연장' : Math.abs(days) + '일 단축'}하시겠습니까?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/ban-duration`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(`✅ ${data.message}`);
+            renderBannedUsersList();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 정지 해제 =====
+async function unbanUser(userId) {
+    if (!confirm('정지를 해제하시겠습니까?')) return;
+
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/unban`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('✅ 정지가 해제되었습니다.');
+            renderBannedUsersList();
+            renderReportList();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
     }
 }
 
@@ -2794,13 +2981,13 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
             </div>
         `)}
         ${isAdminMode && isAdmin ? `
-            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
-                <button class="btn-sm danger" onclick="adminDeleteCardAndDismiss(${profile.id}, ${reportId})">🗑️ 카드 삭제</button>
-                <button class="btn-sm danger" onclick="adminBanUserAndDismiss(${profile.user_id}, ${reportId})">🚫 이용 정지</button>
-                <button class="btn-sm" onclick="adminDismissReport(${reportId})">✅ 신고 반려</button>
-                <button class="btn-sm" onclick="closeModal()">닫기</button>
-            </div>
-        ` : ''}
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+        <button class="btn-sm danger" onclick="adminDeleteCardAndDismiss(${profile.id}, ${reportId})">🗑️ 카드 삭제</button>
+        <button class="btn-sm danger" onclick="openBanReasonModal(${profile.user_id}, ${reportId})">🚫 이용 정지</button>
+        <button class="btn-sm" onclick="adminDismissReport(${reportId})">✅ 신고 반려</button>
+        <button class="btn-sm" onclick="closeModal()">닫기</button>
+    </div>
+` : ''}
     `;
     modal.classList.add('active');
 }
@@ -3091,31 +3278,36 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
 }
 
     async function handleLogin(e) {
-        e.preventDefault();
-        const nickname = document.getElementById('loginNickname').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
+    e.preventDefault();
+    const nickname = document.getElementById('loginNickname').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
 
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nickname, password })
-            });
-            const user = await res.json();
-            if (res.ok) {
-                currentUserId = user.id;
-                setData('currentUser', currentUserId);
-                await loadUserData();
-                closeModal();
-                showToast('✅ 로그인 완료!');
-            } else {
-                showToast('❌ 아이디 또는 비밀번호가 올바르지 않습니다.');
-            }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-            console.error('Login error:', error);
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            currentUserId = data.id;
+            setData('currentUser', currentUserId);
+            await loadUserData();
+            closeModal();
+            showToast('✅ 로그인 완료!');
+        } else if (res.status === 403 && data.error === '이용 정지') {
+            // ★★★ 정지 메시지 표시 ★★★
+            showToast('🚫 ' + data.message);
+            // 모달에 정지 메시지 표시 (선택)
+        } else {
+            showToast('❌ 아이디 또는 비밀번호가 올바르지 않습니다.');
         }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Login error:', error);
     }
+}
 
     function openSignupModal() {
     const modal = document.getElementById('commonModal');
@@ -4117,12 +4309,10 @@ function updateUI() {
     if (isEmailVerified) {
         emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
         if (emailBox) emailBox.classList.add('success');
-        // ★★★ 인증 완료 시 버튼 숨기기 ★★★
         if (emailVerifyBtn) emailVerifyBtn.style.display = 'none';
     } else {
         emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
         if (emailBox) emailBox.classList.remove('success');
-        // ★★★ 미인증 시 버튼 보이기 ★★★
         if (emailVerifyBtn) emailVerifyBtn.style.display = 'inline-flex';
     }
 
@@ -4164,15 +4354,16 @@ function updateUI() {
     benefit.innerHTML = html;
 
     // ===== 10. 관리자 패널 =====
-if (isAdmin) {
-    const pending = allUsers.filter(u => u.card_status === 'pending').length;
-    document.getElementById('pendingCount').textContent = pending;
-    document.getElementById('adminPanel').classList.remove('hidden');
-    renderPendingList();
-    renderReportList(); // ★★★ 추가! ★★★
-} else {
-    document.getElementById('adminPanel').classList.add('hidden');
-}
+    if (isAdmin) {
+        const pending = allUsers.filter(u => u.card_status === 'pending').length;
+        document.getElementById('pendingCount').textContent = pending;
+        document.getElementById('adminPanel').classList.remove('hidden');
+        renderPendingList();
+        renderReportList();
+        renderBannedUsersList(); // ★★★ 추가! ★★★
+    } else {
+        document.getElementById('adminPanel').classList.add('hidden');
+    }
 }
 
     // ===== 이메일 인증 관련 함수 (새로운 버전) =====

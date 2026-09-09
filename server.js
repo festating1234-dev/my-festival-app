@@ -107,6 +107,14 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
         }
 
+        // ★★★ 정지 확인 ★★★
+        if (data.is_banned) {
+            return res.status(403).json({
+                error: '이용 정지',
+                message: '지속적인 신고로 1달간 이용이 정지되었습니다. 문의사항이 있다면 하단 "문의하기" 버튼을 통해 연락 부탁드립니다.'
+            });
+        }
+
         res.json(data);
     } catch (err) {
         console.error('Login error:', err);
@@ -832,21 +840,139 @@ app.get('/api/admin/reports', async (req, res) => {
 });
 
 // ============================================================
-//  관리자: 이용 정지 / 신고 반려 API
+//  관리자: 이용 정지 / 정지 관리 API
 // ============================================================
 
-// 1. 사용자 이용 정지
+// 1. 사용자 이용 정지 (모든 카드 삭제 + 정지 사유 저장)
 app.put('/api/admin/users/:id/ban', async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+        return res.status(400).json({ error: '정지 사유가 필요합니다.' });
+    }
+
+    try {
+        // 1. 해당 사용자의 모든 프로필(카드) 삭제
+        const { error: deleteError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('user_id', id);
+
+        if (deleteError) throw deleteError;
+
+        // 2. 사용자 정지 처리 (정지 사유 + 만료일 = 30일 후)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                is_banned: true,
+                ban_reason: reason,
+                ban_expires_at: expiresAt.toISOString()
+            })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // 3. 해당 사용자의 좋아요, 매칭 데이터도 정리 (선택)
+        await supabase.from('likes').delete().eq('user_id', id);
+        await supabase.from('matches').delete().or(`from_user_id.eq.${id},to_card_id.in.(SELECT id FROM profiles WHERE user_id = ${id})`);
+
+        res.json({
+            success: true,
+            message: '사용자가 정지되었고, 모든 카드가 삭제되었습니다.',
+            expires_at: expiresAt
+        });
+    } catch (error) {
+        console.error('Ban error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 정지된 사용자 목록 조회 (관리자용)
+app.get('/api/admin/banned-users', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select(`
+                id,
+                nickname,
+                school,
+                is_banned,
+                ban_reason,
+                ban_expires_at,
+                profiles:profiles(user_id, id, type, emoji, school, grade, age, gender, height, detail, created_at)
+            `)
+            .eq('is_banned', true)
+            .order('nickname', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Banned users error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 정지 해제
+app.put('/api/admin/users/:id/unban', async (req, res) => {
     const { id } = req.params;
     try {
         const { error } = await supabase
             .from('users')
-            .update({ is_banned: true })
+            .update({
+                is_banned: false,
+                ban_reason: null,
+                ban_expires_at: null
+            })
             .eq('id', id);
+
         if (error) throw error;
-        res.json({ success: true, message: '사용자가 이용 정지되었습니다.' });
+        res.json({ success: true, message: '정지가 해제되었습니다.' });
     } catch (error) {
-        console.error('Ban user error:', error);
+        console.error('Unban error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 정지 기간 변경 (연장/단축)
+app.put('/api/admin/users/:id/ban-duration', async (req, res) => {
+    const { id } = req.params;
+    const { days } = req.body; // 양수: 연장, 음수: 단축
+
+    if (typeof days !== 'number') {
+        return res.status(400).json({ error: '유효한 일수가 필요합니다.' });
+    }
+
+    try {
+        // 현재 만료일 조회
+        const { data: user, error: fetchError } = await supabase
+            .from('users')
+            .select('ban_expires_at')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const currentExpiry = new Date(user.ban_expires_at);
+        currentExpiry.setDate(currentExpiry.getDate() + days);
+
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ ban_expires_at: currentExpiry.toISOString() })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        res.json({
+            success: true,
+            message: `정지 기간이 ${days > 0 ? days + '일 연장' : Math.abs(days) + '일 단축'}되었습니다.`,
+            new_expires_at: currentExpiry
+        });
+    } catch (error) {
+        console.error('Ban duration error:', error);
         res.status(500).json({ error: error.message });
     }
 });
