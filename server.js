@@ -745,7 +745,7 @@ app.get('/api/test', (req, res) => {
 //  신고 관련 API  (★ 모든 API는 먼저 정의)
 // ============================================================
 
-// 1. 신고 접수
+// 1. 신고 접수 (중복 체크 추가)
 app.post('/api/reports', async (req, res) => {
     const { reporter_user_id, target_user_id, target_card_id, reason, description } = req.body;
 
@@ -754,6 +754,21 @@ app.post('/api/reports', async (req, res) => {
     }
 
     try {
+        // ★★★ 중복 신고 체크 ★★★
+        const { data: existing, error: checkError } = await supabase
+            .from('reports')
+            .select('id')
+            .eq('reporter_user_id', reporter_user_id)
+            .eq('target_card_id', target_card_id)
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existing) {
+            return res.status(400).json({ error: '이미 신고한 카드입니다.' });
+        }
+
+        // 신고 저장
         const { data, error } = await supabase
             .from('reports')
             .insert([{
