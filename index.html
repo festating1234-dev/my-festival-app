@@ -2426,6 +2426,7 @@ document.getElementById('notificationModal').addEventListener('click', function(
             updateMatchingData();
 
             updateUI();
+            updateNotificationBadge();
             renderProfiles();
             updateLikedBtn();
             return true;
@@ -5557,7 +5558,8 @@ async function renderReportList() {
         renderProfiles();  // ← 이 줄은 유지 (비로그인 시 필요)
     }
     renderFestivalCalendar();
-    // renderProfiles();  // ← ★★★ 이 줄을 삭제! ★★★
+    // 알림 배지 초기화 (로그인 상태면 읽지 않은 알림 개수 표시)
+updateNotificationBadge();
     updateLikedBtn();
     updateUI();
 
