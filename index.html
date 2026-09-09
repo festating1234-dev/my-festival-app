@@ -1147,6 +1147,10 @@
                     <button class="register-btn" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내카드관리하기</button>
                     <button class="matching-btn" onclick="openMatchingStatus()"><i class="fas fa-exchange-alt"></i> 매칭현황</button>
                     <button class="ideal-btn" onclick="openIdealSearch()"><i class="fas fa-star"></i> 이상형찾기</button>
+                    <button class="notification-btn" onclick="toggleNotificationModal()" style="position:relative; padding:4px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.05); color:#aaa; font-size:0.55rem; font-weight:600; cursor:pointer; transition:0.2s;">
+    <i class="fas fa-bell"></i> 알림
+    <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
+</button>
                 </div>
             </div>
 
@@ -1467,6 +1471,22 @@
     </div>
 </div>
 
+<!-- 알림 모달 -->
+<div class="modal-overlay" id="notificationModal">
+    <div class="modal-box" style="max-width: 400px; max-height: 70vh;">
+        <span class="close-btn" id="notificationModalClose">&times;</span>
+        <h2>🔔 알림</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div class="subtitle" style="margin-bottom:0;">새로운 소식을 확인하세요</div>
+            <button class="btn-sm" onclick="markAllNotificationsAsRead()" style="font-size:0.5rem;">모두 읽음</button>
+        </div>
+        <div id="notificationList" style="max-height:50vh; overflow-y:auto; padding-right:4px;">
+            <!-- JavaScript에서 렌더링 -->
+            <div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 알림이 없습니다.</div>
+        </div>
+    </div>
+</div>
+
 <!-- 이메일 인증 모달 (새로 추가) -->
 <div class="modal-overlay" id="emailVerificationModal">
     <div class="modal-box" style="max-width: 400px;">
@@ -1712,21 +1732,61 @@ function hasCardForMode(mode) {
 }
 
 // ===== 관리자: 신고 대상 카드 관리 액션 =====
+// 전역 변수로 allReports 선언 (이미 있다면 생략)
+let allReports = [];
 
 // 1. 카드 삭제 + 신고 반려 (자동)
 async function adminDeleteCardAndDismiss(cardId, reportId) {
     if (!confirm('이 카드를 삭제하고 해당 신고를 반려 처리하시겠습니까?')) return;
     try {
+        // ===== 🆕 신고 데이터와 카드 데이터 조회 (알림용) =====
+        const report = allReports?.find(r => r.id === reportId);
+        const targetCard = allProfiles.find(p => p.id === cardId);
+        
+        const reporterUserId = report?.reporter_user_id;
+        const targetUserId = report?.target_user_id || targetCard?.user_id;
+        const targetSchool = targetCard?.school || '알 수 없음';
+        const targetAge = targetCard?.age || '?';
+        const cardType = targetCard?.type || '';
+        const typeLabel = cardType === 'solo' ? '둘이서 (1:1)' : 
+                         cardType === 'group' ? '여럿이서 (다대다)' : 
+                         cardType === 'same' ? '동성친구 찾기' : '카드';
+
         // 카드 삭제
         const delRes = await fetch(`/api/profiles/${cardId}`, { method: 'DELETE' });
         if (!delRes.ok) throw new Error('카드 삭제 실패');
+        
         // 신고 반려
         const dismissRes = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
         if (!dismissRes.ok) throw new Error('신고 반려 실패');
+        
         showToast('✅ 카드가 삭제되고 신고가 반려되었습니다.');
         closeModal();
         renderReportList(); // 목록 갱신
         renderProfiles();   // 카드 목록 갱신
+
+        // ===== 🆕 알림 생성 =====
+        // 1) 신고자에게: 신고 승인 알림
+        if (reporterUserId) {
+            await createNotification(
+                reporterUserId,
+                'report_approved',
+                '🚨 신고가 승인되었습니다.',
+                `${targetSchool} ${targetAge}세 프로필을 대상으로 한 신고가 승인되었어요. 해당 카드는 삭제 조치되었습니다.`,
+                'find'
+            );
+        }
+
+        // 2) 신고 대상자(카드 소유자)에게: 카드 삭제 알림
+        if (targetUserId) {
+            await createNotification(
+                targetUserId,
+                'card_deleted_by_report',
+                '📌 접수된 신고로 인해 카드가 삭제되었어요.',
+                `"${typeLabel}" 카드가 삭제되었어요. 자기소개 문구를 수정해주세요.`,
+                'find'
+            );
+        }
     } catch (error) {
         showToast('❌ ' + error.message);
     }
@@ -1907,11 +1967,31 @@ async function unbanUser(userId) {
 async function adminDismissReport(reportId) {
     if (!confirm('해당 신고를 반려하시겠습니까?')) return;
     try {
+        // ===== 🆕 신고 데이터와 카드 데이터 조회 (알림용) =====
+        const report = allReports?.find(r => r.id === reportId);
+        const targetCard = allProfiles.find(p => p.id === report?.target_card_id);
+        
+        const reporterUserId = report?.reporter_user_id;
+        const targetSchool = targetCard?.school || '알 수 없음';
+        const targetAge = targetCard?.age || '?';
+
         const res = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
         if (!res.ok) throw new Error('신고 반려 실패');
+        
         showToast('✅ 신고가 반려되었습니다.');
         closeModal();
         renderReportList();
+
+        // ===== 🆕 알림 생성 (신고자에게) =====
+        if (reporterUserId) {
+            await createNotification(
+                reporterUserId,
+                'report_rejected',
+                '📌 신고가 반려되었습니다.',
+                `${targetSchool} ${targetAge}세 프로필을 대상으로 한 신고가 반려되었어요. 지속적으로 문제가 느껴지시면 문의하기를 이용해주세요.`,
+                'find'
+            );
+        }
     } catch (error) {
         showToast('❌ ' + error.message);
     }
@@ -1927,6 +2007,161 @@ document.getElementById('reportModal').addEventListener('click', function(e) {
 document.getElementById('cardRequiredClose').addEventListener('click', closeCardRequiredModal);
 document.getElementById('cardRequiredModal').addEventListener('click', function(e) {
     if (e.target === this) closeCardRequiredModal();
+});
+
+// ===== 알림 관련 함수 =====
+
+// ===== 알림 생성 헬퍼 함수 (반드시 필요!) =====
+async function createNotification(userId, type, title, message, link = null) {
+    if (!userId) return;
+    try {
+        await fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, type, title, message, link })
+        });
+        // 현재 사용자가 알림을 받는 대상이면 배지 업데이트
+        if (currentUser && userId === currentUser.id) {
+            updateNotificationBadge();
+        }
+    } catch (error) {
+        console.error('Create notification error:', error);
+    }
+}
+
+// 알림 모달 토글
+function toggleNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    if (modal.classList.contains('active')) {
+        modal.classList.remove('active');
+    } else {
+        modal.classList.add('active');
+        loadNotifications();
+    }
+}
+
+// 알림 목록 로드
+async function loadNotifications() {
+    if (!currentUser) return;
+    const container = document.getElementById('notificationList');
+    container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
+
+    try {
+        const res = await fetch(`/api/notifications?userId=${currentUser.id}`);
+        const notifications = await res.json();
+
+        if (notifications.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 새로운 알림이 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        notifications.forEach(n => {
+            const isUnread = !n.is_read;
+            const time = new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            html += `
+                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}')">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.8rem; color:${isUnread ? '#fbbf24' : '#aaa'};">${n.title}</div>
+                            <div style="font-size:0.65rem; color:#ccc; margin-top:2px;">${n.message}</div>
+                        </div>
+                        <div style="font-size:0.5rem; color:#666; white-space:nowrap; margin-left:8px;">${time}</div>
+                    </div>
+                    ${isUnread ? '<div style="font-size:0.45rem; color:#a855f7; margin-top:4px;">● 새 알림</div>' : ''}
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Load notifications error:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.7rem; padding:20px 0; text-align:center;">⚠️ 알림을 불러오는데 실패했습니다.</div>';
+    }
+}
+
+// 알림 클릭 처리
+async function handleNotificationClick(notificationId, link) {
+    // 읽음 처리
+    try {
+        await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
+    } catch (error) {
+        console.error('Mark read error:', error);
+    }
+
+    closeNotificationModal();
+
+    // 링크로 이동
+    if (link) {
+        // link는 'matching', 'mypage', 'find' 등
+        const tabMap = {
+            'matching': 'find',
+            'mypage': 'mypage',
+            'find': 'find'
+        };
+        const tab = tabMap[link] || 'find';
+        document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+        document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${tab}`)?.classList.add('active');
+
+        // 매칭 현황 탭은 추가 이동
+        if (link === 'matching') {
+            setTimeout(() => openMatchingStatus(), 300);
+        }
+    }
+
+    updateNotificationBadge();
+}
+
+// 알림 모달 닫기
+function closeNotificationModal() {
+    document.getElementById('notificationModal').classList.remove('active');
+}
+
+// 모든 알림 읽음 처리
+async function markAllNotificationsAsRead() {
+    if (!currentUser) return;
+    try {
+        await fetch('/api/notifications/read-all', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        loadNotifications();
+        updateNotificationBadge();
+    } catch (error) {
+        console.error('Mark all read error:', error);
+    }
+}
+
+// 알림 배지 업데이트
+async function updateNotificationBadge() {
+    if (!currentUser) {
+        document.getElementById('notificationBadge').style.display = 'none';
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/notifications/unread-count?userId=${currentUser.id}`);
+        const { count } = await res.json();
+        const badge = document.getElementById('notificationBadge');
+        if (count > 0) {
+            badge.style.display = 'inline-block';
+            badge.textContent = count > 9 ? '9+' : count;
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Badge update error:', error);
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('notificationModalClose').addEventListener('click', closeNotificationModal);
+document.getElementById('notificationModal').addEventListener('click', function(e) {
+    if (e.target === this) closeNotificationModal();
 });
 
     // ================================================================
@@ -2395,41 +2630,53 @@ async function renderProfiles() {
 }
 
     async function toggleLike(cardId) {
-        if (!hasMyCard || !isLoggedIn) {
-            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-            return;
-        }
-        const card = allProfiles.find(p => p.id === cardId);
-        if (card && card.user_id === currentUserId) {
-            showToast('⚠️ 본인의 카드는 찜할 수 없습니다');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/likes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUserId, card_id: cardId })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                if (data.action === 'liked') {
-                    likedIds.add(cardId);
-                    if (card) card.likes = (card.likes || 0) + 1;
-                } else {
-                    likedIds.delete(cardId);
-                    if (card) card.likes = (card.likes || 0) - 1;
-                }
-                renderProfiles();
-                updateLikedBtn();
-            } else {
-                showToast('❌ ' + data.error);
-            }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-            console.error('Like error:', error);
-        }
+    if (!hasMyCard || !isLoggedIn) {
+        showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+        return;
     }
+    const card = allProfiles.find(p => p.id === cardId);
+    if (card && card.user_id === currentUserId) {
+        showToast('⚠️ 본인의 카드는 찜할 수 없습니다');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/likes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUserId, card_id: cardId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            if (data.action === 'liked') {
+                likedIds.add(cardId);
+                if (card) card.likes = (card.likes || 0) + 1;
+
+                // ===== 🆕 좋아요 알림 (카드 소유자에게) =====
+                const cardOwnerId = card?.user_id;
+                if (cardOwnerId && cardOwnerId !== currentUserId) {
+                    await createNotification(
+                        cardOwnerId,
+                        'liked',
+                        '❤️ 나를 찜한 카드가 있어요!',
+                        '누군가 회원님의 카드를 찜했어요. 확인해볼까요?',
+                        'find'
+                    );
+                }
+            } else {
+                likedIds.delete(cardId);
+                if (card) card.likes = (card.likes || 0) - 1;
+            }
+            renderProfiles();
+            updateLikedBtn();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Like error:', error);
+    }
+}
 
     function toggleShowLiked() {
         showLikedOnly = !showLikedOnly;
@@ -3133,30 +3380,52 @@ function handleCardRegisterRedirect() {
     }
 
     async function respondMatching(matchId, accept) {
-        const match = allMatches.find(m => m.id === matchId);
-        if (!match) return;
-        const status = accept ? 'accepted' : 'rejected';
-        try {
-            const res = await fetch(`/api/matches/${matchId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-            if (res.ok) {
-                await fetchMatches();
-                updateMatchingData();
-                showToast(accept ? '✅ 매칭을 수락했습니다!' : '❌ 매칭을 거절했습니다.');
-                closeModal();
-                setTimeout(() => openMatchingStatus(), 300);
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    const status = accept ? 'accepted' : 'rejected';
+    try {
+        const res = await fetch(`/api/matches/${matchId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        if (res.ok) {
+            await fetchMatches();
+            updateMatchingData();
+            showToast(accept ? '✅ 매칭을 수락했습니다!' : '❌ 매칭을 거절했습니다.');
+            closeModal();
+            setTimeout(() => openMatchingStatus(), 300);
+
+            // ===== 🆕 알림 생성 =====
+            const fromUserId = match.from_user_id;
+            if (accept) {
+                // 매칭 수락 알림 (신청자에게)
+                await createNotification(
+                    fromUserId,
+                    'match_accepted',
+                    '💌 매칭이 수락되었습니다!',
+                    '상대방이 매칭을 수락했어요. 연락처를 확인해보세요!',
+                    'matching'
+                );
             } else {
-                const err = await res.json();
-                showToast('❌ ' + err.error);
+                // 매칭 거절 알림 (신청자에게)
+                await createNotification(
+                    fromUserId,
+                    'match_rejected',
+                    '💔 매칭이 거절되었습니다.',
+                    '상대방이 매칭을 거절했어요. 새로운 인연을 찾아보세요!',
+                    'find'
+                );
             }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-            console.error('Match response error:', error);
+        } else {
+            const err = await res.json();
+            showToast('❌ ' + err.error);
         }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Match response error:', error);
     }
+}
 
     function switchToLogin() {
         document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
@@ -3751,12 +4020,28 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
             });
             const data = await res.json();
             if (res.ok) {
-                currentUserId = data.id;
-                setData('currentUser', currentUserId);
-                await loadUserData();
-                closeModal();
-                showToast('🎉 회원가입 완료!');
-            } else {
+    currentUserId = data.id;
+    setData('currentUser', currentUserId);
+    await loadUserData();
+    closeModal();
+    showToast('🎉 회원가입 완료!');
+
+    // ★★★ 추천인 알림 ★★★
+    const referral = document.getElementById('signupReferral').value.trim();
+    if (referral) {
+        // 추천인 찾기 (allUsers는 이미 로드되어 있어야 함)
+        const referrer = allUsers.find(u => u.nickname === referral);
+        if (referrer) {
+            await createNotification(
+                referrer.id,
+                'referral',
+                '🌟 나를 추천인으로 입력한 친구가 있어요!',
+                '회원님이 추천한 친구가 가입했어요! 나와 친구 모두 무료매칭권 1개가 지급되었어요!',
+                'mypage'
+            );
+        }
+    }
+} else {
                 showToast('❌ ' + data.error);
             }
         } catch (error) {
@@ -4621,10 +4906,19 @@ async function adminApproveCard() {
             body: JSON.stringify({ status: 'approved' })
         });
         if (res.ok) {
-            await fetchUsers();
-            updateUI();
-            showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
-        } else {
+    await fetchUsers();
+    updateUI();
+    showToast(`✅ ${target.nickname}님의 학생증 인증이 승인되었습니다!`);
+
+    // ★★★ 알림 생성 ★★★
+    await createNotification(
+        target.id,
+        'card_verified',
+        '✅ 학생증 인증이 승인되었습니다!',
+        '인증이 완료되어 "나를찜한" 기능을 사용할 수 있습니다.',
+        'mypage'
+    );
+} else {
             const data = await res.json();
             showToast('❌ ' + data.error);
         }
@@ -4651,10 +4945,19 @@ async function adminRejectCard() {
             body: JSON.stringify({ status: 'rejected' })
         });
         if (res.ok) {
-            await fetchUsers();
-            updateUI();
-            showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
-        } else {
+    await fetchUsers();
+    updateUI();
+    showToast(`❌ ${target.nickname}님의 학생증 인증이 반려되었습니다.`);
+
+    // ★★★ 알림 생성 ★★★
+    await createNotification(
+        target.id,
+        'card_verified',
+        '❌ 학생증 인증이 반려되었습니다.',
+        '학생증 사진을 다시 확인하여 제출해주세요.',
+        'mypage'
+    );
+} else {
             const data = await res.json();
             showToast('❌ ' + data.error);
         }
