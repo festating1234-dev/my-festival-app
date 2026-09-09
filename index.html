@@ -2011,16 +2011,22 @@ document.getElementById('cardRequiredModal').addEventListener('click', function(
 
 // ===== 알림 관련 함수 =====
 
-// ===== 알림 생성 헬퍼 함수 (반드시 필요!) =====
-async function createNotification(userId, type, title, message, link = null) {
+// ===== 알림 생성 헬퍼 함수 (cardId 추가) =====
+async function createNotification(userId, type, title, message, link = null, cardId = null) {
     if (!userId) return;
     try {
         await fetch('/api/notifications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, type, title, message, link })
+            body: JSON.stringify({ 
+                user_id: userId, 
+                type, 
+                title, 
+                message, 
+                link,
+                card_id: cardId   // ← 추가됨
+            })
         });
-        // 현재 사용자가 알림을 받는 대상이면 배지 업데이트
         if (currentUser && userId === currentUser.id) {
             updateNotificationBadge();
         }
@@ -2061,7 +2067,7 @@ async function loadNotifications() {
             const time = new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             html += `
-                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}')"
+                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}', ${n.card_id || null})"
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="flex:1;">
                             <div style="font-weight:600; font-size:0.8rem; color:${isUnread ? '#fbbf24' : '#aaa'};">${n.title}</div>
@@ -2082,7 +2088,7 @@ async function loadNotifications() {
 }
 
 // 알림 클릭 처리
-async function handleNotificationClick(notificationId, link, type) {
+async function handleNotificationClick(notificationId, link, type, cardId) {
     // 읽음 처리
     try {
         await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
@@ -2092,46 +2098,19 @@ async function handleNotificationClick(notificationId, link, type) {
 
     closeNotificationModal();
 
-    // ===== 🆕 '찜' 알림 특별 처리 =====
-    if (type === 'liked') {
-        // 1. 학생증 인증 확인
-        if (cardVerificationStatus !== 'approved') {
-            showToast('⚠️ 나를 찜한 카드는 학생증 인증 후에 확인할 수 있어요.');
-            // 내정보 탭으로 이동 (인증 유도)
-            document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
-            document.querySelector('[data-tab="mypage"]')?.classList.add('active');
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-mypage')?.classList.add('active');
-            updateNotificationBadge();
-            return;
+    // ===== 🆕 '찜' 알림: 해당 카드 상세 모달 띄우기 =====
+    if (type === 'liked' && cardId) {
+        const profile = allProfiles.find(p => p.id === cardId);
+        if (profile) {
+            showProfileDetail(profile);
+        } else {
+            showToast('⚠️ 해당 카드를 찾을 수 없습니다.');
         }
-
-        // 2. 내 카드 등록 확인
-        if (!hasMyCard) {
-            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-            updateNotificationBadge();
-            return;
-        }
-
-        // 3. '나를찜한' 필터 활성화
-        showLikedByOnly = true;
-        showLikedOnly = false;
-        document.getElementById('showLikedByBtn')?.classList.add('active');
-        document.getElementById('showLikedBtn')?.classList.remove('active');
-
-        // 4. 친구찾기 탭으로 이동
-        document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
-        document.querySelector('[data-tab="find"]')?.classList.add('active');
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page-find')?.classList.add('active');
-
-        // 5. 카드 목록 다시 그리기 (필터 적용)
-        renderProfiles();
         updateNotificationBadge();
         return;
     }
 
-    // ===== 기존 링크 이동 로직 (찜이 아닌 다른 알림들) =====
+    // ===== 기존 링크 이동 로직 (찜 외 알림) =====
     if (link) {
         const tabMap = {
             'matching': 'find',
@@ -2696,8 +2675,9 @@ async function renderProfiles() {
                         cardOwnerId,
                         'liked',
                         '❤️ 나를 찜한 카드가 있어요!',
-                        '누군가 회원님의 카드를 찜했어요. 확인해볼까요?',
-                        'find'
+                         '누군가 회원님의 카드를 찜했어요. 확인해볼까요?',
+        null,        // link는 null (클릭 시 직접 카드 모달 띄움)
+        cardId       // ← 찜당한 카드 ID (즉, 내 카드)
                     );
                 }
             } else {

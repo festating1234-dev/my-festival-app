@@ -982,7 +982,7 @@ app.post('/api/admin/notifications', async (req, res) => {
 
 // 0. 단일 알림 생성 (시스템 내부용)
 app.post('/api/notifications', async (req, res) => {
-    const { user_id, type, title, message, link } = req.body;
+    const { user_id, type, title, message, link, card_id } = req.body;
     if (!user_id || !type || !title || !message) {
         return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
@@ -990,7 +990,15 @@ app.post('/api/notifications', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('notifications')
-            .insert([{ user_id, type, title, message, link: link || null, is_read: false }])
+            .insert([{ 
+                user_id, 
+                type, 
+                title, 
+                message, 
+                link: link || null, 
+                card_id: card_id || null,  // ← 추가됨
+                is_read: false 
+            }])
             .select();
 
         if (error) throw error;
