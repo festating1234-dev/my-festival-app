@@ -1517,7 +1517,29 @@
     // ===== 신고 관련 함수 =====
 let reportTarget = null; // { cardId, targetUserId }
 
-function openReportModal(cardId, targetUserId) {
+// ===== 신고 모달 열기 (중복 체크 포함) =====
+async function openReportModal(cardId, targetUserId) {
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+
+    // ★★★ 중복 신고 체크 ★★★
+    try {
+        const res = await fetch(`/api/reports/check-duplicate?reporter_user_id=${currentUser.id}&target_card_id=${cardId}`);
+        const data = await res.json();
+
+        if (data.duplicate) {
+            showToast('⚠️ 이미 신고한 카드입니다.');
+            return;
+        }
+    } catch (error) {
+        console.error('Duplicate check error:', error);
+        showToast('⚠️ 중복 확인 중 오류가 발생했습니다.');
+        return;
+    }
+
+    // 중복이 아니면 모달 열기
     reportTarget = { cardId, targetUserId };
     document.getElementById('reportModal').classList.add('active');
     document.getElementById('reportCustomArea').style.display = 'none';
