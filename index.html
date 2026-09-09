@@ -3022,18 +3022,21 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
         return;
     }
     if (!hasCardForMode(currentMode)) {
-        // 현재 모드에 맞는 카드가 없으면 등록 유도 모달 표시
         const modeLabel = currentMode === 'solo' ? '둘이서 (1:1)' : 
                          currentMode === 'group' ? '여럿이서 (2:2,3:3,4:4)' : 
                          '동성친구 찾기';
-        // 모달에 현재 모드 정보 전달
+        
+        // ★★★ 모달 내부 텍스트 변경 ★★★
+        document.getElementById('cardRequiredModeLabel').textContent = modeLabel;
+        document.getElementById('cardRequiredTitle').textContent = `${modeLabel} 카드를 등록해야 매칭 신청이 가능해요!`;
+        
+        // 모달에 현재 모드 저장 (등록 버튼 클릭 시 사용)
         document.getElementById('cardRequiredModal').dataset.mode = currentMode;
-        document.getElementById('cardRequiredModal').dataset.modeLabel = modeLabel;
         document.getElementById('cardRequiredModal').classList.add('active');
         return;
     }
     openMatchingTypeSelection(cardId);
-}
+}ㄴ
 
 // ===== 카드 등록 필요 모달 닫기 =====
 function closeCardRequiredModal() {
@@ -3043,12 +3046,10 @@ function closeCardRequiredModal() {
 // ===== 내 카드 등록하기로 이동 (모달 닫기 + 해당 모드 카드 등록 열기) =====
 function handleCardRegisterRedirect() {
     const modal = document.getElementById('cardRequiredModal');
-    const mode = modal.dataset.mode || 'solo'; // 현재 모드 가져오기
+    const mode = modal.dataset.mode || 'solo';
     
-    closeCardRequiredModal();      // 카드 필요 모달 닫기
-    closeModal();                  // 카드 상세 모달 닫기 (commonModal)
-    
-    // 해당 모드의 카드 등록 폼 열기
+    closeCardRequiredModal();
+    closeModal();
     openCardRegisterForm(mode);
 }
     
