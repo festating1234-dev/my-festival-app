@@ -1956,6 +1956,8 @@ document.getElementById('cardRequiredModal').addEventListener('click', function(
     // 매칭 데이터
     let matchingData = { sent: [], received: [], matched: [] };
 
+    let isSubmittingCard = false; // 카드 등록 중복 방지 플래그
+
     // ================================================================
     // 2. localStorage 헬퍼 (로그인 상태만 유지)
     // ================================================================
@@ -4182,50 +4184,65 @@ function openEditProfile() {
     }
 
     async function handleCardRegister(e, type) {
-        e.preventDefault();
-        if (!currentUser) return;
-        const detail = document.getElementById('cardIntro_' + type).value.trim();
-        if (detail.length < 20) {
-            showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
-            return;
-        }
-        const newCard = {
-            user_id: currentUserId,
-            type: type,
-            emoji: currentUser.animal.split(' ')[0] || '🐶',
-            school: currentUser.school,
-            grade: currentUser.grade,
-            gender: currentUser.gender,
-            height: currentUser.height,
-            detail: detail,
-            age: currentUser.age,
-            major: currentUser.major,
-            region: currentUser.region,
-            preview: detail.slice(0, 18) + '...'
-        };
+    e.preventDefault();
+    if (!currentUser) return;
+    if (isSubmittingCard) {
+        showToast('⏳ 이미 등록 요청 중입니다. 잠시만 기다려주세요.');
+        return;
+    }
 
-        try {
-            const res = await fetch('/api/profiles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newCard)
-            });
-            const data = await res.json();
-            if (res.ok) {
-                allProfiles.push(data);
-                hasMyCard = true;
-                renderProfiles();
-                updateLikedBtn();
-                closeModal();
-                showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 등록되었습니다!`);
+    const detail = document.getElementById('cardIntro_' + type).value.trim();
+    if (detail.length < 20) {
+        showToast('⚠️ 자기소개는 20자 이상 입력해주세요');
+        return;
+    }
+
+    isSubmittingCard = true;
+
+    const newCard = {
+        user_id: currentUserId,
+        type: type,
+        emoji: currentUser.animal.split(' ')[0] || '🐶',
+        school: currentUser.school,
+        grade: currentUser.grade,
+        gender: currentUser.gender,
+        height: currentUser.height,
+        detail: detail,
+        age: currentUser.age,
+        major: currentUser.major,
+        region: currentUser.region,
+        preview: detail.slice(0, 18) + '...'
+    };
+
+    try {
+        const res = await fetch('/api/profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newCard)
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            allProfiles.push(data);
+            hasMyCard = true;
+            renderProfiles();
+            updateLikedBtn();
+            closeModal();
+            showToast(`✅ ${type === 'solo' ? '둘이서' : type === 'group' ? '여럿이서' : '동성친구'} 카드가 등록되었습니다!`);
+        } else {
+            if (data.error && data.error.includes('이미 해당 유형의 카드가 존재합니다')) {
+                showToast('⚠️ 이미 등록된 카드 유형입니다.');
             } else {
                 showToast('❌ ' + data.error);
             }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-            console.error('Card register error:', error);
         }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Card register error:', error);
+    } finally {
+        isSubmittingCard = false;
     }
+}
 
     async function handleCardUpdate(e, type) {
         e.preventDefault();

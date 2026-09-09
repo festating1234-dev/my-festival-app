@@ -503,9 +503,25 @@ app.get('/api/profiles', async (req, res) => {
     }
 });
 
-// 2-2. 카드 등록
+// 2-2. 카드 등록 (중복 체크 추가)
 app.post('/api/profiles', async (req, res) => {
+    const { user_id, type } = req.body;
     try {
+        // ★★★ 동일 사용자 + 동일 타입 카드 존재 여부 확인 ★★★
+        const { data: existing, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user_id)
+            .eq('type', type)
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existing) {
+            return res.status(400).json({ error: '이미 해당 유형의 카드가 존재합니다.' });
+        }
+
+        // 카드 등록
         const { data, error } = await supabase
             .from('profiles')
             .insert([req.body])
