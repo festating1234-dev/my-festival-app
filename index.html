@@ -2193,6 +2193,7 @@ async function markAllNotificationsAsRead() {
 
 // 알림 배지 업데이트
 async function updateNotificationBadge() {
+    console.log('🔥 updateNotificationBadge 실행됨, count:', count);
     const badge = document.getElementById('notificationBadge');
     const btn = document.querySelector('.notification-btn');
 
