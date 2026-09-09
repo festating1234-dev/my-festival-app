@@ -2200,9 +2200,9 @@ async function updateNotificationBadge() {
     if (!currentUser) {
         if (badge) badge.style.display = 'none';
         if (btn) {
-            btn.style.color = '#aaa';
-            btn.style.borderColor = 'rgba(255,255,255,0.08)';
-            btn.style.background = 'rgba(255,255,255,0.05)';
+            btn.style.setProperty('color', '#aaa', 'important');
+            btn.style.setProperty('border-color', 'rgba(255,255,255,0.08)', 'important');
+            btn.style.setProperty('background', 'rgba(255,255,255,0.05)', 'important');
             const newBadge = btn.querySelector('.new-badge');
             if (newBadge) newBadge.style.display = 'none';
         }
@@ -2223,20 +2223,20 @@ async function updateNotificationBadge() {
             }
         }
 
-        // 2. ★ 버튼 스타일 직접 조작 (CSS 우선순위 무시!)
+        // 2. ★ !important를 사용한 버튼 스타일 직접 조작
         if (btn) {
             if (count > 0) {
                 // 알림 있음: 노란색 강조 + New 표시
-                btn.style.color = '#fbbf24';
-                btn.style.borderColor = 'rgba(251,191,36,0.3)';
-                btn.style.background = 'rgba(251,191,36,0.1)';
+                btn.style.setProperty('color', '#fbbf24', 'important');
+                btn.style.setProperty('border-color', 'rgba(251,191,36,0.3)', 'important');
+                btn.style.setProperty('background', 'rgba(251,191,36,0.1)', 'important');
                 const newBadge = btn.querySelector('.new-badge');
                 if (newBadge) newBadge.style.display = 'inline-block';
             } else {
                 // 알림 없음: 흑백/회색
-                btn.style.color = '#aaa';
-                btn.style.borderColor = 'rgba(255,255,255,0.08)';
-                btn.style.background = 'rgba(255,255,255,0.05)';
+                btn.style.setProperty('color', '#aaa', 'important');
+                btn.style.setProperty('border-color', 'rgba(255,255,255,0.08)', 'important');
+                btn.style.setProperty('background', 'rgba(255,255,255,0.05)', 'important');
                 const newBadge = btn.querySelector('.new-badge');
                 if (newBadge) newBadge.style.display = 'none';
             }
