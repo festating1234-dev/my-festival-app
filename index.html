@@ -1702,6 +1702,12 @@ function showProfileDetailForAdmin(cardId, reportId, reportReason, reportDescrip
     showProfileDetail(profile, false, null, null, true, reportId, reportReason, reportDescription);
 }
 
+// ===== 현재 모드에 맞는 카드가 있는지 확인 =====
+function hasCardForMode(mode) {
+    if (!currentUser) return false;
+    return allProfiles.some(p => p.user_id === currentUser.id && p.type === mode);
+}
+
 // ===== 관리자: 신고 대상 카드 관리 액션 =====
 
 // 1. 카드 삭제 + 신고 반려 (자동)
@@ -2917,15 +2923,15 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
     const genderText = profile.gender === 'female' ? '여성' : '남성';
 
     let showMatchBtn = false;
-    if (isLoggedIn && !isMyCard && hasMyCard) {
-        if (currentMode === 'same') {
+if (isLoggedIn && !isMyCard && hasCardForMode(currentMode)) {
+    if (currentMode === 'same') {
+        showMatchBtn = true;
+    } else if (currentMode === 'solo' || currentMode === 'group') {
+        if (currentUser && profile.gender !== currentUser.gender) {
             showMatchBtn = true;
-        } else if (currentMode === 'solo' || currentMode === 'group') {
-            if (currentUser && profile.gender !== currentUser.gender) {
-                showMatchBtn = true;
-            }
         }
     }
+}ㄴ
 
     content.innerHTML = `
         <h2>💌 카드 상세</h2>
@@ -3012,8 +3018,14 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
         showToast('⚠️ 로그인 후 이용 가능합니다');
         return;
     }
-    if (!hasMyCard) {
-        document.getElementById('cardRequiredModal').classList.add('active');
+    if (!hasCardForMode(currentMode)) {
+        // 현재 모드에 맞는 카드가 없으면 등록 유도
+        const modeLabel = currentMode === 'solo' ? '둘이서 (1:1)' : 
+                         currentMode === 'group' ? '여럿이서 (2:2,3:3,4:4)' : 
+                         '동성친구 찾기';
+        showToast(`⚠️ ${modeLabel} 매칭을 위해 카드를 등록해주세요.`);
+        // 카드 관리 모달 열기 (선택)
+        // openCardManagement();
         return;
     }
     openMatchingTypeSelection(cardId);
