@@ -2612,18 +2612,26 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         <div style="font-size:0.7rem; color:#888;">📞 연락처</div>
         <div style="font-size:1.2rem; font-weight:700; color:#fbbf24; margin-top:2px;">${phone}</div>
         <div style="font-size:0.6rem; color:#4ade80; margin-top:4px;">🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!</div>
+        <!-- ★★★ 신고 버튼 추가 ★★★ -->
+        ${!isMyCard && isLoggedIn ? `
+            <div style="margin-top:8px; text-align:right;">
+                <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">
+                    🚨 신고
+                </button>
+            </div>
+        ` : ''}
     </div>
 ` : `
     <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-    <div style="font-size:0.6rem; color:#666;">
-        <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
+        <div style="font-size:0.6rem; color:#666;">
+            <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
+        </div>
+        ${!isMyCard && isLoggedIn ? `
+            <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">
+                🚨 신고
+            </button>
+        ` : ''}
     </div>
-    ${!isMyCard && isLoggedIn ? `
-        <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">
-            🚨 신고
-        </button>
-    ` : ''}
-</div>
 `}
     `;
     modal.classList.add('active');
