@@ -1519,11 +1519,11 @@
         <div style="font-size:3rem; margin:8px 0;">📇</div>
         <h2 style="color:#fbbf24;">내 카드를 등록해야 매칭 신청이 가능해요!</h2>
         <div style="margin:16px 0;">
-            <button class="btn-primary" onclick="closeModal(); openCardManagement();" style="width:100%;">
+            <button class="btn-primary" onclick="handleCardRegisterRedirect()" style="width:100%;">
                 <i class="fas fa-plus"></i> 내 카드 등록하기
             </button>
         </div>
-        <button class="btn-sm" onclick="closeModal()" style="width:100%;">닫기</button>
+        <button class="btn-sm" onclick="closeCardRequiredModal()" style="width:100%;">닫기</button>
     </div>
 </div>
 
@@ -1725,6 +1725,12 @@ async function adminDismissReport(reportId) {
 document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
 document.getElementById('reportModal').addEventListener('click', function(e) {
     if (e.target === this) closeReportModal();
+});
+
+// 카드 등록 필요 모달 닫기 이벤트
+document.getElementById('cardRequiredClose').addEventListener('click', closeCardRequiredModal);
+document.getElementById('cardRequiredModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCardRequiredModal();
 });
 
     // ================================================================
@@ -2825,6 +2831,18 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
         return;
     }
     openMatchingTypeSelection(cardId);
+}
+
+// ===== 카드 등록 필요 모달 닫기 =====
+function closeCardRequiredModal() {
+    document.getElementById('cardRequiredModal').classList.remove('active');
+}
+
+// ===== 내 카드 등록하기로 이동 (모달 닫기 + 카드 관리 열기) =====
+function handleCardRegisterRedirect() {
+    closeCardRequiredModal();      // 카드 필요 모달 닫기
+    closeModal();                  // 카드 상세 모달 닫기 (commonModal)
+    openCardManagement();          // 내 카드 관리 열기
 }
     
     function openMatchingTypeSelection(cardId) {
