@@ -4446,10 +4446,13 @@ async function renderReportList() {
         if (!res.ok) throw new Error('신고 목록 로드 실패');
         const reports = await res.json();
 
-        if (reports.length === 0) {
-            container.innerHTML = '<div style="color:#666; font-size:0.7rem; padding:8px 0; text-align:center;">📭 접수된 신고가 없습니다.</div>';
-            return;
-        }
+// ★★★ 대기 중인 신고만 필터링 ★★★
+const pendingReports = reports.filter(r => r.status === 'pending');
+
+if (pendingReports.length === 0) {
+    container.innerHTML = '<div style="color:#666; font-size:0.7rem; padding:8px 0; text-align:center;">📭 접수된 신고가 없습니다.</div>';
+    return;
+}
 
         let html = '<div style="margin-top:12px;">';
         html += '<div style="font-weight:700; font-size:0.8rem; color:#f87171; margin-bottom:8px;">🚨 신고 목록</div>';
