@@ -2495,8 +2495,7 @@ function showProfileDetail(profile, isFromMatching = false) {
                 <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
             ` : ''}
             ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-            ${!showMatchBtn && !isMyCard && isLoggedIn ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
-            <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
+            ${!showMatchBtn && !isMyCard && isLoggedIn && !isFromMatching ? `<button class="btn-sm" style="flex:1; background:rgba(255,255,255,0.03); color:#666;" disabled>매칭 불가</button>` : ''}
         </div>
         ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '<div style="margin-top:6px; font-size:0.55rem; color:#666; text-align:center;">⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다</div>' : ''}
         <div style="margin-top:8px; font-size:0.6rem; color:#666; text-align:center;">
