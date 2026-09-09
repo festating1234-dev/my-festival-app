@@ -2952,7 +2952,7 @@ if (isLoggedIn && !isMyCard && hasCardForMode(currentMode)) {
         <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
     ` : ''}
     ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-    ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && showMatchBtn ? `
+    ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender)) ? `
     <button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>
 ` : ''}
     <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
