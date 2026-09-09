@@ -1140,22 +1140,26 @@
         <!-- 친구찾기 -->
         <div id="page-find" class="page active">
             <div class="find-header">
-                <span class="count-badge" id="genderCount">👩 0명 · 👨 0명</span>
-                <div class="action-buttons">
-    <button class="liked-btn" id="showLikedBtn" onclick="toggleShowLiked()"><i class="fas fa-heart"></i> 내가찜한카드</button>
-    <button class="liked-by-btn" id="showLikedByBtn" onclick="toggleShowLikedBy()"><i class="fas fa-heart"></i> 나를찜한카드</button>
-    <button class="register-btn" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내카드관리하기</button>
-    <button class="matching-btn" onclick="openMatchingStatus()"><i class="fas fa-exchange-alt"></i> 매칭현황</button>
-    
-    <!-- ★ 알림 버튼을 여기로 이동 (이상형찾기 바로 위) -->
-    <button class="notification-btn" onclick="toggleNotificationModal()" style="position:relative; padding:4px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.05); color:#aaa; font-size:0.55rem; font-weight:600; cursor:pointer; transition:0.2s;">
-        <i class="fas fa-bell"></i> 알림
-        <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
-    </button>
+    <!-- ===== 1번째 줄: 성별 카운트 + 알림 버튼 ===== -->
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+        <span class="count-badge" id="genderCount">👩 0명 · 👨 0명</span>
+        
+        <!-- ★ 알림 버튼 (여기로 이동!) -->
+        <button class="notification-btn" onclick="toggleNotificationModal()" style="position:relative; padding:4px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.05); color:#aaa; font-size:0.55rem; font-weight:600; cursor:pointer; transition:0.2s; white-space:nowrap;">
+            <i class="fas fa-bell"></i> 알림
+            <span id="notificationBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#f87171; color:#fff; font-size:0.45rem; border-radius:50%; padding:1px 5px; min-width:16px; text-align:center;">0</span>
+        </button>
+    </div>
 
-    <button class="ideal-btn" onclick="openIdealSearch()"><i class="fas fa-star"></i> 이상형찾기</button>
+    <!-- ===== 2번째 줄: 나머지 버튼들 ===== -->
+    <div class="action-buttons">
+        <button class="liked-btn" id="showLikedBtn" onclick="toggleShowLiked()"><i class="fas fa-heart"></i> 내가찜한카드</button>
+        <button class="liked-by-btn" id="showLikedByBtn" onclick="toggleShowLikedBy()"><i class="fas fa-heart"></i> 나를찜한카드</button>
+        <button class="register-btn" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내카드관리하기</button>
+        <button class="matching-btn" onclick="openMatchingStatus()"><i class="fas fa-exchange-alt"></i> 매칭현황</button>
+        <button class="ideal-btn" onclick="openIdealSearch()"><i class="fas fa-star"></i> 이상형찾기</button>
+    </div>
 </div>
-            </div>
 
             <div class="mode-tabs" id="modeTabs">
                 <button class="active" data-mode="solo" onclick="switchMode('solo')"><i class="fas fa-user"></i> 둘이서 (1:1)</button>
