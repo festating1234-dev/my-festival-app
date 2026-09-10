@@ -1251,6 +1251,36 @@
     </div>
 </div>
 
+<!-- 친구 초대 모달 -->
+<div class="modal-overlay" id="inviteModal">
+    <div class="modal-box" style="max-width: 400px; text-align: center;">
+        <span class="close-btn" id="inviteModalClose">&times;</span>
+        <h2>🎉 친구 초대하기</h2>
+        <div class="subtitle">친구에게 내 추천인 코드를 알려주세요!</div>
+        
+        <div style="background:rgba(251,191,36,0.05); border-radius:16px; padding:24px; margin:16px 0; border:1px solid rgba(251,191,36,0.15);">
+            <div style="font-size:0.6rem; color:#888; margin-bottom:8px;">내 추천인 코드</div>
+            <div id="myReferralCodeDisplay" style="font-size:2rem; font-weight:900; color:#fbbf24; letter-spacing:8px; font-family: 'Courier New', monospace;">------</div>
+        </div>
+        
+        <button class="btn-primary" onclick="copyReferralCode()" style="width:100%; margin-bottom:8px;">
+            <i class="fas fa-copy"></i> 코드 복사하기
+        </button>
+        
+        <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:12px; margin-top:12px; border:1px solid rgba(74,222,128,0.1);">
+            <div style="font-size:0.65rem; color:#aaa;">지금까지 초대한 친구</div>
+            <div style="font-size:1.4rem; font-weight:900; color:#4ade80; margin-top:4px;">
+                <span id="invitedCountDisplay">0</span>명
+            </div>
+        </div>
+        
+        <div style="font-size:0.6rem; color:#888; margin-top:12px; line-height:1.5;">
+            💡 친구가 내 코드로 가입하면<br>
+            <strong style="color:#fbbf24;">나와 친구 모두 매칭권 1장</strong>을 받아요!
+        </div>
+    </div>
+</div>
+
 <!-- 축제 상세 모달 -->
 <div class="festival-modal-overlay" id="festivalModalOverlay">
     <div class="festival-modal-box">
@@ -1304,7 +1334,10 @@
                     <div class="profile-row"><span class="label">활동지역</span><span class="value" id="profileRegion">서울특별시</span></div>
                     <div class="profile-row"><span class="label">자기소개</span><span class="value" id="profileIntro" style="font-size:0.7rem; line-height:1.3;">안녕하세요! 긍정적인 에너지를 가진 사람이에요. 함께 즐거운 추억 만들어요!</span></div>
                     <div class="profile-row"><span class="label">전화번호</span><span class="value" id="profilePhone">010-1234-5678</span></div>
-                    <div class="profile-row"><span class="label">추천인</span><span class="value" id="profileReferred">-</span></div>
+                    <div class="profile-row">
+    <span class="label">내 추천인 코드</span>
+    <span class="value" id="profileReferralCode" style="font-family: 'Courier New', monospace; letter-spacing:2px; color:#fbbf24;">------</span>
+</div>
                     <div class="profile-row"><span class="label">무료 매치권</span><span class="value" id="freeTicketDisplay">0장</span></div>
                 </div>
 
@@ -1341,10 +1374,11 @@
                 </div>
 
                 <div style="display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;">
-                    <button class="btn-sm primary" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내 카드 관리</button>
-                    <button class="btn-sm" onclick="openGuideModal()"><i class="fas fa-question-circle"></i> 이용방법</button>
-                    <button class="btn-sm" onclick="openRefundModal()"><i class="fas fa-receipt"></i> 환불신청</button>
-                </div>
+    <button class="btn-sm primary" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내 카드 관리</button>
+    <button class="btn-sm primary" onclick="openInviteModal()"><i class="fas fa-user-plus"></i> 친구 초대하기</button>
+    <button class="btn-sm" onclick="openGuideModal()"><i class="fas fa-question-circle"></i> 이용방법</button>
+    <button class="btn-sm" onclick="openRefundModal()"><i class="fas fa-receipt"></i> 환불신청</button>
+</div>
 
                 <div class="verify-section">
                     <h3 style="font-size:0.9rem; margin-bottom:8px; color:#fbbf24;"><i class="fas fa-shield-alt"></i> 학생 인증</h3>
@@ -2242,6 +2276,77 @@ async function updateNotificationBadge() {
     }
 }
 
+// ===== 친구 초대 모달 =====
+function openInviteModal() {
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+    const code = currentUser.referral_code;
+    document.getElementById('myReferralCodeDisplay').textContent = code || '------';
+    document.getElementById('invitedCountDisplay').textContent = currentUser.invited_count || 0;
+    document.getElementById('inviteModal').classList.add('active');
+    
+    // 코드가 없으면 서버에 생성 요청
+    if (!code) {
+        fetch(`/api/users/${currentUser.id}/ensure-referral-code`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.referral_code) {
+                    currentUser.referral_code = data.referral_code;
+                    document.getElementById('myReferralCodeDisplay').textContent = data.referral_code;
+                    document.getElementById('profileReferralCode').textContent = data.referral_code;
+                }
+            })
+            .catch(err => console.error('코드 생성 오류:', err));
+    }
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').classList.remove('active');
+}
+
+function copyReferralCode() {
+    const code = currentUser?.referral_code;
+    if (!code) {
+        showToast('⚠️ 추천인 코드가 없습니다. 잠시 후 다시 시도해주세요.');
+        return;
+    }
+    
+    // 클립보드 복사
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast('✅ 추천인 코드가 복사되었습니다!');
+        }).catch(() => {
+            fallbackCopy(code);
+        });
+    } else {
+        fallbackCopy(code);
+    }
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ 추천인 코드가 복사되었습니다!');
+    } catch (err) {
+        showToast('❌ 복사에 실패했습니다. 코드를 직접 입력해주세요.');
+    }
+    ta.remove();
+}
+
+// 모달 닫기 이벤트
+document.getElementById('inviteModalClose')?.addEventListener('click', closeInviteModal);
+document.getElementById('inviteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeInviteModal();
+});
+
 // 모달 닫기 이벤트
 document.getElementById('notificationModalClose').addEventListener('click', closeNotificationModal);
 document.getElementById('notificationModal').addEventListener('click', function(e) {
@@ -2441,6 +2546,22 @@ document.getElementById('notificationModal').addEventListener('click', function(
             updateNotificationBadge();
             renderProfiles();
             updateLikedBtn();
+
+            // ===== 🆕 기존 유저에게 추천인 코드가 없으면 자동 생성 =====
+            if (currentUser && !currentUser.referral_code) {
+                try {
+                    const r = await fetch(`/api/users/${currentUser.id}/ensure-referral-code`, { method: 'POST' });
+                    const d = await r.json();
+                    if (d.referral_code) {
+                        currentUser.referral_code = d.referral_code;
+                        const codeEl = document.getElementById('profileReferralCode');
+                        if (codeEl) codeEl.textContent = d.referral_code;
+                    }
+                } catch (e) {
+                    console.error('추천인 코드 자동 생성 실패:', e);
+                }
+            }
+
             return true;
         } else {
             // 서버에 없는 사용자면 로그아웃 처리
@@ -3705,6 +3826,77 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
     }
 }
 
+// ===== 추천인 코드 확인 =====
+let referralCodeValid = false;
+let referralCodeChecked = false;
+
+async function checkReferralCode() {
+    const code = document.getElementById('signupReferral')?.value.trim().toLowerCase();
+    const status = document.getElementById('referralStatus');
+    
+    if (!code) {
+        status.innerHTML = '<span style="color:#f87171;">❌ 추천인 코드를 입력해주세요</span>';
+        referralCodeValid = false;
+        return;
+    }
+    if (code.length !== 6) {
+        status.innerHTML = '<span style="color:#f87171;">❌ 6자리 코드를 입력해주세요</span>';
+        referralCodeValid = false;
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/users/check-referral-code?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        
+        if (data.valid) {
+            status.innerHTML = `<span style="color:#4ade80;">✅ 유효한 코드입니다 (${data.nickname}님)</span>`;
+            referralCodeValid = true;
+        } else {
+            status.innerHTML = '<span style="color:#f87171;">❌ 존재하지 않는 추천인 코드입니다</span>';
+            referralCodeValid = false;
+        }
+        referralCodeChecked = true;
+    } catch (error) {
+        status.innerHTML = '<span style="color:#f87171;">⚠️ 확인 중 오류가 발생했습니다</span>';
+        referralCodeValid = false;
+    }
+}
+
+// ===== 이벤트 코드 확인 =====
+let eventCodeValid = false;
+
+async function checkEventCode() {
+    const code = document.getElementById('signupEventCode')?.value.trim();
+    const status = document.getElementById('eventCodeStatus');
+    
+    if (!code) {
+        status.innerHTML = '';
+        eventCodeValid = false;
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/check-event-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        
+        if (data.valid) {
+            status.innerHTML = `<span style="color:#4ade80;">✅ 유효한 이벤트 코드입니다 (매칭권 ${data.tickets}장 지급)</span>`;
+            eventCodeValid = true;
+        } else {
+            status.innerHTML = '<span style="color:#f87171;">❌ 유효하지 않은 이벤트 코드입니다</span>';
+            eventCodeValid = false;
+        }
+    } catch (error) {
+        status.innerHTML = '<span style="color:#f87171;">⚠️ 확인 중 오류가 발생했습니다</span>';
+        eventCodeValid = false;
+    }
+}
+
     function openSignupModal() {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
@@ -3723,12 +3915,24 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
                 <div id="nicknameStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
 
                 <div style="margin-top:8px;">
-                    <div style="font-size:0.7rem; color:#fbbf24;">🌟 추천인 (선택)</div>
-                    <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">친구의 아이디를 입력하면 서로 혜택을 받을 수 있어요!</div>
-                    <div class="referral-input-wrap">
-                        <input type="text" id="signupReferral" placeholder="추천인 아이디 입력">
-                    </div>
-                </div>
+    <div style="font-size:0.7rem; color:#fbbf24;">🌟 추천인 코드 (선택)</div>
+    <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">친구의 추천인 코드를 입력하면 서로 매칭권 1장을 받아요!</div>
+    <div class="nickname-check">
+        <input type="text" id="signupReferral" placeholder="추천인 코드 6자리" maxlength="6">
+        <button type="button" class="btn-sm" onclick="checkReferralCode()">확인</button>
+    </div>
+    <div id="referralStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
+</div>
+
+<div style="margin-top:8px;">
+    <div style="font-size:0.7rem; color:#fbbf24;">🎁 이벤트 코드 (선택)</div>
+    <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">운영자가 배포한 이벤트 코드 입력 시 매칭권 5장 지급!</div>
+    <div class="nickname-check">
+        <input type="text" id="signupEventCode" placeholder="이벤트 코드 입력">
+        <button type="button" class="btn-sm" onclick="checkEventCode()">확인</button>
+    </div>
+    <div id="eventCodeStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
+</div>
             </div>
 
             <div class="row-half">
@@ -4112,8 +4316,12 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
             referred_by: referral || null,
             hide_school: false,
             hide_major: false,
-            hide_same_school: false
-        };
+            hide_same_school: false,
+    
+    // ★★★ 추가 ★★★
+    used_referral_code: referralCodeValid ? document.getElementById('signupReferral').value.trim().toLowerCase() : null,
+    used_event_code: eventCodeValid ? document.getElementById('signupEventCode').value.trim() : null
+};
 
         try {
             const res = await fetch('/api/users', {
@@ -4712,7 +4920,7 @@ function updateUI() {
     document.getElementById('profileRegion').textContent = currentUser.region;
     document.getElementById('profileIntro').textContent = currentUser.intro || '';
     document.getElementById('profilePhone').textContent = currentUser.phone || '-';
-    document.getElementById('profileReferred').textContent = currentUser.referred_by || '-';
+    document.getElementById('profileReferralCode').textContent = currentUser.referral_code || '------';
     document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
 
     // ===== 5. 개인정보 숨기기 상태 =====
