@@ -1770,8 +1770,7 @@ function hasCardForMode(mode) {
 }
 
 // ===== 관리자: 신고 대상 카드 관리 액션 =====
-// 전역 변수로 allReports 선언 (이미 있다면 생략)
-let allReports = [];
+
 
 // 1. 카드 삭제 + 신고 반려 (자동)
 async function adminDeleteCardAndDismiss(cardId, reportId) {
@@ -2244,6 +2243,7 @@ document.getElementById('notificationModal').addEventListener('click', function(
     // 1. 초기 데이터 (localStorage 대신 서버에서 로드)
     // ================================================================
     let allProfiles = [];
+    let allReports = [];
     let allUsers = [];
     let allLikes = [];
     let allMatches = [];
