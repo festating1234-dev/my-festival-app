@@ -34,6 +34,39 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
+// ---------------------- 추천인/이벤트 코드 설정 ----------------------
+// 이벤트 코드 (운영자용, 원하는 만큼 추가 가능)
+const EVENT_CODES = {
+    'festival2026': 5,
+    'welcome5': 5,
+    'openfestival': 5
+};
+
+// 6자리 랜덤 코드 생성 (숫자 + 소문자)
+function generateReferralCode() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+}
+
+// 중복되지 않는 고유 코드 생성
+async function getUniqueReferralCode() {
+    for (let i = 0; i < 10; i++) {
+        const code = generateReferralCode();
+        const { data } = await supabase
+            .from('users')
+            .select('id')
+            .eq('referral_code', code)
+            .limit(1);
+        if (!data || data.length === 0) return code;
+    }
+    throw new Error('추천인 코드 생성 실패');
+}
+
+
 // ============================================================
 //  1.  사용자 관련 API
 // ============================================================
@@ -60,20 +93,150 @@ app.get('/api/users/check-nickname', async (req, res) => {
     }
 });
 
-// 1-2. 회원가입
-app.post('/api/users', async (req, res) => {
+// 1-8. 추천인 코드 유효성 확인
+app.get('/api/users/check-referral-code', async (req, res) => {
+    const { code } = req.query;
+    if (!code) {
+        return res.status(400).json({ error: '코드를 입력해주세요.' });
+    }
     try {
         const { data, error } = await supabase
             .from('users')
-            .insert([req.body])
-            .select();
+            .select('id, nickname, school')
+            .eq('referral_code', code)
+            .limit(1);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            res.json({ valid: true, nickname: data[0].nickname, school: data[0].school });
+        } else {
+            res.json({ valid: false });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
+// 1-9. 이벤트 코드 유효성 확인
+app.post('/api/check-event-code', (req, res) => {
+    const { code } = req.body;
+    if (!code) {
+        return res.json({ valid: false });
+    }
+    const tickets = EVENT_CODES[code];
+    res.json({ valid: !!tickets, tickets: tickets || 0 });
+});
+
+// 1-10. 유저의 추천인 코드 보장 (기존 유저가 코드가 없을 때 생성)
+app.post('/api/users/:id/ensure-referral-code', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data: user } = await supabase
+            .from('users')
+            .select('referral_code')
+            .eq('id', id)
+            .single();
+        
+        if (user?.referral_code) {
+            return res.json({ referral_code: user.referral_code });
+        }
+        
+        // 코드 생성
+        const newCode = await getUniqueReferralCode();
+        await supabase
+            .from('users')
+            .update({ referral_code: newCode })
+            .eq('id', id);
+        
+        res.json({ referral_code: newCode });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 1-2. 회원가입 (추천인/이벤트 코드 처리 포함)
+app.post('/api/users', async (req, res) => {
+    try {
+        const userData = { ...req.body };
+        
+        // 1. 프론트에서 넘어온 추천인/이벤트 코드 분리
+        const usedReferralCode = userData.used_referral_code;
+        const usedEventCode = userData.used_event_code;
+        delete userData.used_referral_code;
+        delete userData.used_event_code;
+        delete userData.referral_code; // 혹시 몰라서 제거
+        
+        // 2. 내 추천인 코드 생성
+        const myReferralCode = await getUniqueReferralCode();
+        
+        // 3. 초기 매칭권 계산
+        let initialTickets = 0;
+        
+        // 3-1. 이벤트 코드 확인
+        if (usedEventCode && EVENT_CODES[usedEventCode]) {
+            initialTickets += EVENT_CODES[usedEventCode];
+        }
+        
+        // 3-2. 추천인 코드 확인
+        let referrer = null;
+        if (usedReferralCode) {
+            const { data: referrerData } = await supabase
+                .from('users')
+                .select('id, nickname, free_tickets, invited_count')
+                .eq('referral_code', usedReferralCode)
+                .limit(1);
+            
+            if (referrerData && referrerData.length > 0) {
+                referrer = referrerData[0];
+                initialTickets += 1; // 신규 가입자 +1
+            }
+        }
+        
+        // 4. 유저 데이터 세팅
+        userData.referral_code = myReferralCode;
+        userData.free_tickets = initialTickets;
+        userData.invited_count = 0;
+        if (referrer) userData.referrer_user_id = referrer.id;
+        
+        // 5. 유저 생성
+        const { data, error } = await supabase
+            .from('users')
+            .insert([userData])
+            .select();
+        
         if (error) {
             console.error('Supabase insert error:', error);
             return res.status(400).json({ error: error.message });
         }
-
-        res.status(201).json(data[0]);
+        
+        const newUser = data[0];
+        
+        // 6. 추천인 보상 처리
+        if (referrer) {
+            // 6-1. 추천인에게 매칭권 +1, 초대 수 +1
+            await supabase
+                .from('users')
+                .update({
+                    free_tickets: (referrer.free_tickets || 0) + 1,
+                    invited_count: (referrer.invited_count || 0) + 1
+                })
+                .eq('id', referrer.id);
+            
+            // 6-2. 추천인에게 알림 발송
+            await supabase.from('notifications').insert([{
+                user_id: referrer.id,
+                type: 'referral',
+                title: '🌟 나를 추천인으로 입력한 친구가 있어요!',
+                message: '회원님이 추천한 친구가 가입했어요! 나와 친구 모두 무료매칭권 1개가 지급되었어요!',
+                link: 'mypage',
+                is_read: false
+            }]);
+            
+            console.log(`✅ 추천인 보상: ${referrer.nickname}님 +1매칭권`);
+        }
+        
+        res.status(201).json(newUser);
     } catch (err) {
         console.error('Server error:', err);
         res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
