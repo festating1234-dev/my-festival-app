@@ -3830,10 +3830,6 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
 let referralCodeValid = false;
 let referralCodeChecked = false;
 
-// ===== 추천인 코드 확인 =====
-let referralCodeValid = false;
-let referralCodeChecked = false;
-
 async function checkReferralCode() {
     const code = document.getElementById('signupReferral')?.value.trim().toLowerCase();
     const status = document.getElementById('referralStatus');
