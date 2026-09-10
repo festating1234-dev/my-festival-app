@@ -1264,6 +1264,7 @@ app.get('/api/blocks', async (req, res) => {
             .from('blocks')
             .select(`
                 id,
+                reason,
                 created_at,
                 blocked_user:blocked_user_id(id, nickname, school, major, grade, gender, age, animal)
             `)
