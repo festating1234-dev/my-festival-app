@@ -2193,11 +2193,10 @@ async function markAllNotificationsAsRead() {
 
 // 알림 배지 업데이트
 async function updateNotificationBadge() {
-    console.log('🔥 updateNotificationBadge 실행됨, count:', count);
     const badge = document.getElementById('notificationBadge');
     const btn = document.querySelector('.notification-btn');
 
-    // 로그인 안 되어 있으면 초기화
+    // 1. 로그인 안 되어 있으면 초기화
     if (!currentUser) {
         if (badge) badge.style.display = 'none';
         if (btn) btn.classList.remove('has-unread');
@@ -2205,10 +2204,14 @@ async function updateNotificationBadge() {
     }
 
     try {
+        // 2. 서버에서 안 읽은 알림 개수 가져오기
         const res = await fetch(`/api/notifications/unread-count?userId=${currentUser.id}`);
         const { count } = await res.json();
 
-        // 숫자 배지 표시
+        // ★ count가 정의된 후에 로그를 찍어야 함! (여기가 정답)
+        console.log('🔥 updateNotificationBadge 실행됨, count:', count);
+
+        // 3. 숫자 배지 표시 (빨간 원)
         if (badge) {
             if (count > 0) {
                 badge.style.display = 'inline-block';
@@ -2218,7 +2221,7 @@ async function updateNotificationBadge() {
             }
         }
 
-        // ★ 버튼에 'has-unread' 클래스 추가/제거 (CSS가 알아서 스타일링)
+        // 4. 버튼에 'has-unread' 클래스 추가/제거 (CSS가 색상과 New를 제어)
         if (btn) {
             if (count > 0) {
                 btn.classList.add('has-unread');
