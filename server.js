@@ -35,12 +35,6 @@ const supabase = createClient(
 );
 
 // ---------------------- 추천인/이벤트 코드 설정 ----------------------
-// 이벤트 코드 (운영자용, 원하는 만큼 추가 가능)
-const EVENT_CODES = {
-    'festival2026': 5,
-    'welcome5': 5,
-    'openfestival': 5
-};
 
 // 6자리 랜덤 코드 생성 (숫자 + 소문자)
 function generateReferralCode() {
@@ -115,16 +109,6 @@ app.get('/api/users/check-referral-code', async (req, res) => {
     }
 });
 
-// 1-9. 이벤트 코드 유효성 확인
-app.post('/api/check-event-code', (req, res) => {
-    const { code } = req.body;
-    if (!code) {
-        return res.json({ valid: false });
-    }
-    const tickets = EVENT_CODES[code];
-    res.json({ valid: !!tickets, tickets: tickets || 0 });
-});
-
 // 1-10. 유저의 추천인 코드 보장 (기존 유저가 코드가 없을 때 생성)
 app.post('/api/users/:id/ensure-referral-code', async (req, res) => {
     const { id } = req.params;
@@ -159,9 +143,7 @@ app.post('/api/users', async (req, res) => {
         
         // 1. 프론트에서 넘어온 추천인/이벤트 코드 분리
         const usedReferralCode = userData.used_referral_code;
-        const usedEventCode = userData.used_event_code;
         delete userData.used_referral_code;
-        delete userData.used_event_code;
         delete userData.referral_code; // 혹시 몰라서 제거
         
         // 2. 내 추천인 코드 생성
@@ -169,11 +151,6 @@ app.post('/api/users', async (req, res) => {
         
         // 3. 초기 매칭권 계산
         let initialTickets = 0;
-        
-        // 3-1. 이벤트 코드 확인
-        if (usedEventCode && EVENT_CODES[usedEventCode]) {
-            initialTickets += EVENT_CODES[usedEventCode];
-        }
         
         // 3-2. 추천인 코드 확인
         let referrer = null;

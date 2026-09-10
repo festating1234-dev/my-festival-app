@@ -3864,40 +3864,6 @@ async function checkReferralCode() {
     }
 }
 
-// ===== 이벤트 코드 확인 =====
-let eventCodeValid = false;
-
-async function checkEventCode() {
-    const code = document.getElementById('signupEventCode')?.value.trim();
-    const status = document.getElementById('eventCodeStatus');
-    
-    if (!code) {
-        status.innerHTML = '';
-        eventCodeValid = false;
-        return;
-    }
-    
-    try {
-        const res = await fetch('/api/check-event-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
-        });
-        const data = await res.json();
-        
-        if (data.valid) {
-            status.innerHTML = `<span style="color:#4ade80;">✅ 유효한 이벤트 코드입니다 (매칭권 ${data.tickets}장 지급)</span>`;
-            eventCodeValid = true;
-        } else {
-            status.innerHTML = '<span style="color:#f87171;">❌ 유효하지 않은 이벤트 코드입니다</span>';
-            eventCodeValid = false;
-        }
-    } catch (error) {
-        status.innerHTML = '<span style="color:#f87171;">⚠️ 확인 중 오류가 발생했습니다</span>';
-        eventCodeValid = false;
-    }
-}
-
     function openSignupModal() {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
@@ -3925,15 +3891,6 @@ async function checkEventCode() {
     <div id="referralStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
 </div>
 
-<div style="margin-top:8px;">
-    <div style="font-size:0.7rem; color:#fbbf24;">🎁 이벤트 코드 (선택)</div>
-    <div style="font-size:0.6rem; color:#888; margin-bottom:4px;">운영자가 배포한 이벤트 코드 입력 시 매칭권 5장 지급!</div>
-    <div class="nickname-check">
-        <input type="text" id="signupEventCode" placeholder="이벤트 코드 입력">
-        <button type="button" class="btn-sm" onclick="checkEventCode()">확인</button>
-    </div>
-    <div id="eventCodeStatus" style="font-size:0.6rem; color:#888; margin-top:4px;"></div>
-</div>
             </div>
 
             <div class="row-half">
@@ -4320,8 +4277,7 @@ async function checkEventCode() {
             hide_same_school: false,
     
     // ★★★ 추가 ★★★
-    used_referral_code: referralCodeValid ? document.getElementById('signupReferral').value.trim().toLowerCase() : null,
-    used_event_code: eventCodeValid ? document.getElementById('signupEventCode').value.trim() : null
+    used_referral_code: referralCodeValid ? document.getElementById('signupReferral').value.trim().toLowerCase() : null
 };
 
         try {
