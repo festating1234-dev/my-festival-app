@@ -93,7 +93,7 @@ app.get('/api/users/check-nickname', async (req, res) => {
     }
 });
 
-// 1-8. 추천인 코드 유효성 확인
+// 1-8. 추천인 코드 유효성 확인 (개인정보 노출 방지)
 app.get('/api/users/check-referral-code', async (req, res) => {
     const { code } = req.query;
     if (!code) {
@@ -102,17 +102,14 @@ app.get('/api/users/check-referral-code', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, nickname, school')
+            .select('id')
             .eq('referral_code', code)
             .limit(1);
         
         if (error) throw error;
         
-        if (data && data.length > 0) {
-            res.json({ valid: true, nickname: data[0].nickname, school: data[0].school });
-        } else {
-            res.json({ valid: false });
-        }
+        // 존재 여부만 반환 (닉네임, 학교 등 개인정보는 절대 반환하지 않음)
+        res.json({ valid: data && data.length > 0 });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -3830,6 +3830,10 @@ const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m
 let referralCodeValid = false;
 let referralCodeChecked = false;
 
+// ===== 추천인 코드 확인 =====
+let referralCodeValid = false;
+let referralCodeChecked = false;
+
 async function checkReferralCode() {
     const code = document.getElementById('signupReferral')?.value.trim().toLowerCase();
     const status = document.getElementById('referralStatus');
@@ -3850,7 +3854,8 @@ async function checkReferralCode() {
         const data = await res.json();
         
         if (data.valid) {
-            status.innerHTML = `<span style="color:#4ade80;">✅ 유효한 코드입니다 (${data.nickname}님)</span>`;
+            // ★ 닉네임 노출 없이 유효성만 표시
+            status.innerHTML = '<span style="color:#4ade80;">✅ 유효한 추천인 코드입니다</span>';
             referralCodeValid = true;
         } else {
             status.innerHTML = '<span style="color:#f87171;">❌ 존재하지 않는 추천인 코드입니다</span>';
