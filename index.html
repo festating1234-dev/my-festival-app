@@ -1550,7 +1550,10 @@
         <h2>🔔 알림</h2>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <div class="subtitle" style="margin-bottom:0;">새로운 소식을 확인하세요</div>
-            <button class="btn-sm" onclick="markAllNotificationsAsRead()" style="font-size:0.5rem;">모두 읽음</button>
+            <div style="display:flex; gap:4px;">
+                <button class="btn-sm" onclick="markAllNotificationsAsRead()" style="font-size:0.5rem;">모두 읽음</button>
+                <button class="btn-sm danger" onclick="deleteAllNotifications()" style="font-size:0.5rem;">전체 삭제</button>
+            </div>
         </div>
         <div id="notificationList" style="max-height:50vh; overflow-y:auto; padding-right:4px;">
             <!-- JavaScript에서 렌더링 -->
@@ -2126,7 +2129,50 @@ function toggleNotificationModal() {
     }
 }
 
-// 알림 목록 로드
+// ===== 알림 개별 삭제 =====
+async function deleteNotification(notificationId) {
+    if (!confirm('이 알림을 삭제하시겠습니까?')) return;
+    try {
+        const res = await fetch(`/api/notifications/${notificationId}`, { method: 'DELETE' });
+        if (res.ok) {
+            // 목록 갱신
+            loadNotifications();
+            // 배지 갱신
+            updateNotificationBadge();
+            showToast('🗑️ 알림이 삭제되었습니다.');
+        } else {
+            showToast('❌ 알림 삭제에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('Delete notification error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 알림 전체 삭제 =====
+async function deleteAllNotifications() {
+    if (!currentUser) return;
+    if (!confirm('모든 알림을 삭제하시겠습니까?\n(삭제된 알림은 복구할 수 없습니다)')) return;
+    try {
+        const res = await fetch('/api/notifications/delete-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        if (res.ok) {
+            loadNotifications();
+            updateNotificationBadge();
+            showToast('🗑️ 모든 알림이 삭제되었습니다.');
+        } else {
+            showToast('❌ 전체 삭제에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('Delete all notifications error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 알림 목록 로드 =====
 async function loadNotifications() {
     if (!currentUser) return;
     const container = document.getElementById('notificationList');
@@ -2147,15 +2193,20 @@ async function loadNotifications() {
             const time = new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             html += `
-                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}', ${n.card_id || null})"
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; transition:0.2s; position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}', ${n.card_id || null})">
                         <div style="flex:1;">
                             <div style="font-weight:600; font-size:0.8rem; color:${isUnread ? '#fbbf24' : '#aaa'};">${n.title}</div>
                             <div style="font-size:0.65rem; color:#ccc; margin-top:2px;">${n.message}</div>
                         </div>
                         <div style="font-size:0.5rem; color:#666; white-space:nowrap; margin-left:8px;">${time}</div>
                     </div>
-                    ${isUnread ? '<div style="font-size:0.45rem; color:#a855f7; margin-top:4px;">● 새 알림</div>' : ''}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                        ${isUnread ? '<div style="font-size:0.45rem; color:#a855f7;">● 새 알림</div>' : '<div></div>'}
+                        <button class="btn-sm danger" onclick="event.stopPropagation(); deleteNotification(${n.id})" style="font-size:0.45rem; padding:2px 8px;">
+                            <i class="fas fa-trash"></i> 삭제
+                        </button>
+                    </div>
                 </div>
             `;
         });

@@ -1083,6 +1083,41 @@ app.put('/api/notifications/read-all', async (req, res) => {
     }
 });
 
+// 6. 알림 개별 삭제
+app.delete('/api/notifications/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete notification error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 7. 알림 전체 삭제 (사용자의 모든 알림)
+app.post('/api/notifications/delete-all', async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('user_id', userId);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete all notifications error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 5. 관리자 공지 발송
 app.post('/api/admin/notifications', async (req, res) => {
     const { userIds, title, message, link } = req.body;
