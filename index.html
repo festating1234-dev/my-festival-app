@@ -1281,6 +1281,24 @@
     </div>
 </div>
 
+<!-- 차단 사유 입력 모달 -->
+<div class="modal-overlay" id="blockReasonModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="blockReasonClose">&times;</span>
+        <h2>🚫 유저 차단</h2>
+        <div class="subtitle">차단 사유를 입력해주세요 (선택)</div>
+        <div id="blockTargetInfo" style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin:12px 0; font-size:0.7rem; color:#aaa;"></div>
+        <div class="form-group">
+            <label>차단 사유</label>
+            <textarea id="blockReasonInput" placeholder="예: 비매너 언행, 허위 프로필 의심 등" style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.8rem; outline:none; resize:vertical; min-height:70px; font-family:inherit;"></textarea>
+        </div>
+        <div style="display:flex; gap:6px;">
+            <button class="btn-primary" onclick="confirmBlockUser()" style="flex:1;">차단하기</button>
+            <button class="btn-sm" onclick="closeBlockReasonModal()" style="flex:1;">취소</button>
+        </div>
+    </div>
+</div>
+
 <!-- 차단 유저 관리 모달 -->
 <div class="modal-overlay" id="blockedListModal">
     <div class="modal-box" style="max-width: 420px; max-height: 70vh;">
@@ -2114,7 +2132,9 @@ document.getElementById('cardRequiredModal').addEventListener('click', function(
     if (e.target === this) closeCardRequiredModal();
 });
 
-// ===== 유저 차단하기 =====
+// ===== 유저 차단 (모달 열기) =====
+let blockTargetUserId = null;
+
 async function blockUser(targetUserId, targetSchool, targetAge) {
     if (!currentUser) {
         showToast('⚠️ 로그인 후 이용 가능합니다');
@@ -2135,22 +2155,43 @@ async function blockUser(targetUserId, targetSchool, targetAge) {
             return;
         }
 
-        if (!confirm(`이 유저를 차단하시겠습니까?\n차단하면 해당 유저의 모든 카드가 보이지 않습니다.\n\n이번 주 남은 횟수: ${data.remaining}명`)) return;
+        // 차단 대상 정보 표시
+        blockTargetUserId = targetUserId;
+        document.getElementById('blockTargetInfo').innerHTML = `
+            📌 차단 대상: <strong style="color:#fbbf24;">${targetSchool || '알 수 없음'}</strong> · ${targetAge || '?'}세
+            <br><span style="font-size:0.6rem; color:#888;">이번 주 남은 차단 횟수: ${data.remaining}명</span>
+        `;
+        document.getElementById('blockReasonInput').value = '';
 
+        // 카드 상세 모달 닫고 차단 사유 모달 열기
+        closeModal();
+        document.getElementById('blockReasonModal').classList.add('active');
+    } catch (error) {
+        console.error('차단 오류:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 실제 차단 실행 =====
+async function confirmBlockUser() {
+    if (!blockTargetUserId) return;
+    const reason = document.getElementById('blockReasonInput').value.trim();
+
+    try {
         const blockRes = await fetch('/api/blocks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 blocker_user_id: currentUser.id,
-                blocked_user_id: targetUserId
+                blocked_user_id: blockTargetUserId,
+                reason: reason || null
             })
         });
         const blockData = await blockRes.json();
 
         if (blockRes.ok) {
-            // 차단 목록 갱신
             await fetchBlocks();
-            closeModal();
+            closeBlockReasonModal();
             renderProfiles();
             showToast(`🚫 차단 완료! (남은 횟수: ${blockData.remaining}명)`);
         } else {
@@ -2161,6 +2202,18 @@ async function blockUser(targetUserId, targetSchool, targetAge) {
         showToast('⚠️ 서버 통신 오류');
     }
 }
+
+// ===== 차단 모달 닫기 =====
+function closeBlockReasonModal() {
+    document.getElementById('blockReasonModal').classList.remove('active');
+    blockTargetUserId = null;
+}
+
+// 이벤트 바인딩
+document.getElementById('blockReasonClose')?.addEventListener('click', closeBlockReasonModal);
+document.getElementById('blockReasonModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeBlockReasonModal();
+});
 
 // ===== 차단 유저 관리 모달 열기 =====
 async function openBlockedListModal() {
@@ -2191,22 +2244,30 @@ async function loadBlockedList() {
         blocks.forEach(b => {
             const u = b.blocked_user || {};
             const school = u.school || '알 수 없음';
+            const major = u.major || '알 수 없음';
+            const grade = u.grade || '?';
             const animal = u.animal || '👤';
             const gender = u.gender === 'female' ? '♀ 여성' : '♂ 남성';
-            const date = b.created_at ? new Date(b.created_at).toLocaleDateString() : '';
+            const age = u.age || '?';
+            const reason = b.reason || '사유 없음';
+            const date = b.created_at ? new Date(b.created_at).toLocaleDateString('ko-KR') : '';
 
             html += `
-                <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:10px; margin-bottom:6px; border:1px solid rgba(239,68,68,0.1); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                    <div style="flex:1; min-width:150px;">
-                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">
-                            <span style="font-size:1.1rem;">${animal}</span> ${u.nickname || '알 수 없음'}
+                <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:12px; margin-bottom:8px; border:1px solid rgba(239,68,68,0.1);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:180px;">
+                            <div style="font-weight:700; font-size:0.85rem; color:#fbbf24; margin-bottom:4px;">
+                                <span style="font-size:1.2rem;">${animal}</span> ${u.nickname || '알 수 없음'}
+                            </div>
+                            <div style="font-size:0.7rem; color:#ddd; line-height:1.6;">
+                                <div>🏫 ${school} / ${major} / ${gender}</div>
+                                <div>🎓 ${grade} / ${age}세</div>
+                                <div style="color:#f87171; margin-top:4px;">📌 차단사유: ${reason}</div>
+                                <div style="font-size:0.55rem; color:#666; margin-top:2px;">📅 차단일: ${date}</div>
+                            </div>
                         </div>
-                        <div style="font-size:0.6rem; color:#aaa;">
-                            ${school} · ${gender} · ${u.age || '?'}세
-                        </div>
-                        <div style="font-size:0.5rem; color:#666; margin-top:2px;">차단일: ${date}</div>
+                        <button class="btn-sm success" onclick="unblockUser(${b.id})" style="font-size:0.5rem; white-space:nowrap;">✅ 차단 해제</button>
                     </div>
-                    <button class="btn-sm success" onclick="unblockUser(${b.id})" style="font-size:0.5rem;">✅ 차단 해제</button>
                 </div>
             `;
         });

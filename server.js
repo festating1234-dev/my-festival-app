@@ -1185,9 +1185,9 @@ app.post('/api/notifications', async (req, res) => {
 //  차단 관련 API
 // ============================================================
 
-// 1. 차단하기 (주간 3명 제한)
+// 1. 차단하기 (주간 3명 제한 + 차단사유)
 app.post('/api/blocks', async (req, res) => {
-    const { blocker_user_id, blocked_user_id } = req.body;
+    const { blocker_user_id, blocked_user_id, reason } = req.body;
     
     if (!blocker_user_id || !blocked_user_id) {
         return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
@@ -1229,10 +1229,14 @@ app.post('/api/blocks', async (req, res) => {
             });
         }
 
-        // 3. 차단 저장
+        // 3. 차단 저장 (차단사유 포함)
         const { data, error } = await supabase
             .from('blocks')
-            .insert([{ blocker_user_id, blocked_user_id }])
+            .insert([{ 
+                blocker_user_id, 
+                blocked_user_id, 
+                reason: reason || null 
+            }])
             .select();
 
         if (error) throw error;
@@ -1240,7 +1244,7 @@ app.post('/api/blocks', async (req, res) => {
         res.status(201).json({ 
             success: true, 
             block: data[0],
-            remaining: 2 - weeklyCount  // 남은 차단 가능 횟수
+            remaining: 2 - weeklyCount
         });
     } catch (error) {
         console.error('Block error:', error);
@@ -1261,7 +1265,7 @@ app.get('/api/blocks', async (req, res) => {
             .select(`
                 id,
                 created_at,
-                blocked_user:blocked_user_id(id, nickname, school, major, gender, age, animal)
+                blocked_user:blocked_user_id(id, nickname, school, major, grade, gender, age, animal)
             `)
             .eq('blocker_user_id', userId)
             .order('created_at', { ascending: false });
