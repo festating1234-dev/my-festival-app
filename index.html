@@ -1772,46 +1772,53 @@ function hasCardForMode(mode) {
 // ===== 관리자: 신고 대상 카드 관리 액션 =====
 
 
-// 1. 카드 삭제 + 신고 반려 (자동)
+// 1. 카드 삭제 + 신고 수리 (자동)
 async function adminDeleteCardAndDismiss(cardId, reportId) {
-    if (!confirm('이 카드를 삭제하고 해당 신고를 반려 처리하시겠습니까?')) return;
+    if (!confirm('해당 신고를 수리하시겠습니까?\n(카드가 삭제됩니다)')) return;
     try {
-        // ===== 🆕 신고 데이터와 카드 데이터 조회 (알림용) =====
+        // ===== 신고 데이터와 카드 데이터 조회 (알림용) =====
         const report = allReports?.find(r => r.id === reportId);
         const targetCard = allProfiles.find(p => p.id === cardId);
-        
+
         const reporterUserId = report?.reporter_user_id;
         const targetUserId = report?.target_user_id || targetCard?.user_id;
         const targetSchool = targetCard?.school || '알 수 없음';
         const targetAge = targetCard?.age || '?';
         const cardType = targetCard?.type || '';
-        const typeLabel = cardType === 'solo' ? '둘이서 (1:1)' : 
-                         cardType === 'group' ? '여럿이서 (다대다)' : 
+        const typeLabel = cardType === 'solo' ? '둘이서 (1:1)' :
+                         cardType === 'group' ? '여럿이서 (다대다)' :
                          cardType === 'same' ? '동성친구 찾기' : '카드';
 
-        // 카드 삭제
+        // 디버깅용 로그 (문제 확인 후 삭제 가능)
+        console.log('🔍 신고 데이터:', report);
+        console.log('🔍 신고자 ID:', reporterUserId);
+
+        // 1. 카드 삭제
         const delRes = await fetch(`/api/profiles/${cardId}`, { method: 'DELETE' });
         if (!delRes.ok) throw new Error('카드 삭제 실패');
-        
-        // 신고 반려
+
+        // 2. 신고 수리 처리 (status를 'resolved'로 변경)
         const dismissRes = await fetch(`/api/admin/reports/${reportId}/dismiss`, { method: 'PUT' });
-        if (!dismissRes.ok) throw new Error('신고 반려 실패');
-        
-        showToast('✅ 카드가 삭제되고 신고가 반려되었습니다.');
+        if (!dismissRes.ok) throw new Error('신고 수리 실패');
+
+        showToast('✅ 카드를 삭제하였습니다.');
         closeModal();
         renderReportList(); // 목록 갱신
         renderProfiles();   // 카드 목록 갱신
 
-        // ===== 🆕 알림 생성 =====
-        // 1) 신고자에게: 신고 승인 알림
+        // ===== 알림 생성 =====
+        // 1) 신고자에게: 신고 수리(승인) 알림
         if (reporterUserId) {
             await createNotification(
                 reporterUserId,
                 'report_approved',
-                '🚨 신고가 승인되었습니다.',
-                `${targetSchool} ${targetAge}세 프로필을 대상으로 한 신고가 승인되었어요. 해당 카드는 삭제 조치되었습니다.`,
+                '🚨 신고가 수리되었습니다.',
+                `${targetSchool} ${targetAge}세 프로필을 대상으로 한 신고가 수리되었어요. 해당 카드는 삭제 조치되었습니다.`,
                 'find'
             );
+            console.log('✅ 신고자에게 알림 전송 완료 (userId:', reporterUserId, ')');
+        } else {
+            console.warn('⚠️ 신고자 ID를 찾을 수 없어 알림을 보내지 못했습니다.');
         }
 
         // 2) 신고 대상자(카드 소유자)에게: 카드 삭제 알림
@@ -1823,9 +1830,11 @@ async function adminDeleteCardAndDismiss(cardId, reportId) {
                 `"${typeLabel}" 카드가 삭제되었어요. 자기소개 문구를 수정해주세요.`,
                 'find'
             );
+            console.log('✅ 카드 소유자에게 알림 전송 완료 (userId:', targetUserId, ')');
         }
     } catch (error) {
         showToast('❌ ' + error.message);
+        console.error('삭제/수리 오류:', error);
     }
 }
 
@@ -5164,6 +5173,7 @@ async function renderReportList() {
         const res = await fetch('/api/admin/reports');
         if (!res.ok) throw new Error('신고 목록 로드 실패');
         const reports = await res.json();
+        allReports = reports;
 
         // ★★★ 대기 중인 신고만 필터링 ★★★
         const pendingReports = reports.filter(r => r.status === 'pending');
