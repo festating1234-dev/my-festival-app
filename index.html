@@ -2603,10 +2603,26 @@ async function renderProfiles() {
         else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
     }
 
-    // 같은학교 숨기기
-    if (currentUser && currentUser.hide_same_school) {
-        filtered = filtered.filter(p => p.user_id === currentUserId || p.school !== currentUser.school);
-    }
+    // ===== 같은학교 숨기기 (카드 주인 기준으로 수정됨) =====
+// 각 카드의 주인이 'hide_same_school'을 켰고, 그 주인이 나와 같은 학교라면 카드를 숨김
+if (currentUser) {
+    filtered = filtered.filter(p => {
+        // 1. 내 카드는 항상 보임
+        if (String(p.user_id) === String(currentUserId)) return true;
+
+        // 2. 카드 주인 찾기 (allUsers에서)
+        const owner = allUsers.find(u => String(u.id) === String(p.user_id));
+        if (!owner) return true; // 주인 정보가 없으면 일단 보여줌
+
+        // 3. 주인이 '같은학교 숨기기'를 켰고, 나와 같은 학교라면 → 숨김
+        if (owner.hide_same_school && owner.school === currentUser.school) {
+            return false;
+        }
+
+        // 4. 그 외에는 모두 보여줌
+        return true;
+    });
+}
     
     // ★★★ 중복 제거 (id 기준) ★★★
     filtered = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
