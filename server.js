@@ -1182,6 +1182,143 @@ app.post('/api/notifications', async (req, res) => {
 });
 
 // ============================================================
+//  차단 관련 API
+// ============================================================
+
+// 1. 차단하기 (주간 3명 제한)
+app.post('/api/blocks', async (req, res) => {
+    const { blocker_user_id, blocked_user_id } = req.body;
+    
+    if (!blocker_user_id || !blocked_user_id) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+    if (blocker_user_id === blocked_user_id) {
+        return res.status(400).json({ error: '본인을 차단할 수 없습니다.' });
+    }
+
+    try {
+        // 1. 이미 차단한 유저인지 확인
+        const { data: existing } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('blocker_user_id', blocker_user_id)
+            .eq('blocked_user_id', blocked_user_id)
+            .limit(1);
+
+        if (existing && existing.length > 0) {
+            return res.status(400).json({ error: '이미 차단한 유저입니다.' });
+        }
+
+        // 2. 주간 차단 횟수 확인 (최근 7일)
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const { data: weeklyBlocks, error: countError } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('blocker_user_id', blocker_user_id)
+            .gte('created_at', weekAgo.toISOString());
+
+        if (countError) throw countError;
+
+        const weeklyCount = weeklyBlocks?.length || 0;
+        if (weeklyCount >= 3) {
+            return res.status(400).json({ 
+                error: '일주일에 최대 3명까지만 차단할 수 있습니다.',
+                weeklyCount: weeklyCount
+            });
+        }
+
+        // 3. 차단 저장
+        const { data, error } = await supabase
+            .from('blocks')
+            .insert([{ blocker_user_id, blocked_user_id }])
+            .select();
+
+        if (error) throw error;
+
+        res.status(201).json({ 
+            success: true, 
+            block: data[0],
+            remaining: 2 - weeklyCount  // 남은 차단 가능 횟수
+        });
+    } catch (error) {
+        console.error('Block error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 내가 차단한 유저 목록 조회
+app.get('/api/blocks', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('blocks')
+            .select(`
+                id,
+                created_at,
+                blocked_user:blocked_user_id(id, nickname, school, major, gender, age, animal)
+            `)
+            .eq('blocker_user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Blocks fetch error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 주간 차단 횟수 조회
+app.get('/api/blocks/weekly-count', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const { data, error } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('blocker_user_id', userId)
+            .gte('created_at', weekAgo.toISOString());
+
+        if (error) throw error;
+
+        const count = data?.length || 0;
+        res.json({ count, remaining: Math.max(0, 3 - count) });
+    } catch (error) {
+        console.error('Weekly count error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 차단 해제
+app.delete('/api/blocks/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('blocks')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Unblock error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  관리자: 이용 정지 / 정지 관리 API
 // ============================================================
 

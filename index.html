@@ -1281,6 +1281,27 @@
     </div>
 </div>
 
+<!-- 차단 유저 관리 모달 -->
+<div class="modal-overlay" id="blockedListModal">
+    <div class="modal-box" style="max-width: 420px; max-height: 70vh;">
+        <span class="close-btn" id="blockedListModalClose">&times;</span>
+        <h2>🚫 차단 유저 관리</h2>
+        <div class="subtitle">차단한 유저를 해제할 수 있어요</div>
+        
+        <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:10px; margin-bottom:12px; border:1px solid rgba(251,191,36,0.1);">
+            <div style="font-size:0.65rem; color:#fbbf24;">
+                📌 이번 주 남은 차단 가능 횟수: <strong id="remainingBlockCount">3</strong>명 / 3명
+            </div>
+        </div>
+
+        <div id="blockedListContainer" style="max-height:45vh; overflow-y:auto;">
+            <div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>
+        </div>
+
+        <button class="btn-sm" onclick="closeBlockedListModal()" style="width:100%; margin-top:10px;">닫기</button>
+    </div>
+</div>
+
 <!-- 축제 상세 모달 -->
 <div class="festival-modal-overlay" id="festivalModalOverlay">
     <div class="festival-modal-box">
@@ -1376,6 +1397,7 @@
                 <div style="display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;">
     <button class="btn-sm primary" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내 카드 관리</button>
     <button class="btn-sm primary" onclick="openInviteModal()"><i class="fas fa-user-plus"></i> 친구 초대하기</button>
+    <button class="btn-sm" onclick="openBlockedListModal()"><i class="fas fa-ban"></i> 차단 유저 관리</button>
     <button class="btn-sm" onclick="openGuideModal()"><i class="fas fa-question-circle"></i> 이용방법</button>
     <button class="btn-sm" onclick="openRefundModal()"><i class="fas fa-receipt"></i> 환불신청</button>
 </div>
@@ -2092,6 +2114,152 @@ document.getElementById('cardRequiredModal').addEventListener('click', function(
     if (e.target === this) closeCardRequiredModal();
 });
 
+// ===== 유저 차단하기 =====
+async function blockUser(targetUserId, targetSchool, targetAge) {
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+    if (String(targetUserId) === String(currentUser.id)) {
+        showToast('⚠️ 본인을 차단할 수 없습니다');
+        return;
+    }
+
+    // 주간 차단 횟수 확인
+    try {
+        const res = await fetch(`/api/blocks/weekly-count?userId=${currentUser.id}`);
+        const data = await res.json();
+        
+        if (data.remaining <= 0) {
+            showToast('⚠️ 일주일에 최대 3명까지만 차단할 수 있어요');
+            return;
+        }
+
+        if (!confirm(`이 유저를 차단하시겠습니까?\n차단하면 해당 유저의 모든 카드가 보이지 않습니다.\n\n이번 주 남은 횟수: ${data.remaining}명`)) return;
+
+        const blockRes = await fetch('/api/blocks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                blocker_user_id: currentUser.id,
+                blocked_user_id: targetUserId
+            })
+        });
+        const blockData = await blockRes.json();
+
+        if (blockRes.ok) {
+            // 차단 목록 갱신
+            await fetchBlocks();
+            closeModal();
+            renderProfiles();
+            showToast(`🚫 차단 완료! (남은 횟수: ${blockData.remaining}명)`);
+        } else {
+            showToast('❌ ' + blockData.error);
+        }
+    } catch (error) {
+        console.error('차단 오류:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 차단 유저 관리 모달 열기 =====
+async function openBlockedListModal() {
+    if (!currentUser) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+    document.getElementById('blockedListModal').classList.add('active');
+    await loadBlockedList();
+    await updateRemainingBlockCount();
+}
+
+// ===== 차단 목록 로드 =====
+async function loadBlockedList() {
+    const container = document.getElementById('blockedListContainer');
+    container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
+
+    try {
+        const res = await fetch(`/api/blocks?userId=${currentUser.id}`);
+        const blocks = await res.json();
+
+        if (!blocks || blocks.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 차단한 유저가 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        blocks.forEach(b => {
+            const u = b.blocked_user || {};
+            const school = u.school || '알 수 없음';
+            const animal = u.animal || '👤';
+            const gender = u.gender === 'female' ? '♀ 여성' : '♂ 남성';
+            const date = b.created_at ? new Date(b.created_at).toLocaleDateString() : '';
+
+            html += `
+                <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:10px; margin-bottom:6px; border:1px solid rgba(239,68,68,0.1); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <div style="flex:1; min-width:150px;">
+                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">
+                            <span style="font-size:1.1rem;">${animal}</span> ${u.nickname || '알 수 없음'}
+                        </div>
+                        <div style="font-size:0.6rem; color:#aaa;">
+                            ${school} · ${gender} · ${u.age || '?'}세
+                        </div>
+                        <div style="font-size:0.5rem; color:#666; margin-top:2px;">차단일: ${date}</div>
+                    </div>
+                    <button class="btn-sm success" onclick="unblockUser(${b.id})" style="font-size:0.5rem;">✅ 차단 해제</button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('차단 목록 오류:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.7rem; padding:20px 0; text-align:center;">⚠️ 차단 목록을 불러오지 못했습니다.</div>';
+    }
+}
+
+// ===== 차단 해제 =====
+async function unblockUser(blockId) {
+    if (!confirm('차단을 해제하시겠습니까?\n(해당 유저의 카드가 다시 보입니다)')) return;
+    try {
+        const res = await fetch(`/api/blocks/${blockId}`, { method: 'DELETE' });
+        if (res.ok) {
+            await fetchBlocks();
+            await loadBlockedList();
+            renderProfiles();
+            showToast('✅ 차단이 해제되었습니다.');
+        } else {
+            showToast('❌ 차단 해제에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('차단 해제 오류:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 남은 차단 횟수 표시 =====
+async function updateRemainingBlockCount() {
+    try {
+        const res = await fetch(`/api/blocks/weekly-count?userId=${currentUser.id}`);
+        const data = await res.json();
+        const el = document.getElementById('remainingBlockCount');
+        if (el) el.textContent = data.remaining;
+    } catch (error) {
+        console.error('남은 횟수 오류:', error);
+    }
+}
+
+// ===== 모달 닫기 =====
+function closeBlockedListModal() {
+    document.getElementById('blockedListModal').classList.remove('active');
+}
+
+// 이벤트 바인딩
+document.getElementById('blockedListModalClose')?.addEventListener('click', closeBlockedListModal);
+document.getElementById('blockedListModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeBlockedListModal();
+});
+
 // ===== 알림 관련 함수 =====
 
 // ===== 알림 생성 헬퍼 함수 (cardId 추가) =====
@@ -2414,6 +2582,7 @@ document.getElementById('notificationModal').addEventListener('click', function(
     let allMatches = [];
     let currentUserId = getData('currentUser', null);
     let nextId = getData('nextId', 100);
+    let allBlocks = [];  // 내가 차단한 유저 목록
 
     let likedIds = new Set();
     let likedByIds = new Set();
@@ -2499,6 +2668,27 @@ document.getElementById('notificationModal').addEventListener('click', function(
         console.error('프로필 로드 오류:', error);
     }
 }
+
+// 차단 목록 불러오기
+async function fetchBlocks() {
+    if (!currentUserId) {
+        allBlocks = [];
+        return;
+    }
+    try {
+        const res = await fetch(`/api/blocks?userId=${currentUserId}`);
+        if (res.ok) {
+            const data = await res.json();
+            allBlocks = data || [];
+        } else {
+            allBlocks = [];
+        }
+    } catch (error) {
+        console.error('차단 목록 로드 오류:', error);
+        allBlocks = [];
+    }
+}
+
     // 4-2. 사용자 정보 불러오기
     async function fetchUser(userId) {
         try {
@@ -2573,6 +2763,9 @@ document.getElementById('notificationModal').addEventListener('click', function(
 
             // 4. 서버에서 매칭 목록 불러오기
             await fetchMatches();
+
+            // 차단 목록 불러오기
+            await fetchBlocks();
 
             // 5. 내 카드 확인
             const mySoloCard = allProfiles.find(p => p.user_id === currentUserId && p.type === 'solo');
@@ -2776,26 +2969,39 @@ async function renderProfiles() {
     }
 
     // ===== 같은학교 숨기기 (카드 주인 기준으로 수정됨) =====
-// 각 카드의 주인이 'hide_same_school'을 켰고, 그 주인이 나와 같은 학교라면 카드를 숨김
-if (currentUser) {
-    filtered = filtered.filter(p => {
-        // 1. 내 카드는 항상 보임
-        if (String(p.user_id) === String(currentUserId)) return true;
+    // 각 카드의 주인이 'hide_same_school'을 켰고, 그 주인이 나와 같은 학교라면 카드를 숨김
+    if (currentUser) {
+        filtered = filtered.filter(p => {
+            // 1. 내 카드는 항상 보임
+            if (String(p.user_id) === String(currentUserId)) return true;
 
-        // 2. 카드 주인 찾기 (allUsers에서)
-        const owner = allUsers.find(u => String(u.id) === String(p.user_id));
-        if (!owner) return true; // 주인 정보가 없으면 일단 보여줌
+            // 2. 카드 주인 찾기 (allUsers에서)
+            const owner = allUsers.find(u => String(u.id) === String(p.user_id));
+            if (!owner) return true; // 주인 정보가 없으면 일단 보여줌
 
-        // 3. 주인이 '같은학교 숨기기'를 켰고, 나와 같은 학교라면 → 숨김
-        if (owner.hide_same_school && owner.school === currentUser.school) {
-            return false;
-        }
+            // 3. 주인이 '같은학교 숨기기'를 켰고, 나와 같은 학교라면 → 숨김
+            if (owner.hide_same_school && owner.school === currentUser.school) {
+                return false;
+            }
 
-        // 4. 그 외에는 모두 보여줌
-        return true;
-    });
-}
-    
+            // 4. 그 외에는 모두 보여줌
+            return true;
+        });
+    }
+
+    // ===== 🆕 차단한 유저의 카드 숨기기 =====
+    if (allBlocks && allBlocks.length > 0) {
+        const blockedUserIds = new Set(
+            allBlocks.map(b => String(b.blocked_user?.id || b.blocked_user_id))
+        );
+        filtered = filtered.filter(p => {
+            // 내 카드는 항상 보임
+            if (String(p.user_id) === String(currentUserId)) return true;
+            // 차단한 유저의 카드는 숨김
+            return !blockedUserIds.has(String(p.user_id));
+        });
+    }
+
     // ★★★ 중복 제거 (id 기준) ★★★
     filtered = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
@@ -3509,8 +3715,13 @@ if (isLoggedIn && !isMyCard && hasCardForMode(currentMode)) {
                     <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
                 </div>
                 ${!isMyCard && isLoggedIn && !isAdminMode ? `
-                    <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
-                ` : ''}
+    <div style="display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap;">
+        <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
+        <button class="btn-sm" onclick="event.stopPropagation(); blockUser(${profile.user_id}, '${profile.school || ''}', ${profile.age || 0})" style="font-size:0.5rem; padding:2px 8px; background:rgba(100,100,100,0.15); color:#aaa; border-color:rgba(150,150,150,0.2);">
+            <i class="fas fa-ban"></i> 차단
+        </button>
+    </div>
+` : ''}
             </div>
         `)}
         ${isAdminMode && isAdmin ? `
@@ -4382,6 +4593,7 @@ async function checkReferralCode() {
         freeMatchTickets = 0;
         hasMyCard = false;
         likedIds.clear();
+        allBlocks = [];
         likedByIds.clear();
         updateUI();
         renderProfiles();
