@@ -4015,16 +4015,25 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
 
     function updateLikedBtn() {
     const btn = document.getElementById('showLikedBtn');
-    const count = likedIds.size;
-    btn.innerHTML = `<i class="fas fa-heart"></i> 내가찜한카드${count > 0 ? ' ('+count+')' : ''}`;
-    // ★ active 클래스는 "필터가 켜져있을 때만" 붙임
+    const btn2 = document.getElementById('showLikedByBtn');
+
+    // ===== 현재 모드에 해당하는 카드만 카운트 =====
+    // 내가 찜한 카드 중, 현재 모드(type)인 카드 수
+    const likedCountByMode = allProfiles.filter(p =>
+        likedIds.has(p.id) && p.type === currentMode
+    ).length;
+
+    // 나를 찜한 카드 중, 현재 모드(type)인 카드 수
+    const likedByCountByMode = allProfiles.filter(p =>
+        likedByIds.has(String(p.user_id)) && p.type === currentMode
+    ).length;
+
+    // 버튼 텍스트 갱신
+    btn.innerHTML = `<i class="fas fa-heart"></i> 내가찜한카드${likedCountByMode > 0 ? ' (' + likedCountByMode + ')' : ''}`;
     if (showLikedOnly) btn.classList.add('active');
     else btn.classList.remove('active');
 
-    const btn2 = document.getElementById('showLikedByBtn');
-    const count2 = likedByIds.size;
-    btn2.innerHTML = `<i class="fas fa-heart"></i> 나를찜한카드${count2 > 0 ? ' ('+count2+')' : ''}`;
-    // ★ active 클래스는 "필터가 켜져있을 때만" 붙임
+    btn2.innerHTML = `<i class="fas fa-heart"></i> 나를찜한카드${likedByCountByMode > 0 ? ' (' + likedByCountByMode + ')' : ''}`;
     if (showLikedByOnly) btn2.classList.add('active');
     else btn2.classList.remove('active');
 }
@@ -4034,17 +4043,17 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
     document.querySelectorAll('#modeTabs button').forEach(b => b.classList.remove('active'));
     document.querySelector(`#modeTabs button[data-mode="${mode}"]`).classList.add('active');
 
-    // ★★★ 성별 필터 상태 관리 ★★★
+    // 성별 필터 상태 관리
     if (mode === 'same' && currentUser) {
-        // 동성친구 모드: 현재 사용자 성별로 고정
         genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
         genderFilter.disabled = true;
     } else {
-        // 둘이서 / 여럿이서 모드: 전체 성별로 초기화
         genderFilter.value = 'all';
         genderFilter.disabled = false;
     }
 
+    // ★ 버튼 카운트 갱신 (모드별로 다시 계산)
+    updateLikedBtn();
     renderProfiles();
 }
 
