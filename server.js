@@ -305,7 +305,7 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-// 1-3. 로그인
+// 1-3. 로그인 (관리자 플래그 포함)
 app.post('/api/login', async (req, res) => {
     const { nickname, password } = req.body;
 
@@ -332,7 +332,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
         }
 
-        // ★★★ 정지 확인 ★★★
+        // 정지 확인
         if (data.is_banned) {
             return res.status(403).json({
                 error: '이용 정지',
@@ -340,7 +340,11 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        res.json(data);
+        // ★ 관리자 여부 명시적으로 포함
+        res.json({
+            ...data,
+            is_admin: data.is_admin === true
+        });
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });

@@ -3370,7 +3370,8 @@ document.getElementById('notificationModal').addEventListener('click', function(
     let isLoggedIn = false;
     let isEmailVerified = false;
     let cardVerificationStatus = 'none';
-    let isAdmin = sessionStorage.getItem('isAdmin') === 'true' || false;
+    // ★ 이제 로그인 시 서버에서 is_admin 값을 받아옴
+let isAdmin = false;
     let currentYear = 2026, currentMonth = 8;
     let hasMyCard = false;
     let freeMatchTickets = 0;
@@ -3552,6 +3553,9 @@ async function fetchInUseTickets() {
         const userData = await fetchUser(currentUserId);
         if (userData) {
             currentUser = userData;
+// ★ 서버에서 받은 is_admin 값으로 관리자 여부 설정
+isAdmin = currentUser.is_admin === true;
+console.log('👤 로그인:', currentUser.nickname, '/ 관리자:', isAdmin);
             isLoggedIn = true;
             isEmailVerified = currentUser.email_verified || false;
             cardVerificationStatus = currentUser.card_status || 'none';
@@ -5730,6 +5734,8 @@ async function checkReferralCode() {
         isLoggedIn = false;
         currentUserId = null;
         currentUser = null;
+    isAdmin = false;  // ★ 추가!
+    sessionStorage.removeItem('isAdmin');  // ★ sessionStorage도 정리
         setData('currentUser', null);
         document.getElementById('authSection').classList.remove('hidden');
         document.getElementById('profileSection').classList.add('hidden');
