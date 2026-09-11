@@ -4525,11 +4525,9 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
                          currentMode === 'group' ? '여럿이서 (2:2,3:3,4:4)' : 
                          '동성친구 찾기';
         
-        // ★★★ 모달 내부 텍스트 변경 ★★★
         document.getElementById('cardRequiredModeLabel').textContent = modeLabel;
         document.getElementById('cardRequiredTitle').textContent = `${modeLabel} 카드를 등록해야 매칭 신청이 가능해요!`;
         
-        // 모달에 현재 모드 저장 (등록 버튼 클릭 시 사용)
         document.getElementById('cardRequiredModal').dataset.mode = currentMode;
         document.getElementById('cardRequiredModal').classList.add('active');
         return;
@@ -4552,82 +4550,159 @@ function handleCardRegisterRedirect() {
     openCardRegisterForm(mode);
 }
     
-    function openMatchingTypeSelection(cardId) {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
+    async function openMatchingTypeSelection(cardId) {
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+
+    // 현재 보유 매칭권 확인
+    const currentTickets = currentUser?.free_tickets || 0;
+
+    // ===== 동성친구 모드: 친구신청하기 버튼 하나만 =====
+    if (currentMode === 'same') {
         content.innerHTML = `
-            <h2>💌 매칭 신청</h2>
-            <div class="subtitle">원하는 매칭 방식을 선택해주세요</div>
-            <div style="margin:12px 0;">
-                <div style="background:rgba(74,222,128,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(74,222,128,0.1); cursor:pointer;" onclick="requestMatchingWithType(${cardId}, 'normal')">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:700;">🔹 일반 매칭</div>
-                            <div style="font-size:0.65rem; color:#888;">상대방이 수락 후 양측 결제 (5,000원)</div>
-                        </div>
-                        <span class="price-tag normal">5,000원</span>
+            <h2>👬 친구 신청</h2>
+            <div class="subtitle">동성친구에게 친구 신청을 보냅니다</div>
+            
+            <div style="background:rgba(74,222,128,0.05); border-radius:14px; padding:14px; margin:12px 0; border:1px solid rgba(74,222,128,0.1);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700;">👬 친구신청하기</div>
+                        <div style="font-size:0.65rem; color:#888;">상대방은 매칭권 소진 없이 수락 가능해요</div>
                     </div>
-                </div>
-                <div style="background:rgba(244,114,182,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(244,114,182,0.1); cursor:pointer;" onclick="requestMatchingWithType(${cardId}, 'premium')">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:700;">✨ 슈퍼 매칭</div>
-                            <div style="font-size:0.65rem; color:#888;">상대방은 무료 수락, 신청자만 결제 (10,000원)</div>
-                        </div>
-                        <span class="price-tag premium">10,000원</span>
-                    </div>
+                    <span class="price-tag normal">1장</span>
                 </div>
             </div>
+            
+            <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px 12px; margin-bottom:10px; font-size:0.6rem; color:#aaa;">
+                💡 <strong style="color:#fbbf24;">보유 매칭권:</strong> ${currentTickets}장
+                ${currentTickets < 1 ? '<br><span style="color:#f87171;">⚠️ 매칭권이 부족해요! 신청할 수 없어요.</span>' : ''}
+            </div>
+            
+            <button class="btn-primary" onclick="requestMatchingWithType(${cardId}, 'normal')" style="width:100%; margin-bottom:6px;" ${currentTickets < 1 ? 'disabled style="opacity:0.4; width:100%; margin-bottom:6px;"' : ''}>
+                ✉️ 친구 신청 보내기
+            </button>
             <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">취소</button>
         `;
         modal.classList.add('active');
+        return;
     }
+
+    // ===== 둘이서 / 여럿이서 모드: 일반매칭 / 슈퍼매칭 =====
+    content.innerHTML = `
+        <h2>💌 매칭 신청</h2>
+        <div class="subtitle">원하는 매칭 방식을 선택해주세요</div>
+        
+        <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px 12px; margin-bottom:10px; font-size:0.6rem; color:#aaa;">
+            💡 <strong style="color:#fbbf24;">보유 매칭권:</strong> ${currentTickets}장
+        </div>
+        
+        <div style="margin:12px 0;">
+            <!-- 일반 매칭 -->
+            <div style="background:rgba(74,222,128,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(74,222,128,0.1); cursor:${currentTickets >= 1 ? 'pointer' : 'not-allowed'}; opacity:${currentTickets >= 1 ? '1' : '0.4'};" 
+                 ${currentTickets >= 1 ? 'onclick="requestMatchingWithType(' + cardId + ', \'normal\')"' : ''}>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700;">🔹 일반 매칭</div>
+                        <div style="font-size:0.65rem; color:#888;">매칭 성사 시 나와 상대방 모두 매칭권 1장씩 소진</div>
+                    </div>
+                    <span class="price-tag normal">1장</span>
+                </div>
+                ${currentTickets < 1 ? '<div style="font-size:0.55rem; color:#f87171; margin-top:4px;">⚠️ 매칭권이 부족해요</div>' : ''}
+            </div>
+            
+            <!-- 슈퍼 매칭 -->
+            <div style="background:rgba(244,114,182,0.05); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(244,114,182,0.1); cursor:${currentTickets >= 2 ? 'pointer' : 'not-allowed'}; opacity:${currentTickets >= 2 ? '1' : '0.4'};" 
+                 ${currentTickets >= 2 ? 'onclick="requestMatchingWithType(' + cardId + ', \'premium\')"' : ''}>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700;">✨ 슈퍼 매칭</div>
+                        <div style="font-size:0.65rem; color:#888;">매칭 성사 시 나만 매칭권 2장 소진 (상대방은 무료 수락)</div>
+                    </div>
+                    <span class="price-tag premium">2장</span>
+                </div>
+                ${currentTickets < 2 ? '<div style="font-size:0.55rem; color:#f87171; margin-top:4px;">⚠️ 매칭권이 부족해요 (2장 필요)</div>' : ''}
+            </div>
+        </div>
+        
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">취소</button>
+    `;
+    modal.classList.add('active');
+}
 
     async function requestMatchingWithType(cardId, type) {
-        if (!isLoggedIn) {
-            showToast('⚠️ 로그인 후 이용 가능합니다');
-            switchToLogin();
-            return;
-        }
-        if (!hasMyCard) {
-            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-            return;
-        }
-        const targetCard = allProfiles.find(p => p.id === cardId);
-        if (!targetCard) return;
-        if ((currentMode === 'solo' || currentMode === 'group') && currentUser && targetCard.gender === currentUser.gender) {
-            showToast('⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다');
-            return;
-        }
-        if (currentMode === 'same' && currentUser && targetCard.gender !== currentUser.gender) {
-            showToast('⚠️ 동성친구는 같은 성별끼리만 매칭 가능합니다');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/matches', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    from_user_id: currentUserId,
-                    to_card_id: cardId,
-                    type: type
-                })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                await fetchMatches();
-                updateMatchingData();
-                closeModal();
-                showToast(`💌 ${type === 'normal' ? '일반' : '슈퍼'} 매칭 신청이 전송되었습니다!`);
-            } else {
-                showToast('❌ ' + data.error);
-            }
-        } catch (error) {
-            showToast('⚠️ 서버 통신 오류');
-            console.error('Match request error:', error);
-        }
+    if (!isLoggedIn) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        switchToLogin();
+        return;
     }
+    if (!hasMyCard) {
+        showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+        return;
+    }
+
+    const targetCard = allProfiles.find(p => p.id === cardId);
+    if (!targetCard) return;
+
+    // 성별 검증
+    if ((currentMode === 'solo' || currentMode === 'group') && currentUser && targetCard.gender === currentUser.gender) {
+        showToast('⚠️ 둘이서/여럿이서는 이성끼리만 매칭 가능합니다');
+        return;
+    }
+    if (currentMode === 'same' && currentUser && targetCard.gender !== currentUser.gender) {
+        showToast('⚠️ 동성친구는 같은 성별끼리만 매칭 가능합니다');
+        return;
+    }
+
+    // ===== 매칭권 비용 계산 (프론트 미리 체크) =====
+    let costA = 1;
+    if (targetCard.type === 'same') {
+        costA = 1; // 동성친구
+    } else if (type === 'premium') {
+        costA = 2; // 슈퍼매칭
+    } else {
+        costA = 1; // 일반매칭
+    }
+
+    const currentTickets = currentUser?.free_tickets || 0;
+    if (currentTickets < costA) {
+        showToast(`⚠️ 매칭권이 부족합니다. (필요: ${costA}장, 보유: ${currentTickets}장)`);
+        return;
+    }
+
+    // 확인 창
+    const typeLabel = targetCard.type === 'same' ? '친구신청' : (type === 'premium' ? '슈퍼매칭' : '일반매칭');
+    if (!confirm(`${typeLabel}을 신청하시겠습니까?\n\n매칭권 ${costA}장이 즉시 차감됩니다.\n(매칭 실패 시 환급)\n\n보유: ${currentTickets}장 → 신청 후: ${currentTickets - costA}장`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from_user_id: currentUserId,
+                to_card_id: cardId,
+                type: type
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            // 내 매칭권 정보 갱신
+            currentUser.free_tickets = data.tickets_remaining;
+            await fetchMatches();
+            updateMatchingData();
+            updateUI();
+            closeModal();
+            showToast(`💌 ${typeLabel} 신청 완료! (매칭권 ${costA}장 사용, 남은: ${data.tickets_remaining}장)`);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        showToast('⚠️ 서버 통신 오류');
+        console.error('Match request error:', error);
+    }
+}
 
     async function respondMatching(matchId, accept) {
     const match = allMatches.find(m => m.id === matchId);
