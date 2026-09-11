@@ -3918,8 +3918,8 @@ card.innerHTML = `
     <span class="card-type-badge">${typeLabel}</span>
     ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
     ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-    <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
-        <span style="font-size:1.7rem; line-height:1; flex-shrink:0;">${p.emoji}</span>
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px; margin-top:20px;">
+    <span style="font-size:1.7rem; line-height:1; flex-shrink:0;">${p.emoji}</span>
         ${hasAnyVerification ? `
         <div style="display:flex; flex-direction:column; gap:2px;">
             ${ownerEmailVerified ? '<span style="font-size:0.42rem; background:rgba(74,222,128,0.15); color:#4ade80; padding:1px 6px; border-radius:20px; border:1px solid rgba(74,222,128,0.2); white-space:nowrap;">✅ 학교메일</span>' : ''}
