@@ -3836,18 +3836,29 @@ async function renderProfiles() {
     }
 
     // 동성친구 모드
-    if (currentMode === 'same' && currentUser) {
-        const myCards = filtered.filter(p => String(p.user_id) === String(currentUserId));
-        const others = filtered.filter(p => String(p.user_id) !== String(currentUserId) && p.gender === currentUser.gender);
-        filtered = [...myCards, ...others];
+if (currentMode === 'same' && currentUser) {
+    const myCards = filtered.filter(p => String(p.user_id) === String(currentUserId));
+    
+    // ★★★ 관리자는 모든 성별 열람 가능! ★★★
+    let others;
+    if (isAdmin) {
+        // 관리자: 성별 제한 없이 모든 카드
+        others = filtered.filter(p => String(p.user_id) !== String(currentUserId));
+        genderFilter.disabled = false;
+    } else {
+        // 일반 유저: 같은 성별만
+        others = filtered.filter(p => String(p.user_id) !== String(currentUserId) && p.gender === currentUser.gender);
         genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
         genderFilter.disabled = true;
-    } else {
-        genderFilter.disabled = false;
-        const genderVal = genderFilter.value;
-        if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
-        else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
     }
+    
+    filtered = [...myCards, ...others];
+} else {
+    genderFilter.disabled = false;
+    const genderVal = genderFilter.value;
+    if (genderVal === 'female') filtered = filtered.filter(p => p.gender === 'female');
+    else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
+}
 
     // ===== 같은학교 숨기기 (카드 주인 기준) =====
     if (currentUser) {
