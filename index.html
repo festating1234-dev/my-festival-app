@@ -1288,6 +1288,9 @@
         <h2>✍️ 매칭 후기 작성</h2>
         <div class="subtitle">진정성 있는 후기를 남겨주세요!</div>
 
+        <!-- ★ 반려 안내 배너 (기본 숨김) ★ -->
+        <div id="reviewRejectBanner" style="display:none; background:rgba(239,68,68,0.08); border-radius:10px; padding:10px 12px; margin-top:10px; border:1px solid rgba(239,68,68,0.15); font-size:0.65rem; color:#f87171; line-height:1.6;"></div>
+
         <!-- 안내 박스 -->
         <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; margin:12px 0; border:1px solid rgba(251,191,36,0.1);">
             <div style="font-size:0.7rem; color:#fbbf24; font-weight:700; margin-bottom:6px;">📌 안내</div>
@@ -1296,18 +1299,16 @@
                 나의 후기글은 이렇게 보여져요 👇
             </div>
             <div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:0.6rem; color:#ccc; line-height:1.5;">
-    🐰 / 이화여자대학교 / 26학번 / 여럿이서 / 대학 들어오고 미팅은 처음이었는데 상대방 분들이 친절하게 술게임도 알려 주시고 너무 재밌었어요!! 미팅 끝나고도 계속 연락하면서 다음주에 또 만나서 같이 놀기로 했어요 😚
-</div>
-
-<!-- ★ 보상 안내 문구 추가 ★ -->
-<div style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(251,191,36,0.15);">
-    <div style="font-size:0.62rem; color:#4ade80; line-height:1.6;">
-        🎁 후기글 <strong>30자 이상</strong> 작성 시: <strong>매칭권 1개</strong> 지급!
-    </div>
-    <div style="font-size:0.62rem; color:#fbbf24; line-height:1.6; margin-top:2px;">
-        🎉 후기글 <strong>100자 이상</strong> 작성 시: <strong>매칭권 2개</strong> 지급!
-    </div>
-</div>
+                🐰 / 이화여자대학교 / 26학번 / 여럿이서 / 대학 들어오고 미팅은 처음이었는데 상대방 분들이 친절하게 술게임도 알려 주시고 너무 재밌었어요!! 미팅 끝나고도 계속 연락하면서 다음주에 또 만나서 같이 놀기로 했어요 😚
+            </div>
+            <div style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(251,191,36,0.15);">
+                <div style="font-size:0.62rem; color:#4ade80; line-height:1.6;">
+                    🎁 후기글 <strong>30자 이상</strong> 작성 시: <strong>매칭권 1개</strong> 지급!
+                </div>
+                <div style="font-size:0.62rem; color:#fbbf24; line-height:1.6; margin-top:2px;">
+                    🎉 후기글 <strong>100자 이상</strong> 작성 시: <strong>매칭권 2개</strong> 지급!
+                </div>
+            </div>
         </div>
 
         <!-- 후기 입력 -->
@@ -2424,19 +2425,26 @@ async function openReviewModal(matchId, targetUserId, cardType, targetSchool, ta
         return;
     }
 
-    // 이미 후기를 썼는지 확인
+    let rejectedInfo = null; // 반려된 후기 정보 (있을 경우)
+
+    // 이미 후기를 썼는지 확인 (pending/approved만 차단)
     try {
         const res = await fetch(`/api/reviews/check?userId=${currentUser.id}&matchId=${matchId}`);
         const data = await res.json();
+        
         if (data.exists) {
             if (data.review?.status === 'pending') {
                 showToast('⚠️ 이미 이 매칭에 대한 후기를 제출하셨어요. (검수 대기 중)');
+                return;
             } else if (data.review?.status === 'approved') {
                 showToast('⚠️ 이미 이 매칭에 대한 후기가 승인되었어요.');
-            } else if (data.review?.status === 'rejected') {
-                showToast('⚠️ 이미 이 매칭에 대한 후기가 반려되었어요.');
+                return;
             }
-            return;
+        }
+        
+        // 반려된 후기가 있으면 정보 저장 (안내 문구용)
+        if (data.rejectedReview) {
+            rejectedInfo = data.rejectedReview;
         }
     } catch (error) {
         console.error('후기 확인 오류:', error);
@@ -2450,6 +2458,21 @@ async function openReviewModal(matchId, targetUserId, cardType, targetSchool, ta
     const hint = document.getElementById('reviewLengthHint');
     hint.textContent = '최소 30자 이상 입력해주세요';
     hint.style.color = '#888';
+
+    // ★ 반려 안내 배너 표시/숨김
+    const rejectBanner = document.getElementById('reviewRejectBanner');
+    if (rejectBanner) {
+        if (rejectedInfo) {
+            rejectBanner.style.display = 'block';
+            rejectBanner.innerHTML = `
+                ⚠️ 이전 후기가 반려되었어요.<br>
+                <span style="color:#f87171; font-size:0.55rem;">반려 사유: ${rejectedInfo.reject_reason || '사유 없음'}</span><br>
+                <span style="font-size:0.55rem; color:#aaa;">좀 더 진정성 있는 후기를 남겨주세요!</span>
+            `;
+        } else {
+            rejectBanner.style.display = 'none';
+        }
+    }
 
     // 실시간 글자수 카운트
     textarea.oninput = function () {

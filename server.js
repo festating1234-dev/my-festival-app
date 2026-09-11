@@ -1339,17 +1339,23 @@ app.post('/api/reviews', async (req, res) => {
     }
 
     try {
-        // 이미 이 매칭에 대해 후기를 쓴 적 있는지 확인
+        // ★★★ 이미 '검수 중(pending)' 또는 '승인(approved)'된 후기가 있는지만 확인 ★★★
+        // 반려(rejected)된 후기는 재작성 가능!
         if (match_id) {
             const { data: existing } = await supabase
                 .from('reviews')
-                .select('id')
+                .select('id, status')
                 .eq('user_id', user_id)
                 .eq('match_id', match_id)
+                .in('status', ['pending', 'approved'])
                 .limit(1);
 
             if (existing && existing.length > 0) {
-                return res.status(400).json({ error: '이미 후기를 작성한 매칭입니다.' });
+                const status = existing[0].status;
+                const msg = status === 'pending' 
+                    ? '이미 검수 중인 후기가 있습니다.' 
+                    : '이미 승인된 후기가 있습니다.';
+                return res.status(400).json({ error: msg });
             }
         }
 
@@ -1397,7 +1403,7 @@ app.get('/api/reviews/my', async (req, res) => {
     }
 });
 
-// 3. 특정 매칭에 후기를 썼는지 확인
+// 3. 특정 매칭에 후기를 썼는지 확인 (pending/approved만)
 app.get('/api/reviews/check', async (req, res) => {
     const { userId, matchId } = req.query;
     if (!userId || !matchId) {
@@ -1405,15 +1411,33 @@ app.get('/api/reviews/check', async (req, res) => {
     }
 
     try {
+        // pending 또는 approved 상태의 후기만 확인
         const { data, error } = await supabase
             .from('reviews')
             .select('id, status, content, created_at')
             .eq('user_id', userId)
             .eq('match_id', matchId)
+            .in('status', ['pending', 'approved'])
+            .order('created_at', { ascending: false })
             .limit(1);
 
         if (error) throw error;
-        res.json({ exists: data && data.length > 0, review: data?.[0] || null });
+        
+        // 반려된 후기도 함께 조회 (재작성 시 참고용)
+        const { data: rejected } = await supabase
+            .from('reviews')
+            .select('id, status, content, reject_reason, created_at')
+            .eq('user_id', userId)
+            .eq('match_id', matchId)
+            .eq('status', 'rejected')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        res.json({ 
+            exists: data && data.length > 0, 
+            review: data?.[0] || null,
+            rejectedReview: rejected?.[0] || null
+        });
     } catch (error) {
         console.error('Review check error:', error);
         res.status(500).json({ error: error.message });
