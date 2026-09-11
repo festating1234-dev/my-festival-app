@@ -1411,7 +1411,8 @@
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
                         <div id="profileAvatar" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#a855f7,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">👤</div>
                         <div>
-                            <div style="font-weight:700; font-size:1rem;"><span id="profileNickname">홍길동</span> <span id="userBadgeDisplay" class="badge-status unverified">미인증</span></div>
+                            <div style="font-weight:700; font-size:1rem;"><span id="profileNickname">홍길동</span></div>
+<div id="userBadgeDisplay" style="margin-top:3px; display:flex; flex-direction:column; gap:3px; align-items:flex-start;"></div>
                             <div style="font-size:0.65rem; color:#888;"><span id="profileSchool">홍익대학교</span> · <span id="profileMajor">경영학과</span> · <span id="profileGrade">22학번</span></div>
                         </div>
                         <div style="margin-left:auto; display:flex; gap:4px; flex-wrap:wrap;">
@@ -1486,30 +1487,30 @@
 
                     <div class="verify-box" id="emailVerifyBox">
     <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증</div>
-    <div class="desc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
-    <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+    <div class="desc" id="emailVerifyDesc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
+    <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;" id="emailVerifyInputArea">
         <button class="btn-sm primary" id="emailVerifyBtn" onclick="openEmailVerificationModal()">
-    <i class="fas fa-envelope"></i> 이메일 인증하러 가기
-</button>
+            <i class="fas fa-envelope"></i> 이메일 인증하러 가기
+        </button>
     </div>
     <div id="emailStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
         <span style="color:#888;">⏳ 미인증</span>
     </div>
 </div>
                     <div class="verify-box" id="cardVerifyBox">
-                        <div class="title"><i class="fas fa-id-card"></i> 학생증 인증 (관리자 확인)</div>
-                        <div class="desc">인증 시 <strong>'나를 찜한 사람'</strong> 확인 가능!</div>
-                        <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
-                            <input type="file" accept="image/*" id="cardInput" style="color:#aaa; font-size:0.6rem; flex:1;">
-                            <button class="btn-sm primary" onclick="submitCardVerification()">제출</button>
-                        </div>
-                        <div id="cardStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
-                            <span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>
-                        </div>
-                        <div id="cardRejectReason" style="margin-top:4px; font-size:0.7rem; color:#f87171; display:none;">
-                            ⚠️ 학생증 인증이 반려되었습니다. 좀 더 명확한 사진을 제출해 주세요.
-                        </div>
-                    </div>
+    <div class="title"><i class="fas fa-id-card"></i> 학생증 인증 (관리자 확인)</div>
+    <div class="desc" id="cardVerifyDesc">인증 시 <strong>'나를 찜한 사람'</strong> 확인 가능!</div>
+    <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;" id="cardVerifyInputArea">
+        <input type="file" accept="image/*" id="cardInput" style="color:#aaa; font-size:0.6rem; flex:1;">
+        <button class="btn-sm primary" onclick="submitCardVerification()">제출</button>
+    </div>
+    <div id="cardStatus" style="margin-top:4px; font-size:0.7rem; color:#888;">
+        <span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>
+    </div>
+    <div id="cardRejectReason" style="margin-top:4px; font-size:0.7rem; color:#f87171; display:none;">
+        ⚠️ 학생증 인증이 반려되었습니다. 좀 더 명확한 사진을 제출해 주세요.
+    </div>
+</div>
 
                     <div style="background:linear-gradient(135deg, rgba(168,85,247,0.06), rgba(124,58,237,0.02)); border-radius:14px; padding:12px; margin-top:10px; border:1px solid rgba(168,85,247,0.08);">
                         <div style="font-weight:700; font-size:0.8rem;">🎁 내 혜택</div>
@@ -3905,33 +3906,45 @@ async function renderProfiles() {
         }
 
         const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
-        const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
+const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
 
-        card.innerHTML = `
-            <span class="emoji-big">${p.emoji}</span>
-            <span class="card-type-badge">${typeLabel}</span>
-            ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-            ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
-            <div class="info-line">
-                ${schoolDisplay} / ${majorDisplay}
-            </div>
-            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-                ${genderText} / ${p.height}cm
-            </div>
-            <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
-                ${p.grade} / ${p.age}세
-            </div>
-            <div class="preview">${p.preview || detailDisplay}</div>
-            ${moreNotice}
-            <div class="meta">
-                <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
-                <span>
-                    <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
-                       onclick="event.stopPropagation(); toggleLike(${p.id})"
-                       title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
-                </span>
-            </div>
-        `;
+// ★ 카드 주인의 인증 상태 확인
+const owner = allUsers.find(u => String(u.id) === String(p.user_id));
+const ownerEmailVerified = owner?.email_verified || false;
+const ownerCardApproved = owner?.card_status === 'approved';
+const hasAnyVerification = ownerEmailVerified || ownerCardApproved;
+
+card.innerHTML = `
+    <span class="emoji-big">${p.emoji}</span>
+    <span class="card-type-badge">${typeLabel}</span>
+    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+    <div class="info-line">
+        ${schoolDisplay} / ${majorDisplay}
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${genderText} / ${p.height}cm
+    </div>
+    <div class="info-line" style="margin-top:2px; font-size:0.5rem; color:#aaa;">
+        ${p.grade} / ${p.age}세
+    </div>
+    ${hasAnyVerification ? `
+    <div style="margin-top:3px; display:flex; gap:3px; flex-wrap:wrap;">
+        ${ownerEmailVerified ? '<span style="font-size:0.4rem; background:rgba(74,222,128,0.15); color:#4ade80; padding:1px 5px; border-radius:20px; border:1px solid rgba(74,222,128,0.2);">✅ 메일</span>' : ''}
+        ${ownerCardApproved ? '<span style="font-size:0.4rem; background:rgba(96,165,250,0.15); color:#60a5fa; padding:1px 5px; border-radius:20px; border:1px solid rgba(96,165,250,0.2);">✅ 학생증</span>' : ''}
+    </div>
+    ` : ''}
+    <div class="preview">${p.preview || detailDisplay}</div>
+    ${moreNotice}
+    <div class="meta">
+        <span><i class="far fa-heart" style="color:#f472b6;"></i> ${p.likes || 0}</span>
+        <span>
+            <i class="fas fa-heart like-icon ${isLiked ? 'liked' : ''} ${!canLike ? 'disabled' : ''}" 
+               onclick="event.stopPropagation(); toggleLike(${p.id})"
+               title="${!canLike ? isMyCard ? '본인의 카드입니다' : '내 카드 등록 후 찜하기 가능합니다' : ''}"></i>
+        </span>
+    </div>
+`;
         card.addEventListener('click', () => showProfileDetail(p));
         grid.appendChild(card);
     }
@@ -4533,11 +4546,22 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         }
     }
 
-    content.innerHTML = `
-        <h2>💌 카드 상세</h2>
-        <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
-        <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
-        ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
+    // ★ 카드 주인 인증 상태 확인
+const detailOwner = allUsers.find(u => String(u.id) === String(profile.user_id));
+const detailOwnerEmail = detailOwner?.email_verified || false;
+const detailOwnerCard = detailOwner?.card_status === 'approved';
+
+content.innerHTML = `
+    <h2>💌 카드 상세</h2>
+    <div style="font-size:2rem; text-align:center; margin:4px 0;">${profile.emoji}</div>
+    <div style="text-align:center; font-size:0.7rem; color:#a855f7; margin-bottom:6px;">${typeLabel}</div>
+    ${(detailOwnerEmail || detailOwnerCard) ? `
+    <div style="text-align:center; margin-bottom:6px; display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+        ${detailOwnerEmail ? '<span style="font-size:0.55rem; background:rgba(74,222,128,0.15); color:#4ade80; padding:2px 8px; border-radius:20px; border:1px solid rgba(74,222,128,0.2);">✅ 학교메일 인증</span>' : ''}
+        ${detailOwnerCard ? '<span style="font-size:0.55rem; background:rgba(96,165,250,0.15); color:#60a5fa; padding:2px 8px; border-radius:20px; border:1px solid rgba(96,165,250,0.2);">✅ 학생증 인증</span>' : ''}
+    </div>
+    ` : ''}
+    ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
         <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
         <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
         <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
@@ -6222,7 +6246,7 @@ function updateUI() {
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('profileSection').classList.remove('hidden');
 
-    // ===== 1. 프로필 아바타를 동물 이모지로 변경 =====
+    // ===== 1. 프로필 아바타 (동물 이모지) =====
     const avatarDiv = document.querySelector('.profile-card > div > div:first-child');
     if (avatarDiv && currentUser && currentUser.animal) {
         const emoji = currentUser.animal.split(' ')[0] || '👤';
@@ -6233,26 +6257,28 @@ function updateUI() {
         avatarDiv.style.fontSize = '1.4rem';
     }
 
-    // ===== 2. 닉네임은 순수 텍스트로만 표시 =====
+    // ===== 2. 닉네임 =====
     document.getElementById('profileNickname').textContent = currentUser.nickname;
 
-    // ===== 3. 인증 상태 배지 =====
-    const badge = document.getElementById('userBadgeDisplay');
+    // ===== 3. 인증 마크 (세로 두 줄) =====
     const hasEmail = isEmailVerified;
     const hasCard = cardVerificationStatus === 'approved';
-
-    if (hasEmail && hasCard) {
-        badge.textContent = '⭐ 인증완료';
-        badge.className = 'badge-status verified';
-    } else if (hasEmail || hasCard) {
-        badge.textContent = '⭐ 부분인증';
-        badge.className = 'badge-status verified';
-    } else {
-        badge.textContent = '미인증';
-        badge.className = 'badge-status unverified';
+    const badge = document.getElementById('userBadgeDisplay');
+    if (badge) {
+        let badgeHtml = '';
+        if (hasEmail) {
+            badgeHtml += `<span style="background:rgba(74,222,128,0.15); color:#4ade80; padding:2px 8px; border-radius:20px; font-size:0.55rem; border:1px solid rgba(74,222,128,0.2); white-space:nowrap;">✅ 학교메일 인증</span>`;
+        }
+        if (hasCard) {
+            badgeHtml += `<span style="background:rgba(96,165,250,0.15); color:#60a5fa; padding:2px 8px; border-radius:20px; font-size:0.55rem; border:1px solid rgba(96,165,250,0.2); white-space:nowrap;">✅ 학생증 인증</span>`;
+        }
+        if (!hasEmail && !hasCard) {
+            badgeHtml = `<span class="badge-status unverified">미인증</span>`;
+        }
+        badge.innerHTML = badgeHtml;
     }
 
-    // ===== 4. 사용자 기본 정보 =====
+    // ===== 4. 기본 정보 =====
     document.getElementById('profileSchool').textContent = currentUser.school;
     document.getElementById('profileMajor').textContent = currentUser.major;
     document.getElementById('profileGrade').textContent = currentUser.grade;
@@ -6264,35 +6290,36 @@ function updateUI() {
     document.getElementById('profileRegion').textContent = currentUser.region;
     document.getElementById('profileIntro').textContent = currentUser.intro || '';
     document.getElementById('profilePhone').textContent = currentUser.phone || '-';
-    document.getElementById('profileReferralCode').textContent = currentUser.referral_code || '------';
+
+    const refCodeEl = document.getElementById('profileReferralCode');
+    if (refCodeEl) refCodeEl.textContent = currentUser.referral_code || '------';
+
     document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
 
-// 사용 중 매칭권 표시 (비동기)
-const inUseEl = document.getElementById('inUseTicketDisplay');
-if (inUseEl) {
-    // 일단 캐시된 값으로 표시 후, 서버에서 최신값 조회
-    const cachedInUse = matchingData?.sent
-        ?.filter(m => m.status === 'pending')
-        ?.reduce((sum, m) => sum + (m.a_tickets_used || 0), 0) || 0;
-    inUseEl.textContent = cachedInUse + '장';
+    // 사용 중 매칭권
+    const inUseEl = document.getElementById('inUseTicketDisplay');
+    if (inUseEl) {
+        const cachedInUse = matchingData?.sent
+            ?.filter(m => m.status === 'pending')
+            ?.reduce((sum, m) => sum + (m.a_tickets_used || 0), 0) || 0;
+        inUseEl.textContent = cachedInUse + '장';
 
-    // 서버에서 최신값 조회 (실패해도 무시)
-    fetch(`/api/matches/in-use-tickets?userId=${currentUser.id}`)
-        .then(r => r.json())
-        .then(data => {
-            if (typeof data.in_use === 'number') {
-                inUseEl.textContent = data.in_use + '장';
-            }
-        })
-        .catch(err => console.error('사용 중 매칭권 조회 오류:', err));
-}
+        fetch(`/api/matches/in-use-tickets?userId=${currentUser.id}`)
+            .then(r => r.json())
+            .then(data => {
+                if (typeof data.in_use === 'number') {
+                    inUseEl.textContent = data.in_use + '장';
+                }
+            })
+            .catch(err => console.error('사용 중 매칭권 조회 오류:', err));
+    }
 
     // ===== 5. 개인정보 숨기기 상태 =====
     document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
     document.getElementById('profileHideMajor').textContent = currentUser.hide_major ? '✅' : '❌';
     document.getElementById('profileHideSameSchool').textContent = currentUser.hide_same_school ? '✅' : '❌';
 
-    // ===== 6. 토글 버튼 상태 동기화 =====
+    // ===== 6. 토글 상태 동기화 =====
     const toggleSchool = document.getElementById('toggleHideSchool');
     const toggleMajor = document.getElementById('toggleHideMajor');
     const toggleSame = document.getElementById('toggleHideSameSchool');
@@ -6300,41 +6327,55 @@ if (inUseEl) {
     if (toggleMajor) toggleMajor.classList.toggle('active', currentUser.hide_major);
     if (toggleSame) toggleSame.classList.toggle('active', currentUser.hide_same_school);
 
-    // ===== 7. 이메일 인증 상태 (버튼 제어 포함) =====
+    // ===== 7. 이메일 인증 UI =====
     const emailStatus = document.getElementById('emailStatus');
     const emailBox = document.getElementById('emailVerifyBox');
-    const emailVerifyBtn = document.getElementById('emailVerifyBtn');
+    const emailVerifyInputArea = document.getElementById('emailVerifyInputArea');
+    const emailVerifyDesc = document.getElementById('emailVerifyDesc');
 
     if (isEmailVerified) {
-        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! 무료 매치권 1회 지급</span>';
+        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료!</span>';
         if (emailBox) emailBox.classList.add('success');
-        if (emailVerifyBtn) emailVerifyBtn.style.display = 'none';
+        if (emailVerifyInputArea) emailVerifyInputArea.style.display = 'none';
+        if (emailVerifyDesc) emailVerifyDesc.style.display = 'none';
     } else {
         emailStatus.innerHTML = '<span style="color:#888;">⏳ 미인증</span>';
         if (emailBox) emailBox.classList.remove('success');
-        if (emailVerifyBtn) emailVerifyBtn.style.display = 'inline-flex';
+        if (emailVerifyInputArea) emailVerifyInputArea.style.display = 'flex';
+        if (emailVerifyDesc) emailVerifyDesc.style.display = 'block';
     }
 
-    // ===== 8. 학생증 인증 상태 =====
+    // ===== 8. 학생증 인증 UI =====
     const cardStatus = document.getElementById('cardStatus');
     const cardBox = document.getElementById('cardVerifyBox');
     const rejectReason = document.getElementById('cardRejectReason');
+    const cardVerifyInputArea = document.getElementById('cardVerifyInputArea');
+    const cardVerifyDesc = document.getElementById('cardVerifyDesc');
+
     if (cardVerificationStatus === 'pending') {
         cardStatus.innerHTML = '<span class="status-badge pending">⏳ 관리자 확인 중</span> <span style="color:#888; font-size:0.6rem;">관리자 확인 후 승인여부가 결정됩니다</span>';
-        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (cardBox) cardBox.classList.remove('success', 'rejected');
         if (rejectReason) rejectReason.style.display = 'none';
+        if (cardVerifyDesc) cardVerifyDesc.style.display = 'block';
+        if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'none';
     } else if (cardVerificationStatus === 'approved') {
-        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한" 확인 가능</span>';
+        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한카드" 확인 가능</span>';
         if (cardBox) { cardBox.classList.add('success'); cardBox.classList.remove('rejected'); }
         if (rejectReason) rejectReason.style.display = 'none';
+        if (cardVerifyDesc) cardVerifyDesc.style.display = 'none';
+        if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'none';
     } else if (cardVerificationStatus === 'rejected') {
         cardStatus.innerHTML = '<span class="status-badge rejected">❌ 인증 반려</span>';
         if (cardBox) { cardBox.classList.remove('success'); cardBox.classList.add('rejected'); }
         if (rejectReason) rejectReason.style.display = 'block';
+        if (cardVerifyDesc) cardVerifyDesc.style.display = 'block';
+        if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'flex';
     } else {
         cardStatus.innerHTML = '<span style="color:#888;">⏳ 아직 인증을 제출하지 않았습니다</span>';
-        if (cardBox) { cardBox.classList.remove('success', 'rejected'); }
+        if (cardBox) cardBox.classList.remove('success', 'rejected');
         if (rejectReason) rejectReason.style.display = 'none';
+        if (cardVerifyDesc) cardVerifyDesc.style.display = 'block';
+        if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'flex';
     }
 
     // ===== 9. 혜택 표시 =====
@@ -6354,17 +6395,17 @@ if (inUseEl) {
 
     // ===== 10. 관리자 패널 =====
     if (isAdmin) {
-    const pending = allUsers.filter(u => u.card_status === 'pending').length;
-    document.getElementById('pendingCount').textContent = pending;
-    document.getElementById('adminPanel').classList.remove('hidden');
-    renderPendingList();
-    renderReportList();
-    renderBannedUsersList();
-    renderAdminReviews();
-    updateNoticeRecipientCount();  // ★ 추가!
-} else {
-    document.getElementById('adminPanel').classList.add('hidden');
-}
+        const pending = allUsers.filter(u => u.card_status === 'pending').length;
+        document.getElementById('pendingCount').textContent = pending;
+        document.getElementById('adminPanel').classList.remove('hidden');
+        renderPendingList();
+        renderReportList();
+        renderBannedUsersList();
+        renderAdminReviews();
+        updateNoticeRecipientCount();
+    } else {
+        document.getElementById('adminPanel').classList.add('hidden');
+    }
 }
 
     // ===== 이메일 인증 관련 함수 (새로운 버전) =====
