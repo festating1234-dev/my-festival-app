@@ -3987,44 +3987,47 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
     }
 
     function toggleShowLikedBy() {
-        if (!isLoggedIn) {
-            showToast('⚠️ 로그인 후 이용 가능합니다');
-            return;
-        }
-        if (!hasMyCard) {
-            showToast('⚠️ 내 카드를 먼저 등록해주세요!');
-            return;
-        }
-        if (cardVerificationStatus !== 'approved') {
-            showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
-            document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
-            document.querySelector('[data-tab="mypage"]').classList.add('active');
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-mypage').classList.add('active');
-            return;
-        }
-        showLikedByOnly = !showLikedByOnly;
-        if (showLikedByOnly) {
-            showLikedOnly = false;
-            document.getElementById('showLikedBtn').classList.remove('active');
-        }
-        document.getElementById('showLikedByBtn').classList.toggle('active');
-        renderProfiles();
+    if (!isLoggedIn) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
     }
+    if (!hasMyCard) {
+        showToast('⚠️ 내 카드를 먼저 등록해주세요!');
+        return;
+    }
+    if (cardVerificationStatus !== 'approved') {
+        showToast('⚠️ 학생증 인증자만 나를찜한카드를 확인할 수 있어요');
+        document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tab="mypage"]').classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-mypage').classList.add('active');
+        return;
+    }
+    showLikedByOnly = !showLikedByOnly;
+    if (showLikedByOnly) {
+        showLikedOnly = false;
+        document.getElementById('showLikedBtn').classList.remove('active');
+    }
+    // ★ updateLikedBtn을 통해 버튼 상태 일괄 갱신
+    updateLikedBtn();
+    renderProfiles();
+}
 
     function updateLikedBtn() {
-        const btn = document.getElementById('showLikedBtn');
-        const count = likedIds.size;
-        btn.innerHTML = `<i class="fas fa-heart"></i> 내가찜한카드${count > 0 ? ' ('+count+')' : ''}`;
-        if (count > 0) btn.classList.add('active');
-        else btn.classList.remove('active');
+    const btn = document.getElementById('showLikedBtn');
+    const count = likedIds.size;
+    btn.innerHTML = `<i class="fas fa-heart"></i> 내가찜한카드${count > 0 ? ' ('+count+')' : ''}`;
+    // ★ active 클래스는 "필터가 켜져있을 때만" 붙임
+    if (showLikedOnly) btn.classList.add('active');
+    else btn.classList.remove('active');
 
-        const btn2 = document.getElementById('showLikedByBtn');
-        const count2 = likedByIds.size;
-        btn2.innerHTML = `<i class="fas fa-heart"></i> 나를찜한카드${count2 > 0 ? ' ('+count2+')' : ''}`;
-        if (count2 > 0 && hasMyCard && cardVerificationStatus === 'approved') btn2.classList.add('active');
-        else btn2.classList.remove('active');
-    }
+    const btn2 = document.getElementById('showLikedByBtn');
+    const count2 = likedByIds.size;
+    btn2.innerHTML = `<i class="fas fa-heart"></i> 나를찜한카드${count2 > 0 ? ' ('+count2+')' : ''}`;
+    // ★ active 클래스는 "필터가 켜져있을 때만" 붙임
+    if (showLikedByOnly) btn2.classList.add('active');
+    else btn2.classList.remove('active');
+}
 
     function switchMode(mode) {
     currentMode = mode;
