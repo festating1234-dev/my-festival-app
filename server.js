@@ -786,16 +786,32 @@ app.put('/api/profiles/:id', async (req, res) => {
     }
 });
 
-// 2-4. 카드 삭제
+// 2-4. 카드 삭제 (관련 데이터 함께 정리)
 app.delete('/api/profiles/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // 1. 관련 좋아요(찜) 삭제
+        await supabase
+            .from('likes')
+            .delete()
+            .eq('card_id', id);
+
+        // 2. 관련 매칭 삭제 (pending 상태만 - 성사/거절된 이력은 보존)
+        await supabase
+            .from('matches')
+            .delete()
+            .eq('to_card_id', id)
+            .eq('status', 'pending');
+
+        // 3. 프로필(카드) 삭제
         const { error } = await supabase
             .from('profiles')
             .delete()
             .eq('id', id);
 
         if (error) throw error;
+
+        console.log(`🗑️ 카드 ${id} 삭제 완료 (관련 좋아요/매칭 정리됨)`);
         res.json({ success: true });
     } catch (err) {
         console.error('Profile delete error:', err);
