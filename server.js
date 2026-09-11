@@ -1324,6 +1324,253 @@ app.delete('/api/blocks/:id', async (req, res) => {
 });
 
 // ============================================================
+//  매칭 후기 관련 API
+// ============================================================
+
+// 1. 후기 작성
+app.post('/api/reviews', async (req, res) => {
+    const { user_id, match_id, target_user_id, card_type, target_school, target_major, content } = req.body;
+
+    if (!user_id || !content) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+    if (content.trim().length < 30) {
+        return res.status(400).json({ error: '후기는 최소 30자 이상 작성해주세요.' });
+    }
+
+    try {
+        // 이미 이 매칭에 대해 후기를 쓴 적 있는지 확인
+        if (match_id) {
+            const { data: existing } = await supabase
+                .from('reviews')
+                .select('id')
+                .eq('user_id', user_id)
+                .eq('match_id', match_id)
+                .limit(1);
+
+            if (existing && existing.length > 0) {
+                return res.status(400).json({ error: '이미 후기를 작성한 매칭입니다.' });
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('reviews')
+            .insert([{
+                user_id,
+                match_id: match_id || null,
+                target_user_id: target_user_id || null,
+                card_type: card_type || 'solo',
+                target_school: target_school || null,
+                target_major: target_major || null,
+                content: content.trim(),
+                status: 'pending'
+            }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (error) {
+        console.error('Review create error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 내가 쓴 후기 목록
+app.get('/api/reviews/my', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('My reviews error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 특정 매칭에 후기를 썼는지 확인
+app.get('/api/reviews/check', async (req, res) => {
+    const { userId, matchId } = req.query;
+    if (!userId || !matchId) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('reviews')
+            .select('id, status, content, created_at')
+            .eq('user_id', userId)
+            .eq('match_id', matchId)
+            .limit(1);
+
+        if (error) throw error;
+        res.json({ exists: data && data.length > 0, review: data?.[0] || null });
+    } catch (error) {
+        console.error('Review check error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 관리자: 후기 목록 (상태별 필터 가능)
+app.get('/api/admin/reviews', async (req, res) => {
+    const { status } = req.query; // 'pending', 'approved', 'rejected', 'all'
+
+    try {
+        let query = supabase
+            .from('reviews')
+            .select(`
+                *,
+                user:user_id(nickname, school, grade, animal, gender)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (status && status !== 'all') {
+            query = query.eq('status', status);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Admin reviews error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. 관리자: 후기 승인 (매칭권 지급)
+app.put('/api/admin/reviews/:id/approve', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // 1. 후기 정보 조회
+        const { data: review, error: fetchError } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !review) {
+            return res.status(404).json({ error: '후기를 찾을 수 없습니다.' });
+        }
+
+        if (review.status === 'approved') {
+            return res.status(400).json({ error: '이미 승인된 후기입니다.' });
+        }
+
+        // 2. 매칭권 개수 계산 (30자 이상 1개, 100자 이상 2개)
+        const contentLength = review.content.length;
+        const rewardTickets = contentLength >= 100 ? 2 : 1;
+
+        // 3. 후기 상태 업데이트
+        const { error: updateError } = await supabase
+            .from('reviews')
+            .update({
+                status: 'approved',
+                reward_tickets: rewardTickets,
+                reviewed_at: new Date().toISOString()
+            })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // 4. 유저 매칭권 지급
+        const { data: userData } = await supabase
+            .from('users')
+            .select('free_tickets')
+            .eq('id', review.user_id)
+            .single();
+
+        if (userData) {
+            await supabase
+                .from('users')
+                .update({ free_tickets: (userData.free_tickets || 0) + rewardTickets })
+                .eq('id', review.user_id);
+        }
+
+        // 5. 알림 발송
+        const typeLabel = review.card_type === 'solo' ? '둘이서' :
+                         review.card_type === 'group' ? '여럿이서' :
+                         review.card_type === 'same' ? '동성친구' : '매칭';
+        const targetInfo = `${review.target_school || ''} ${review.target_major || ''}`.trim() || '상대방';
+
+        await supabase.from('notifications').insert([{
+            user_id: review.user_id,
+            type: 'review_approved',
+            title: '✅ 매칭 후기가 승인되었습니다!',
+            message: `(${typeLabel}) ${targetInfo}과의 매칭 후기가 승인되었어요. 매칭권 ${rewardTickets}개가 지급되었어요!`,
+            link: 'mypage',
+            is_read: false
+        }]);
+
+        res.json({ success: true, reward_tickets: rewardTickets });
+    } catch (error) {
+        console.error('Review approve error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 6. 관리자: 후기 반려
+app.put('/api/admin/reviews/:id/reject', async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+        return res.status(400).json({ error: '반려 사유가 필요합니다.' });
+    }
+
+    try {
+        const { data: review, error: fetchError } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !review) {
+            return res.status(404).json({ error: '후기를 찾을 수 없습니다.' });
+        }
+
+        const { error: updateError } = await supabase
+            .from('reviews')
+            .update({
+                status: 'rejected',
+                reject_reason: reason,
+                reviewed_at: new Date().toISOString()
+            })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        const typeLabel = review.card_type === 'solo' ? '둘이서' :
+                         review.card_type === 'group' ? '여럿이서' :
+                         review.card_type === 'same' ? '동성친구' : '매칭';
+        const targetInfo = `${review.target_school || ''} ${review.target_major || ''}`.trim() || '상대방';
+
+        await supabase.from('notifications').insert([{
+            user_id: review.user_id,
+            type: 'review_rejected',
+            title: '❌ 매칭 후기가 반려되었습니다.',
+            message: `(${typeLabel}) ${targetInfo}과의 매칭 후기가 반려되었어요. 반려 사유: ${reason}. 좀 더 진정성 있는 후기를 남겨 주세요.`,
+            link: 'mypage',
+            is_read: false
+        }]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Review reject error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  관리자: 이용 정지 / 정지 관리 API
 // ============================================================
 
