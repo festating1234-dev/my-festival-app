@@ -1545,14 +1545,14 @@ app.post('/api/notifications', async (req, res) => {
 //  차단 관련 API
 // ============================================================
 
-// 1. 차단하기 (주간 3명 제한 + 차단사유)
+// 1. 차단하기 (주간 3명 제한 + 차단사유 + 매칭 자동 취소)
 app.post('/api/blocks', async (req, res) => {
     const { blocker_user_id, blocked_user_id, reason } = req.body;
-    
+
     if (!blocker_user_id || !blocked_user_id) {
         return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
-    if (blocker_user_id === blocked_user_id) {
+    if (String(blocker_user_id) === String(blocked_user_id)) {
         return res.status(400).json({ error: '본인을 차단할 수 없습니다.' });
     }
 
@@ -1573,36 +1573,105 @@ app.post('/api/blocks', async (req, res) => {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
 
-        const { data: weeklyBlocks, error: countError } = await supabase
+        const { data: weeklyBlocks } = await supabase
             .from('blocks')
             .select('id')
             .eq('blocker_user_id', blocker_user_id)
             .gte('created_at', weekAgo.toISOString());
 
-        if (countError) throw countError;
-
         const weeklyCount = weeklyBlocks?.length || 0;
         if (weeklyCount >= 3) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: '일주일에 최대 3명까지만 차단할 수 있습니다.',
                 weeklyCount: weeklyCount
             });
         }
 
-        // 3. 차단 저장 (차단사유 포함)
+        // 3. 차단 저장
         const { data, error } = await supabase
             .from('blocks')
-            .insert([{ 
-                blocker_user_id, 
-                blocked_user_id, 
-                reason: reason || null 
+            .insert([{
+                blocker_user_id,
+                blocked_user_id,
+                reason: reason || null
             }])
             .select();
 
         if (error) throw error;
 
-        res.status(201).json({ 
-            success: true, 
+        // ============================================================
+        // 4. 매칭 자동 취소 (pending 상태만)
+        // ============================================================
+        try {
+            // 두 유저의 카드 ID 조회
+            const { data: blockerCards } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', blocker_user_id);
+
+            const { data: blockedCards } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', blocked_user_id);
+
+            const blockerCardIds = (blockerCards || []).map(c => c.id);
+            const blockedCardIds = (blockedCards || []).map(c => c.id);
+            const allCardIds = [...blockerCardIds, ...blockedCardIds];
+
+            if (allCardIds.length > 0) {
+                // 양방향 pending 매칭 조회
+                const { data: pendingMatches } = await supabase
+                    .from('matches')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .or(`from_user_id.eq.${blocker_user_id},from_user_id.eq.${blocked_user_id}`)
+                    .in('to_card_id', allCardIds);
+
+                if (pendingMatches && pendingMatches.length > 0) {
+                    for (const match of pendingMatches) {
+                        // A의 매칭권 환급
+                        if (match.a_tickets_used > 0) {
+                            const { data: fromUser } = await supabase
+                                .from('users')
+                                .select('free_tickets')
+                                .eq('id', match.from_user_id)
+                                .single();
+
+                            if (fromUser) {
+                                await supabase
+                                    .from('users')
+                                    .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                                    .eq('id', match.from_user_id);
+                            }
+                        }
+
+                        // 매칭 취소
+                        await supabase
+                            .from('matches')
+                            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+                            .eq('id', match.id);
+
+                        // A에게 알림
+                        await supabase.from('notifications').insert([{
+                            user_id: match.from_user_id,
+                            type: 'match_cancelled',
+                            title: '🚫 차단으로 인한 매칭 취소',
+                            message: `차단으로 인해 매칭이 자동 취소되었어요. 사용한 매칭권 ${match.a_tickets_used}장이 환급되었어요.`,
+                            link: 'matching',
+                            is_read: false
+                        }]);
+
+                        console.log(`🚫 차단으로 매칭 ${match.id} 자동 취소 (A 환급: ${match.a_tickets_used}장)`);
+                    }
+                }
+            }
+        } catch (cancelError) {
+            // 매칭 취소 실패해도 차단은 성공 처리
+            console.error('매칭 자동 취소 오류:', cancelError);
+        }
+
+        res.status(201).json({
+            success: true,
             block: data[0],
             remaining: 2 - weeklyCount
         });
@@ -1662,6 +1731,38 @@ app.get('/api/blocks/weekly-count', async (req, res) => {
         res.json({ count, remaining: Math.max(0, 3 - count) });
     } catch (error) {
         console.error('Weekly count error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3-2. 나와 관련된 모든 차단 유저 ID (양방향)
+// - 내가 차단한 사람 + 나를 차단한 사람
+app.get('/api/blocks/related-user-ids', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 내가 차단한 사람
+        const { data: iBlocked } = await supabase
+            .from('blocks')
+            .select('blocked_user_id')
+            .eq('blocker_user_id', userId);
+
+        // 나를 차단한 사람
+        const { data: blockedMe } = await supabase
+            .from('blocks')
+            .select('blocker_user_id')
+            .eq('blocked_user_id', userId);
+
+        const ids = new Set();
+        (iBlocked || []).forEach(b => ids.add(String(b.blocked_user_id)));
+        (blockedMe || []).forEach(b => ids.add(String(b.blocker_user_id)));
+
+        res.json({ user_ids: Array.from(ids) });
+    } catch (error) {
+        console.error('Related block IDs error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -1334,6 +1334,13 @@
         <span class="close-btn" id="blockReasonClose">&times;</span>
         <h2>🚫 유저 차단</h2>
         <div class="subtitle">차단 사유를 입력해주세요 (선택)</div>
+
+        <!-- ★ 안내 문구 추가 ★ -->
+        <div style="background:rgba(239,68,68,0.08); border-radius:10px; padding:10px 12px; margin:12px 0; border:1px solid rgba(239,68,68,0.15); font-size:0.65rem; color:#f87171; line-height:1.6;">
+            ⚠️ 차단 시 <strong>서로의 카드를 볼 수 없어요.</strong><br>
+            진행 중인 매칭이 있다면 자동 취소되고, 사용한 매칭권은 환급돼요.
+        </div>
+
         <div id="blockTargetInfo" style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin:12px 0; font-size:0.7rem; color:#aaa;"></div>
         <div class="form-group">
             <label>차단 사유</label>
@@ -3356,6 +3363,7 @@ document.getElementById('notificationModal').addEventListener('click', function(
     let currentUserId = getData('currentUser', null);
     let nextId = getData('nextId', 100);
     let allBlocks = [];  // 내가 차단한 유저 목록
+    let allBlockedRelatedIds = [];  // 양방향 차단 유저 ID (필터용)
 
     let likedIds = new Set();
     let likedByIds = new Set();
@@ -3442,23 +3450,34 @@ document.getElementById('notificationModal').addEventListener('click', function(
     }
 }
 
-// 차단 목록 불러오기
+// 차단 목록 불러오기 (양방향 포함)
 async function fetchBlocks() {
     if (!currentUserId) {
         allBlocks = [];
+        allBlockedRelatedIds = [];
         return;
     }
     try {
+        // 1. 내가 차단한 유저 목록 (관리 UI용)
         const res = await fetch(`/api/blocks?userId=${currentUserId}`);
         if (res.ok) {
-            const data = await res.json();
-            allBlocks = data || [];
+            allBlocks = await res.json();
         } else {
             allBlocks = [];
+        }
+
+        // 2. 나와 관련된 모든 차단 유저 ID (양방향, 필터용)
+        const relatedRes = await fetch(`/api/blocks/related-user-ids?userId=${currentUserId}`);
+        if (relatedRes.ok) {
+            const relatedData = await relatedRes.json();
+            allBlockedRelatedIds = relatedData.user_ids || [];
+        } else {
+            allBlockedRelatedIds = [];
         }
     } catch (error) {
         console.error('차단 목록 로드 오류:', error);
         allBlocks = [];
+        allBlockedRelatedIds = [];
     }
 }
 
@@ -3789,18 +3808,16 @@ async function renderProfiles() {
         });
     }
 
-    // ===== 🆕 차단한 유저의 카드 숨기기 =====
-    if (allBlocks && allBlocks.length > 0) {
-        const blockedUserIds = new Set(
-            allBlocks.map(b => String(b.blocked_user?.id || b.blocked_user_id))
-        );
-        filtered = filtered.filter(p => {
-            // 내 카드는 항상 보임
-            if (String(p.user_id) === String(currentUserId)) return true;
-            // 차단한 유저의 카드는 숨김
-            return !blockedUserIds.has(String(p.user_id));
-        });
-    }
+    // ===== 🆕 차단 유저의 카드 숨기기 (양방향!) =====
+if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
+    const blockedUserIds = new Set(allBlockedRelatedIds.map(id => String(id)));
+    filtered = filtered.filter(p => {
+        // 내 카드는 항상 보임
+        if (String(p.user_id) === String(currentUserId)) return true;
+        // 내가 차단한 사람 OR 나를 차단한 사람의 카드는 숨김
+        return !blockedUserIds.has(String(p.user_id));
+    });
+}
 
     // ★★★ 중복 제거 (id 기준) ★★★
     filtered = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
