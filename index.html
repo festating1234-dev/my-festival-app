@@ -4505,9 +4505,7 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
                 <div style="font-size:0.6rem; color:#4ade80; margin-top:4px;">🎉 매칭 성공하였습니다! 매칭 상대방에게 인사를 건네보세요!</div>
                 ${!isMyCard && isLoggedIn ? `
                     <div style="margin-top:10px; display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
-                        <button class="btn-sm primary" onclick="openReviewModal(${matchId}, ${profile.user_id}, '${profile.type}', '${profile.school}', '${profile.major}')" style="font-size:0.5rem; padding:3px 10px;">
-                            ✍️ 매칭 후기 남기고 매칭권 받기!
-                        </button>
+                        ${matchId ? `<button class="btn-sm primary" onclick="openReviewModal(${matchId}, ${profile.user_id}, '${profile.type}', '${profile.school}', '${profile.major}')" style="font-size:0.5rem; padding:3px 10px;">✍️ 매칭 후기 남기고 매칭권 받기!</button>` : ''}
                         <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
                     </div>
                 ` : ''}
@@ -4518,7 +4516,12 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
                     <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
                 </div>
                 ${!isMyCard && isLoggedIn && !isAdminMode ? `
-                    <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
+                    <div style="display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap;">
+                        <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
+                        <button class="btn-sm" onclick="event.stopPropagation(); blockUser(${profile.user_id}, '${profile.school || ''}', ${profile.age || 0})" style="font-size:0.5rem; padding:2px 8px; background:rgba(100,100,100,0.15); color:#aaa; border-color:rgba(150,150,150,0.2);">
+                            <i class="fas fa-ban"></i> 차단
+                        </button>
+                    </div>
                 ` : ''}
             </div>
         `)}
