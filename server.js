@@ -2498,6 +2498,159 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
 });
 
 // ============================================================
+//  축제 관련 API
+// ============================================================
+
+// 1. 축제 목록 조회 (공개)
+app.get('/api/festivals', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('festivals')
+            .select('*')
+            .eq('is_active', true)
+            .order('start_date', { ascending: true });
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Festivals fetch error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 관리자: 축제 생성
+app.post('/api/admin/festivals', async (req, res) => {
+    const { admin_user_id, school, title, start_date, end_date, location, ticket, external, day_lineup, lineup } = req.body;
+
+    if (!admin_user_id || !school || !title || !start_date || !end_date) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        const { data, error } = await supabase
+            .from('festivals')
+            .insert([{
+                school,
+                title,
+                start_date,
+                end_date,
+                location: location || null,
+                ticket: ticket || '정보없음',
+                external: external || '정보없음',
+                day_lineup: day_lineup || null,
+                lineup: lineup || null,
+                created_by: admin_user_id,
+                is_active: true
+            }])
+            .select();
+
+        if (error) throw error;
+
+        console.log(`🎪 축제 생성: ${school} - ${title}`);
+        res.status(201).json(data[0]);
+    } catch (error) {
+        console.error('Festival create error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 관리자: 축제 수정
+app.put('/api/admin/festivals/:id', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id, ...updates } = req.body;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 허용 필드
+        const allowedFields = ['school', 'title', 'start_date', 'end_date', 'location', 'ticket', 'external', 'day_lineup', 'lineup', 'is_active'];
+        const filteredUpdates = { updated_at: new Date().toISOString() };
+        for (const key of allowedFields) {
+            if (updates[key] !== undefined) {
+                filteredUpdates[key] = updates[key];
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('festivals')
+            .update(filteredUpdates)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: '축제를 찾을 수 없습니다.' });
+        }
+
+        console.log(`🎪 축제 수정: ID ${id}`);
+        res.json(data[0]);
+    } catch (error) {
+        console.error('Festival update error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 관리자: 축제 삭제
+app.delete('/api/admin/festivals/:id', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id } = req.query;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        const { error } = await supabase
+            .from('festivals')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        console.log(`🎪 축제 삭제: ID ${id}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Festival delete error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  매칭 후기 관련 API
 // ============================================================
 

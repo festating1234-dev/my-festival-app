@@ -1619,6 +1619,19 @@
     
     <div id="adminUserSearchResults" style="margin-top:10px;"></div>
 </div>
+<!-- ★★★ 축제 관리 섹션 ★★★ -->
+<div id="adminFestivalSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
+    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24; margin-bottom:8px;">🎪 축제 관리</div>
+    <div style="font-size:0.6rem; color:#888; margin-bottom:8px;">축제 정보를 입력하면 캘린더에 자동 반영됩니다</div>
+    
+    <button class="btn-primary" onclick="openFestivalManageModal()" style="width:100%; margin-bottom:8px;">
+        <i class="fas fa-plus"></i> 새 축제 등록
+    </button>
+    
+    <div id="adminFestivalList" style="margin-top:10px;">
+        <!-- JavaScript에서 렌더링 -->
+    </div>
+</div>
 </div>
 
                 <div style="text-align:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04);">
@@ -1927,6 +1940,80 @@
 
         <div id="adminUserListContainer" style="max-height:50vh; overflow-y:auto;">
             <div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 축제 입력/수정 모달 -->
+<div class="modal-overlay" id="festivalManageModal">
+    <div class="modal-box" style="max-width: 450px; max-height: 85vh; overflow-y: auto;">
+        <span class="close-btn" id="festivalManageClose">&times;</span>
+        <h2 id="festivalModalTitle">🎪 새 축제 등록</h2>
+        <div class="subtitle">축제 정보를 입력해주세요</div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">학교명 *</label>
+            <input type="text" id="festivalSchool" list="festivalUniList" placeholder="예: 서울대학교" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            <datalist id="festivalUniList"></datalist>
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">축제 제목 *</label>
+            <input type="text" id="festivalTitle" placeholder="예: 대동제, 청춘제" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
+            <div>
+                <label style="font-size:0.7rem; color:#aaa;">시작일 *</label>
+                <input type="date" id="festivalStartDate" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:#aaa;">종료일 *</label>
+                <input type="date" id="festivalEndDate" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">장소</label>
+            <input type="text" id="festivalLocation" placeholder="예: 서울대 캠퍼스" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
+            <div>
+                <label style="font-size:0.7rem; color:#aaa;">티켓</label>
+                <select id="festivalTicket" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+                    <option value="정보없음">정보없음</option>
+                    <option value="필요">필요</option>
+                    <option value="불필요">불필요</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:#aaa;">외부인 출입</label>
+                <select id="festivalExternal" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+                    <option value="정보없음">정보없음</option>
+                    <option value="가능">가능</option>
+                    <option value="불가">불가</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">전체 라인업 (쉼표 구분)</label>
+            <input type="text" id="festivalLineup" placeholder="예: 아이유, 잔나비, 싸이" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">날짜별 라인업 (선택)</label>
+            <div style="font-size:0.55rem; color:#666; margin-bottom:6px;">시작일/종료일을 먼저 입력하면 날짜별로 라인업을 넣을 수 있어요</div>
+            <div id="festivalDayLineupContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn-primary" onclick="saveFestival()" style="flex:1;">
+                <i class="fas fa-save"></i> 저장
+            </button>
+            <button class="btn-sm danger" id="festivalDeleteBtn" onclick="deleteFestival()" style="display:none;">삭제</button>
+            <button class="btn-sm" onclick="closeFestivalManageModal()" style="flex:1;">취소</button>
         </div>
     </div>
 </div>
@@ -4506,89 +4593,37 @@ ${ownerCardApproved ? '<span style="font-size:0.42rem; background:rgba(96,165,25
 //  새 축제 달력 (기존 함수 완전 대체)
 // ============================================================
 
-const FESTIVAL_EVENTS = [
-    {
-        id: 1,
-        school: '연세대학교',
-        title: '대동제',
-        startDate: '2026-09-14',
-        endDate: '2026-09-16',
-        ticket: '필요',
-        location: '연세대 캠퍼스',           // ← 추가
-        external: false,                    // ← 추가
-        dayLineup: {                        // ← 추가 (날짜별 라인업)
-            '2026-09-14': ['아이유', '잔나비'],
-            '2026-09-15': ['싸이', '악뮤'],
-            '2026-09-16': ['블랙핑크', '데이식스']
+// ===== 축제 데이터 (서버에서 로드) =====
+let FESTIVAL_EVENTS = [];
+
+// 서버에서 축제 목록 로드
+async function fetchFestivals() {
+    try {
+        const res = await fetch('/api/festivals');
+        if (res.ok) {
+            const data = await res.json();
+            // 서버 데이터를 프론트 형식으로 변환
+            FESTIVAL_EVENTS = data.map(f => ({
+                id: f.id,
+                school: f.school,
+                title: f.title,
+                startDate: f.start_date,
+                endDate: f.end_date,
+                location: f.location,
+                ticket: f.ticket,
+                external: f.external,
+                dayLineup: f.day_lineup,
+                lineup: f.lineup
+            }));
+            console.log(`🎪 축제 ${FESTIVAL_EVENTS.length}개 로드됨`);
+        } else {
+            FESTIVAL_EVENTS = [];
         }
-    },
-    // ===== 14일 테스트용 더미 데이터 (5개) =====
-{
-    id: 10,
-    school: '가천대학교',
-    title: '가천 축제',
-    startDate: '2026-09-14',
-    endDate: '2026-09-14',
-    ticket: '불필요',
-    location: '가천대 캠퍼스',
-    external: true,
-    dayLineup: {
-        '2026-09-14': ['가천 밴드']
-    }
-},
-{
-    id: 11,
-    school: '경희대학교',
-    title: '경희 축제',
-    startDate: '2026-09-14',
-    endDate: '2026-09-14',
-    ticket: '필요',
-    location: '경희대 캠퍼스',
-    external: false,
-    dayLineup: {
-        '2026-09-14': ['경희 댄스팀']
-    }
-},
-{
-    id: 12,
-    school: '단국대학교',
-    title: '단국 축제',
-    startDate: '2026-09-14',
-    endDate: '2026-09-14',
-    ticket: '정보없음',
-    location: '단국대 캠퍼스',
-    external: true,
-    dayLineup: {
-        '2026-09-14': ['단국 락밴드']
-    }
-},
-{
-    id: 13,
-    school: '동국대학교',
-    title: '동국 축제',
-    startDate: '2026-09-14',
-    endDate: '2026-09-14',
-    ticket: '불필요',
-    location: '동국대 캠퍼스',
-    external: false,
-    dayLineup: {
-        '2026-09-14': ['동국 국악팀']
-    }
-},
-{
-    id: 14,
-    school: '서강대학교',
-    title: '서강 축제',
-    startDate: '2026-09-14',
-    endDate: '2026-09-14',
-    ticket: '필요',
-    location: '서강대 캠퍼스',
-    external: true,
-    dayLineup: {
-        '2026-09-14': ['서강 재즈밴드']
+    } catch (error) {
+        console.error('축제 로드 오류:', error);
+        FESTIVAL_EVENTS = [];
     }
 }
-];
 
 let festivalCurrentYear = 2026;
 let festivalCurrentMonth = 8; // 9월
@@ -4690,6 +4725,249 @@ function renderFestivalCalendar() {
     // ===== 4. 하단 학교 목록 렌더링 =====
     renderFestivalSchoolList();
 }
+
+// ============================================================
+//  관리자: 축제 관리
+// ============================================================
+
+let editingFestivalId = null;
+let editingFestivalLineupData = {};
+
+// ===== 축제 관리 모달 열기 =====
+function openFestivalManageModal(festivalId = null) {
+    if (!isAdmin) {
+        showToast('⚠️ 관리자 권한이 필요합니다.');
+        return;
+    }
+
+    editingFestivalId = festivalId;
+    editingFestivalLineupData = {};
+
+    // 대학 목록 채우기
+    const uniList = document.getElementById('festivalUniList');
+    if (uniList) {
+        uniList.innerHTML = KOREAN_UNIVERSITIES.map(u => `<option value="${u}">`).join('');
+    }
+
+    const title = document.getElementById('festivalModalTitle');
+    const deleteBtn = document.getElementById('festivalDeleteBtn');
+
+    if (festivalId) {
+        // 수정 모드
+        const f = FESTIVAL_EVENTS.find(e => e.id === festivalId);
+        if (!f) {
+            showToast('⚠️ 축제 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        title.textContent = '🎪 축제 수정';
+        document.getElementById('festivalSchool').value = f.school || '';
+        document.getElementById('festivalTitle').value = f.title || '';
+        document.getElementById('festivalStartDate').value = f.startDate || '';
+        document.getElementById('festivalEndDate').value = f.endDate || '';
+        document.getElementById('festivalLocation').value = f.location || '';
+        document.getElementById('festivalTicket').value = f.ticket || '정보없음';
+        document.getElementById('festivalExternal').value = f.external || '정보없음';
+        document.getElementById('festivalLineup').value = f.lineup || '';
+        editingFestivalLineupData = f.dayLineup || {};
+        deleteBtn.style.display = 'block';
+    } else {
+        // 새 등록
+        title.textContent = '🎪 새 축제 등록';
+        document.getElementById('festivalSchool').value = '';
+        document.getElementById('festivalTitle').value = '';
+        document.getElementById('festivalStartDate').value = '';
+        document.getElementById('festivalEndDate').value = '';
+        document.getElementById('festivalLocation').value = '';
+        document.getElementById('festivalTicket').value = '정보없음';
+        document.getElementById('festivalExternal').value = '정보없음';
+        document.getElementById('festivalLineup').value = '';
+        deleteBtn.style.display = 'none';
+    }
+
+    renderDayLineupInputs();
+    document.getElementById('festivalManageModal').classList.add('active');
+}
+
+function closeFestivalManageModal() {
+    document.getElementById('festivalManageModal').classList.remove('active');
+    editingFestivalId = null;
+    editingFestivalLineupData = {};
+}
+
+// ===== 날짜별 라인업 입력 UI 렌더링 =====
+function renderDayLineupInputs() {
+    const container = document.getElementById('festivalDayLineupContainer');
+    if (!container) return;
+
+    const startDate = document.getElementById('festivalStartDate').value;
+    const endDate = document.getElementById('festivalEndDate').value;
+
+    if (!startDate || !endDate || startDate > endDate) {
+        container.innerHTML = '<div style="font-size:0.55rem; color:#666;">시작일과 종료일을 먼저 입력해주세요.</div>';
+        return;
+    }
+
+    // 날짜 배열 생성
+    const days = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        days.push(ds);
+    }
+
+    let html = '';
+    days.forEach(dateStr => {
+        const dateObj = new Date(dateStr);
+        const dayNum = dateObj.getDate();
+        const currentValue = (editingFestivalLineupData[dateStr] || []).join(', ');
+
+        html += `
+            <div>
+                <label style="font-size:0.6rem; color:#888;">${dateStr} (${dayNum}일차)</label>
+                <input type="text" class="day-lineup-input" data-date="${dateStr}" placeholder="예: 아이유, 잔나비 (쉼표 구분)" value="${currentValue}" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// 날짜 변경 시 재렌더링
+document.getElementById('festivalStartDate')?.addEventListener('change', renderDayLineupInputs);
+document.getElementById('festivalEndDate')?.addEventListener('change', renderDayLineupInputs);
+
+// ===== 축제 저장 =====
+async function saveFestival() {
+    if (!isAdmin) return;
+
+    const school = document.getElementById('festivalSchool').value.trim();
+    const title = document.getElementById('festivalTitle').value.trim();
+    const start_date = document.getElementById('festivalStartDate').value;
+    const end_date = document.getElementById('festivalEndDate').value;
+    const location = document.getElementById('festivalLocation').value.trim();
+    const ticket = document.getElementById('festivalTicket').value;
+    const external = document.getElementById('festivalExternal').value;
+    const lineup = document.getElementById('festivalLineup').value.trim();
+
+    if (!school || !title || !start_date || !end_date) {
+        showToast('⚠️ 학교명, 제목, 시작일, 종료일은 필수입니다.');
+        return;
+    }
+    if (start_date > end_date) {
+        showToast('⚠️ 시작일이 종료일보다 늦을 수 없습니다.');
+        return;
+    }
+
+    // 날짜별 라인업 수집
+    const dayLineup = {};
+    document.querySelectorAll('.day-lineup-input').forEach(input => {
+        const dateStr = input.dataset.date;
+        const value = input.value.trim();
+        if (value) {
+            dayLineup[dateStr] = value.split(',').map(s => s.trim()).filter(Boolean);
+        }
+    });
+
+    const body = {
+        admin_user_id: currentUser.id,
+        school,
+        title,
+        start_date,
+        end_date,
+        location,
+        ticket,
+        external,
+        day_lineup: Object.keys(dayLineup).length > 0 ? dayLineup : null,
+        lineup: lineup || null
+    };
+
+    try {
+        const url = editingFestivalId 
+            ? `/api/admin/festivals/${editingFestivalId}` 
+            : '/api/admin/festivals';
+        const method = editingFestivalId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(`✅ 축제가 ${editingFestivalId ? '수정' : '등록'}되었습니다.`);
+            closeFestivalManageModal();
+            await fetchFestivals();
+            renderFestivalCalendar();
+            renderAdminFestivalList();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Save festival error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 축제 삭제 =====
+async function deleteFestival() {
+    if (!editingFestivalId || !isAdmin) return;
+
+    if (!confirm('이 축제를 삭제하시겠습니까?')) return;
+
+    try {
+        const res = await fetch(`/api/admin/festivals/${editingFestivalId}?admin_user_id=${currentUser.id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('✅ 축제가 삭제되었습니다.');
+            closeFestivalManageModal();
+            await fetchFestivals();
+            renderFestivalCalendar();
+            renderAdminFestivalList();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Delete festival error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 관리자 패널: 축제 목록 렌더링 =====
+function renderAdminFestivalList() {
+    const container = document.getElementById('adminFestivalList');
+    if (!container) return;
+
+    if (!FESTIVAL_EVENTS || FESTIVAL_EVENTS.length === 0) {
+        container.innerHTML = '<div style="color:#666; font-size:0.65rem; padding:8px 0; text-align:center;">📭 등록된 축제가 없습니다.</div>';
+        return;
+    }
+
+    let html = '';
+    FESTIVAL_EVENTS.forEach(f => {
+        html += `
+            <div style="background:rgba(251,191,36,0.05); border-radius:10px; padding:10px; margin-bottom:6px; border:1px solid rgba(251,191,36,0.1); display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:150px;">
+                    <div style="font-weight:700; font-size:0.75rem; color:#fbbf24;">${f.school}</div>
+                    <div style="font-size:0.6rem; color:#ddd;">${f.title}</div>
+                    <div style="font-size:0.55rem; color:#888;">${f.startDate} ~ ${f.endDate}</div>
+                </div>
+                <button class="btn-sm primary" onclick="openFestivalManageModal(${f.id})" style="font-size:0.5rem;">수정</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// 모달 닫기 이벤트
+document.getElementById('festivalManageClose')?.addEventListener('click', closeFestivalManageModal);
+document.getElementById('festivalManageModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeFestivalManageModal();
+});
 
 function renderFestivalSchoolList() {
     const existingList = document.getElementById('festivalSchoolListContainer');
@@ -6808,6 +7086,7 @@ function updateUI() {
         renderReportList();
         renderBannedUsersList();
         renderAdminReviews();
+         renderAdminFestivalList();
         updateNoticeRecipientCount();
     } else {
         document.getElementById('adminPanel').classList.add('hidden');
@@ -8220,6 +8499,7 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
         await fetchProfiles();
         renderProfiles();  // ← 이 줄은 유지 (비로그인 시 필요)
     }
+    await fetchFestivals();
     renderFestivalCalendar();
     // 알림 배지 초기화 (로그인 상태면 읽지 않은 알림 개수 표시)
 updateNotificationBadge();
