@@ -3722,6 +3722,28 @@ async function fetchInUseTickets() {
     const bottomNotice = document.getElementById('bottomNotice');
     const genderFilter = document.getElementById('genderFilter');
 
+// ===== 헬퍼: 특정 모드에서 나를 찜한 유저 ID Set =====
+function getLikedByUserIdsForMode(mode) {
+    if (!currentUserId) return new Set();
+
+    // 내 mode-type 카드 ID 목록
+    const myCardsOfType = allProfiles.filter(c =>
+        String(c.user_id) === String(currentUserId) && c.type === mode
+    );
+    if (myCardsOfType.length === 0) return new Set();
+
+    const myCardIdsOfType = new Set(myCardsOfType.map(c => String(c.id)));
+
+    // 그 카드들을 찜한 유저 ID 수집
+    const result = new Set();
+    allLikes.forEach(l => {
+        if (myCardIdsOfType.has(String(l.card_id))) {
+            result.add(String(l.user_id));
+        }
+    });
+    return result;
+}
+
 async function renderProfiles() {
     let filtered = [...allProfiles];
 
@@ -3759,7 +3781,8 @@ async function renderProfiles() {
                 await renderProfiles();
                 return;
             }
-            filteredOthers = filteredOthers.filter(p => likedByIds.has(p.user_id));
+            const likedByUserIdsForMode = getLikedByUserIdsForMode(currentMode);
+filteredOthers = filteredOthers.filter(p => likedByUserIdsForMode.has(String(p.user_id)));
         }
         filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
     } else {
@@ -3845,7 +3868,7 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
         const card = document.createElement('div');
         card.className = 'note-card';
         const isLiked = likedIds.has(p.id);
-        const isLikedBy = likedByIds.has(p.user_id);
+        const isLikedBy = likedByUserIdsForMode.has(String(p.user_id));
         // ★ 내 카드 판별 (타입 변환으로 number vs string 문제 해결)
         const isMyCard = isLoggedIn && String(p.user_id) === String(currentUserId);
         const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
@@ -4017,16 +4040,17 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
     const btn = document.getElementById('showLikedBtn');
     const btn2 = document.getElementById('showLikedByBtn');
 
-    // ===== 현재 모드에 해당하는 카드만 카운트 =====
     // 내가 찜한 카드 중, 현재 모드(type)인 카드 수
     const likedCountByMode = allProfiles.filter(p =>
         likedIds.has(p.id) && p.type === currentMode
     ).length;
 
-    // 나를 찜한 카드 중, 현재 모드(type)인 카드 수
-    // ★ String 변환 없이 원본 타입으로 비교 (기존 isLikedBy 로직과 동일)
+    // ★ 나를 찜한 카드 중, 현재 모드에서 실제로 나를 찜한 유저의 카드 수
+    const likedByUserIdsForMode = getLikedByUserIdsForMode(currentMode);
     const likedByCountByMode = allProfiles.filter(p =>
-        likedByIds.has(p.user_id) && p.type === currentMode
+        p.type === currentMode &&
+        !likedIds.has(p.id) &&  // (선택) 내가 찜한 카드는 제외할지 여부
+        likedByUserIdsForMode.has(String(p.user_id))
     ).length;
 
     // 버튼 텍스트 갱신
