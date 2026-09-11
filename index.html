@@ -3747,10 +3747,13 @@ function getLikedByUserIdsForMode(mode) {
 async function renderProfiles() {
     let filtered = [...allProfiles];
 
+    // ===== ★ 함수 최상단에서 미리 선언 (스코프 문제 해결) ★ =====
+    const likedByUserIdsForMode = getLikedByUserIdsForMode(currentMode);
+
     // 로그인 사용자 필터
     if (currentUserId) {
-        const myCards = filtered.filter(p => p.user_id === currentUserId);
-        const otherCards = filtered.filter(p => p.user_id !== currentUserId);
+        const myCards = filtered.filter(p => String(p.user_id) === String(currentUserId));
+        const otherCards = filtered.filter(p => String(p.user_id) !== String(currentUserId));
         let filteredOthers = [...otherCards];
         if (showLikedOnly) {
             filteredOthers = filteredOthers.filter(p => likedIds.has(p.id));
@@ -3781,8 +3784,8 @@ async function renderProfiles() {
                 await renderProfiles();
                 return;
             }
-            const likedByUserIdsForMode = getLikedByUserIdsForMode(currentMode);
-filteredOthers = filteredOthers.filter(p => likedByUserIdsForMode.has(String(p.user_id)));
+            // ★ 모드별 likedByUserIds 사용
+            filteredOthers = filteredOthers.filter(p => likedByUserIdsForMode.has(String(p.user_id)));
         }
         filtered = [...myCards.filter(p => p.type === currentMode), ...filteredOthers.filter(p => p.type === currentMode)];
     } else {
@@ -3798,8 +3801,8 @@ filteredOthers = filteredOthers.filter(p => likedByUserIdsForMode.has(String(p.u
 
     // 동성친구 모드
     if (currentMode === 'same' && currentUser) {
-        const myCards = filtered.filter(p => p.user_id === currentUserId);
-        const others = filtered.filter(p => p.user_id !== currentUserId && p.gender === currentUser.gender);
+        const myCards = filtered.filter(p => String(p.user_id) === String(currentUserId));
+        const others = filtered.filter(p => String(p.user_id) !== String(currentUserId) && p.gender === currentUser.gender);
         filtered = [...myCards, ...others];
         genderFilter.value = currentUser.gender === 'female' ? 'female' : 'male';
         genderFilter.disabled = true;
@@ -3810,37 +3813,27 @@ filteredOthers = filteredOthers.filter(p => likedByUserIdsForMode.has(String(p.u
         else if (genderVal === 'male') filtered = filtered.filter(p => p.gender === 'male');
     }
 
-    // ===== 같은학교 숨기기 (카드 주인 기준으로 수정됨) =====
-    // 각 카드의 주인이 'hide_same_school'을 켰고, 그 주인이 나와 같은 학교라면 카드를 숨김
+    // ===== 같은학교 숨기기 (카드 주인 기준) =====
     if (currentUser) {
         filtered = filtered.filter(p => {
-            // 1. 내 카드는 항상 보임
             if (String(p.user_id) === String(currentUserId)) return true;
-
-            // 2. 카드 주인 찾기 (allUsers에서)
             const owner = allUsers.find(u => String(u.id) === String(p.user_id));
-            if (!owner) return true; // 주인 정보가 없으면 일단 보여줌
-
-            // 3. 주인이 '같은학교 숨기기'를 켰고, 나와 같은 학교라면 → 숨김
+            if (!owner) return true;
             if (owner.hide_same_school && owner.school === currentUser.school) {
                 return false;
             }
-
-            // 4. 그 외에는 모두 보여줌
             return true;
         });
     }
 
-    // ===== 🆕 차단 유저의 카드 숨기기 (양방향!) =====
-if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
-    const blockedUserIds = new Set(allBlockedRelatedIds.map(id => String(id)));
-    filtered = filtered.filter(p => {
-        // 내 카드는 항상 보임
-        if (String(p.user_id) === String(currentUserId)) return true;
-        // 내가 차단한 사람 OR 나를 차단한 사람의 카드는 숨김
-        return !blockedUserIds.has(String(p.user_id));
-    });
-}
+    // ===== 차단 유저의 카드 숨기기 (양방향) =====
+    if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
+        const blockedUserIds = new Set(allBlockedRelatedIds.map(id => String(id)));
+        filtered = filtered.filter(p => {
+            if (String(p.user_id) === String(currentUserId)) return true;
+            return !blockedUserIds.has(String(p.user_id));
+        });
+    }
 
     // ★★★ 중복 제거 (id 기준) ★★★
     filtered = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
@@ -3863,40 +3856,37 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
 
     // ====== 카드 렌더링 ======
     grid.innerHTML = '';
-    
+
     for (const p of filtered) {
         const card = document.createElement('div');
         card.className = 'note-card';
         const isLiked = likedIds.has(p.id);
+        // ★ 모드별 likedByUserIds 사용 (함수 상단에서 선언됨)
         const isLikedBy = likedByUserIdsForMode.has(String(p.user_id));
-        // ★ 내 카드 판별 (타입 변환으로 number vs string 문제 해결)
         const isMyCard = isLoggedIn && String(p.user_id) === String(currentUserId);
         const typeLabel = p.type === 'solo' ? '1:1' : p.type === 'group' ? '다대다' : '동성';
         const canLike = hasMyCard && isLoggedIn && !isMyCard;
 
-        // ★ 개인정보 숨기기 - 내 카드 우선 적용
+        // 개인정보 숨기기
         let schoolDisplay = p.school;
         let majorDisplay = p.major;
 
         if (isMyCard) {
-            // 내 카드: currentUser의 설정을 우선 적용 (가장 최신 보장)
             if (currentUser.hide_school) schoolDisplay = '학교비공개';
             if (currentUser.hide_major) majorDisplay = '계열비공개';
         } else if (p.user_id !== null && p.user_id !== undefined) {
-            // 다른 사람의 카드: allUsers에서 찾기
             let owner = allUsers.find(u => String(u.id) === String(p.user_id));
             if (owner) {
                 if (owner.hide_school) schoolDisplay = '학교비공개';
                 if (owner.hide_major) majorDisplay = '계열비공개';
             } else {
-                // allUsers에 없으면 API에서 직접 가져오기 (fallback)
                 try {
                     const res = await fetch(`/api/users/${p.user_id}`);
                     if (res.ok) {
                         const user = await res.json();
                         if (user.hide_school) schoolDisplay = '학교비공개';
                         if (user.hide_major) majorDisplay = '계열비공개';
-                        allUsers.push(user); // 다음을 위해 캐시
+                        allUsers.push(user);
                     }
                 } catch (e) {
                     console.error('사용자 정보 로드 실패:', e);
@@ -3904,7 +3894,7 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
             }
         }
 
-        // ★ 자기소개 제한 (비로그인 시)
+        // 자기소개 제한 (비로그인)
         let detailDisplay = p.detail;
         let moreNotice = '';
         if (!isLoggedIn) {
@@ -3914,11 +3904,9 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
             moreNotice = '<div style="font-size:0.55rem; color:#fbbf24; margin-top:4px; text-align:center;">🔒 전체 내용은 회원가입 후 확인 가능</div>';
         }
 
-        // ★ '나를찜' 배지 조건: 로그인 + 학생증 인증 + 내 카드 아님
         const showLikedByBadge = isLoggedIn && cardVerificationStatus === 'approved' && isLikedBy && !isMyCard;
         const genderText = p.gender === 'female' ? '♀ 여성' : '♂ 남성';
 
-        // ★ 카드 HTML
         card.innerHTML = `
             <span class="emoji-big">${p.emoji}</span>
             <span class="card-type-badge">${typeLabel}</span>
