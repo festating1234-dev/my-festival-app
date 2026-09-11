@@ -1756,12 +1756,13 @@
         <h2>👤 유저 관리</h2>
         <div id="adminUserManageTarget" style="font-size:0.7rem; color:#aaa; margin-bottom:12px;"></div>
 
-        <!-- 탭 -->
-        <div style="display:flex; gap:4px; margin-bottom:12px;">
-            <button class="btn-sm primary" id="userTabTickets" onclick="switchUserTab('tickets')" style="flex:1;">🎫 매칭권</button>
-            <button class="btn-sm" id="userTabInfo" onclick="switchUserTab('info')" style="flex:1;">✏️ 정보수정</button>
-            <button class="btn-sm" id="userTabNoti" onclick="switchUserTab('noti')" style="flex:1;">📢 알림</button>
-            <button class="btn-sm" id="userTabLikes" onclick="switchUserTab('likes')" style="flex:1;">❤️ 찜</button>
+                <!-- 탭 -->
+        <div style="display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="btn-sm primary" id="userTabTickets" onclick="switchUserTab('tickets')" style="flex:1; min-width:60px;">🎫 매칭권</button>
+            <button class="btn-sm" id="userTabInfo" onclick="switchUserTab('info')" style="flex:1; min-width:60px;">✏️ 정보</button>
+            <button class="btn-sm" id="userTabNoti" onclick="switchUserTab('noti')" style="flex:1; min-width:60px;">📢 알림</button>
+            <button class="btn-sm" id="userTabLikes" onclick="switchUserTab('likes')" style="flex:1; min-width:60px;">❤️ 찜</button>
+            <button class="btn-sm danger" id="userTabRestrict" onclick="switchUserTab('restrict')" style="flex:1; min-width:60px;">🚫 제한</button>
         </div>
 
         <!-- 탭 1: 매칭권 -->
@@ -1822,11 +1823,45 @@
             <button class="btn-primary" onclick="sendUserNotification()" style="width:100%;">📢 알림 발송</button>
         </div>
 
-        <!-- 탭 4: 찜 개수 조정 -->
+                <!-- 탭 4: 찜 개수 조정 -->
         <div id="userPanelLikes" style="display:none;">
             <div style="background:rgba(244,114,182,0.05); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(244,114,182,0.1); text-align:center;">
                 <div style="font-size:0.65rem; color:#888;">이 유저의 카드 목록</div>
                 <div id="userCardsLikesList" style="margin-top:8px; text-align:left;"></div>
+            </div>
+        </div>
+
+        <!-- 탭 5: 제한 관리 -->
+        <div id="userPanelRestrict" style="display:none;">
+            <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(239,68,68,0.1);">
+                <div style="font-size:0.65rem; color:#f87171; line-height:1.6;">
+                    ⚠️ 제한 시 해당 유저에게 알림이 자동 발송됩니다.
+                </div>
+            </div>
+
+            <!-- 매칭 제한 -->
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="flex:1;">
+                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">🚫 매칭 기능 제한</div>
+                        <div style="font-size:0.55rem; color:#888; margin-top:2px;">매칭 신청 및 수락이 불가능해집니다</div>
+                    </div>
+                    <button class="btn-sm" id="matchBlockBtn" onclick="toggleMatchBlock()" style="font-size:0.6rem; white-space:nowrap;">설정</button>
+                </div>
+            </div>
+
+            <!-- 신고 제한 -->
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="flex:1;">
+                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">🚫 신고 기능 제한</div>
+                        <div style="font-size:0.55rem; color:#888; margin-top:2px;">카드 신고가 불가능해집니다</div>
+                    </div>
+                    <button class="btn-sm" id="reportBlockBtn" onclick="toggleReportBlock()" style="font-size:0.6rem; white-space:nowrap;">설정</button>
+                </div>
+                <div id="reportBlockReasonArea" style="margin-top:8px; display:none;">
+                    <input type="text" id="reportBlockReasonInput" placeholder="제한 사유 (선택)" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+                </div>
             </div>
         </div>
     </div>
@@ -7504,7 +7539,7 @@ function closeUserManageModal() {
 
 // ===== 탭 전환 =====
 function switchUserTab(tab) {
-    ['tickets', 'info', 'noti', 'likes'].forEach(t => {
+    ['tickets', 'info', 'noti', 'likes', 'restrict'].forEach(t => {
         const btn = document.getElementById(`userTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const panel = document.getElementById(`userPanel${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (t === tab) {
@@ -7515,6 +7550,130 @@ function switchUserTab(tab) {
             if (panel) panel.style.display = 'none';
         }
     });
+
+    // 제한 탭 열릴 때 상태 갱신
+    if (tab === 'restrict') {
+        updateRestrictButtons();
+    }
+}
+
+// ===== 제한 버튼 상태 갱신 =====
+function updateRestrictButtons() {
+    if (!adminSelectedUser) return;
+
+    const matchBtn = document.getElementById('matchBlockBtn');
+    const reportBtn = document.getElementById('reportBlockBtn');
+    const reasonArea = document.getElementById('reportBlockReasonArea');
+    const reasonInput = document.getElementById('reportBlockReasonInput');
+
+    // 매칭 제한 상태
+    if (adminSelectedUser.match_blocked) {
+        matchBtn.textContent = '✅ 해제';
+        matchBtn.classList.add('success');
+        matchBtn.classList.remove('danger');
+    } else {
+        matchBtn.textContent = '🚫 제한';
+        matchBtn.classList.add('danger');
+        matchBtn.classList.remove('success');
+    }
+
+    // 신고 제한 상태
+    if (adminSelectedUser.report_blocked) {
+        reportBtn.textContent = '✅ 해제';
+        reportBtn.classList.add('success');
+        reportBtn.classList.remove('danger');
+        reasonArea.style.display = 'none';
+    } else {
+        reportBtn.textContent = '🚫 제한';
+        reportBtn.classList.add('danger');
+        reportBtn.classList.remove('success');
+    }
+
+    // 기존 사유 표시
+    if (adminSelectedUser.report_block_reason) {
+        reasonInput.value = adminSelectedUser.report_block_reason;
+    }
+}
+
+// ===== 매칭 제한 토글 =====
+async function toggleMatchBlock() {
+    if (!adminSelectedUser) return;
+
+    const newState = !adminSelectedUser.match_blocked;
+    const action = newState ? '제한' : '해제';
+
+    if (!confirm(`매칭 기능을 ${action}하시겠습니까?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/users/${adminSelectedUser.id}/restrict`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                match_blocked: newState
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            adminSelectedUser.match_blocked = newState;
+            updateRestrictButtons();
+            showToast(`✅ 매칭 기능이 ${action}되었습니다.`);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Toggle match block error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 신고 제한 토글 =====
+async function toggleReportBlock() {
+    if (!adminSelectedUser) return;
+
+    const newState = !adminSelectedUser.report_blocked;
+    const action = newState ? '제한' : '해제';
+
+    let reason = '';
+    if (newState) {
+        // 제한 시 사유 입력창 표시
+        const reasonArea = document.getElementById('reportBlockReasonArea');
+        if (reasonArea.style.display === 'none') {
+            reasonArea.style.display = 'block';
+            showToast('⚠️ 제한 사유를 입력한 후 다시 버튼을 눌러주세요.');
+            return;
+        }
+        reason = document.getElementById('reportBlockReasonInput').value.trim();
+    }
+
+    if (!confirm(`신고 기능을 ${action}하시겠습니까?${newState && reason ? '\n사유: ' + reason : ''}`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/users/${adminSelectedUser.id}/restrict`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                report_blocked: newState,
+                report_block_reason: newState ? reason : null
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            adminSelectedUser.report_blocked = newState;
+            adminSelectedUser.report_block_reason = newState ? reason : null;
+            document.getElementById('reportBlockReasonArea').style.display = 'none';
+            updateRestrictButtons();
+            showToast(`✅ 신고 기능이 ${action}되었습니다.`);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Toggle report block error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
 }
 
 // ===== 매칭권 조정 =====

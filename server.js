@@ -1272,12 +1272,40 @@ app.post('/api/matches', async (req, res) => {
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
         }
 
-        const currentTickets = fromUser.free_tickets || 0;
+                const currentTickets = fromUser.free_tickets || 0;
         if (currentTickets < cost.a) {
             return res.status(400).json({ 
                 error: `매칭권이 부족합니다. (필요: ${cost.a}장, 보유: ${currentTickets}장)`,
                 needed: cost.a,
                 owned: currentTickets
+            });
+        }
+
+        // ★★★ 매칭 제한 확인 ★★★
+        const { data: fromUserFull } = await supabase
+            .from('users')
+            .select('match_blocked')
+            .eq('id', from_user_id)
+            .single();
+
+        if (fromUserFull?.match_blocked) {
+            return res.status(403).json({ 
+                error: '매칭 신청이 제한된 계정입니다. 문의하기로 연락해주세요.',
+                code: 'MATCH_BLOCKED'
+            });
+        }
+
+        // ★★★ 대상 카드 소유자가 매칭 제한 상태인지도 확인 ★★★
+        const { data: targetOwner } = await supabase
+            .from('users')
+            .select('match_blocked')
+            .eq('id', targetCard.user_id)
+            .single();
+
+        if (targetOwner?.match_blocked) {
+            return res.status(403).json({ 
+                error: '상대방이 매칭을 받을 수 없는 상태입니다.',
+                code: 'TARGET_MATCH_BLOCKED'
             });
         }
 
@@ -1646,8 +1674,22 @@ app.post('/api/reports', async (req, res) => {
 
         if (checkError) throw checkError;
 
-        if (existing && existing.length > 0) {
+                if (existing && existing.length > 0) {
             return res.status(400).json({ error: '이미 신고한 카드입니다.' });
+        }
+
+        // ★★★ 신고 제한 확인 ★★★
+        const { data: reporter } = await supabase
+            .from('users')
+            .select('report_blocked, report_block_reason')
+            .eq('id', reporter_user_id)
+            .single();
+
+        if (reporter?.report_blocked) {
+            return res.status(403).json({ 
+                error: `신고 기능이 제한된 계정입니다. ${reporter.report_block_reason ? '사유: ' + reporter.report_block_reason : '문의하기로 연락해주세요.'}`,
+                code: 'REPORT_BLOCKED'
+            });
         }
 
         // 신고 저장
@@ -2352,6 +2394,106 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
             error: error.message || '서버 오류',
             stack: error.stack
         });
+    }
+});
+
+// ============================================================
+//  관리자: 매칭/신고 제한 설정/해제
+// ============================================================
+
+app.put('/api/admin/users/:id/restrict', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id, match_blocked, report_blocked, report_block_reason } = req.body;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 업데이트할 필드 구성
+        const updates = {};
+        if (typeof match_blocked === 'boolean') updates.match_blocked = match_blocked;
+        if (typeof report_blocked === 'boolean') updates.report_blocked = report_blocked;
+        if (report_block_reason !== undefined) updates.report_block_reason = report_block_reason || null;
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ error: '변경할 항목이 없습니다.' });
+        }
+
+        const { data: user } = await supabase
+            .from('users')
+            .select('nickname')
+            .eq('id', id)
+            .single();
+
+        await supabase
+            .from('users')
+            .update(updates)
+            .eq('id', id);
+
+        // 제한이 설정된 경우 유저에게 알림
+        if (match_blocked === true) {
+            await supabase.from('notifications').insert([{
+                user_id: id,
+                type: 'admin_notice',
+                title: '🚫 매칭 기능이 제한되었습니다.',
+                message: '관리자에 의해 매칭 신청이 제한되었어요. 문의사항이 있으시면 문의하기로 연락주세요.',
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
+
+        if (report_blocked === true) {
+            await supabase.from('notifications').insert([{
+                user_id: id,
+                type: 'admin_notice',
+                title: '🚫 신고 기능이 제한되었습니다.',
+                message: `관리자에 의해 신고 기능이 제한되었어요.${report_block_reason ? ' 사유: ' + report_block_reason : ''} 문의사항이 있으시면 문의하기로 연락주세요.`,
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
+
+        // 제한이 해제된 경우
+        if (match_blocked === false) {
+            await supabase.from('notifications').insert([{
+                user_id: id,
+                type: 'admin_notice',
+                title: '✅ 매칭 기능 제한이 해제되었습니다.',
+                message: '매칭 기능 제한이 해제되었어요. 이제 정상적으로 이용 가능합니다.',
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
+
+        if (report_blocked === false) {
+            await supabase.from('notifications').insert([{
+                user_id: id,
+                type: 'admin_notice',
+                title: '✅ 신고 기능 제한이 해제되었습니다.',
+                message: '신고 기능 제한이 해제되었어요. 이제 정상적으로 이용 가능합니다.',
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
+
+        console.log(`🚫 관리자가 유저 ${user?.nickname}의 제한 상태 변경:`, updates);
+
+        res.json({ success: true, updated: updates });
+    } catch (error) {
+        console.error('Update restriction error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
