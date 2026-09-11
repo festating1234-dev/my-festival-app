@@ -1535,12 +1535,69 @@
     </div>
 </div>
 
-<!-- ★★★ 매칭 후기 검수 섹션 (새로 추가!) ★★★ -->
+<!-- ★★★ 매칭 후기 검수 섹션 ★★★ -->
 <div id="adminReviewsSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
     <div style="font-weight:700; font-size:0.85rem; color:#a855f7; margin-bottom:8px;">✍️ 매칭 후기 검수</div>
     <div id="adminReviewsList">
         <!-- JavaScript에서 렌더링 -->
     </div>
+</div>
+
+<!-- ★★★ 공지 발송 섹션 (새로 추가!) ★★★ -->
+<div id="adminNoticeSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
+    <div style="font-weight:700; font-size:0.85rem; color:#4ade80; margin-bottom:8px;">📢 공지 발송</div>
+    
+    <!-- 발송 대상 선택 -->
+    <div style="margin-bottom:10px;">
+        <label style="font-size:0.7rem; color:#aaa; display:block; margin-bottom:6px;">발송 대상</label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn-sm primary" id="noticeTargetAllBtn" onclick="selectNoticeTarget('all')">👥 전체 유저</button>
+            <button class="btn-sm" id="noticeTargetSpecificBtn" onclick="selectNoticeTarget('specific')">🎯 특정 유저</button>
+        </div>
+    </div>
+    
+    <!-- 특정 유저 검색 영역 (기본 숨김) -->
+    <div id="noticeSpecificArea" style="display:none; margin-bottom:10px;">
+        <label style="font-size:0.7rem; color:#aaa; display:block; margin-bottom:4px;">유저 검색 (닉네임)</label>
+        <div style="display:flex; gap:4px;">
+            <input type="text" id="noticeUserSearch" placeholder="닉네임 입력 후 검색" style="flex:1; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none; min-width:0;">
+            <button class="btn-sm" onclick="searchNoticeUser()">🔍 검색</button>
+        </div>
+        <div id="noticeSearchResult" style="margin-top:6px; font-size:0.6rem; color:#aaa;"></div>
+    </div>
+    
+    <!-- 제목 입력 -->
+    <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem; color:#aaa; display:block; margin-bottom:4px;">제목</label>
+        <input type="text" id="noticeTitle" placeholder="예: [공지] 서비스 점검 안내" maxlength="50" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+    </div>
+    
+    <!-- 내용 입력 -->
+    <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem; color:#aaa; display:block; margin-bottom:4px;">내용</label>
+        <textarea id="noticeMessage" placeholder="공지 내용을 입력하세요" maxlength="500" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none; resize:vertical; min-height:70px; font-family:inherit;"></textarea>
+    </div>
+
+    <!-- 링크 선택 (선택사항) -->
+    <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem; color:#aaa; display:block; margin-bottom:4px;">클릭 시 이동 (선택)</label>
+        <select id="noticeLink" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+            <option value="">이동 없음</option>
+            <option value="mypage">내정보 탭</option>
+            <option value="find">친구찾기 탭</option>
+            <option value="matching">매칭현황</option>
+        </select>
+    </div>
+    
+    <!-- 예상 수신자 수 -->
+    <div id="noticeRecipientCount" style="font-size:0.65rem; color:#fbbf24; margin-bottom:10px; padding:8px 10px; background:rgba(251,191,36,0.05); border-radius:8px; border:1px solid rgba(251,191,36,0.1);">
+        📊 예상 수신자: <strong>0</strong>명
+    </div>
+    
+    <!-- 발송 버튼 -->
+    <button class="btn-primary" onclick="sendAdminNotice()" style="width:100%;">
+        <i class="fas fa-paper-plane"></i> 공지 발송하기
+    </button>
 </div>
 </div>
 
