@@ -2286,7 +2286,6 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
             '건국대학교', '동국대학교', '국민대학교', '숙명여자대학교', '숭실대학교'
         ];
         const MAJORS = ['이공계열','어문계열','상경계열','예체능','메디컬','서비스','기타계열'];
-        const ANIMALS = ['🐶 강아지상','🐱 고양이상','🐰 토끼상','🦊 여우상','🐻 곰상','🦕 공룡상'];
         const REGIONS = ['서울특별시','경기도','인천광역시','부산광역시','대구광역시','대전광역시'];
         const INTROS = [
             '안녕하세요! 긍정적인 에너지를 가진 사람이에요. 함께 즐거운 추억 만들어요!',
@@ -2317,11 +2316,11 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
                 gender: gender,
                 age: 18 + Math.floor(Math.random() * 8),
                 height: gender === 'female' ? 155 + Math.floor(Math.random() * 20) : 168 + Math.floor(Math.random() * 20),
-                animal: ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
                 region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
                 detail: intro,
                 preview: intro.slice(0, 18) + '...',
                 likes: Math.floor(Math.random() * 30)
+                // ★ animal 컬럼 제거됨!
             });
         }
 
@@ -2330,7 +2329,15 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
             .insert(newProfiles)
             .select();
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Supabase insert error (더미):', error);
+            return res.status(500).json({ 
+                error: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
+        }
 
         console.log(`✅ 관리자가 더미 프로필 ${data.length}개 생성`);
 
@@ -2340,8 +2347,11 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
             profiles: data
         });
     } catch (error) {
-        console.error('Add dummy profiles error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('❌ Add dummy profiles error:', error);
+        res.status(500).json({ 
+            error: error.message || '서버 오류',
+            stack: error.stack
+        });
     }
 });
 
