@@ -4024,8 +4024,9 @@ if (allBlockedRelatedIds && allBlockedRelatedIds.length > 0) {
     ).length;
 
     // 나를 찜한 카드 중, 현재 모드(type)인 카드 수
+    // ★ String 변환 없이 원본 타입으로 비교 (기존 isLikedBy 로직과 동일)
     const likedByCountByMode = allProfiles.filter(p =>
-        likedByIds.has(String(p.user_id)) && p.type === currentMode
+        likedByIds.has(p.user_id) && p.type === currentMode
     ).length;
 
     // 버튼 텍스트 갱신
