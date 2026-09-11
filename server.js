@@ -898,6 +898,247 @@ app.delete('/api/profiles/:id', async (req, res) => {
 });
 
 // ============================================================
+//  관리자: 유저 검색 및 관리 API
+// ============================================================
+
+// 1. 유저 검색 (닉네임 기반)
+app.get('/api/admin/search-user', async (req, res) => {
+    const { keyword, admin_user_id } = req.query;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+    if (!keyword || keyword.trim().length < 1) {
+        return res.status(400).json({ error: '검색어를 입력해주세요.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 유저 검색
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('id, nickname, school, major, grade, gender, age, height, phone, intro, animal, region, free_tickets, invited_count, email_verified, card_status, is_banned, is_admin, match_blocked, report_blocked, report_block_reason, created_at')
+            .ilike('nickname', `%${keyword.trim()}%`)
+            .order('nickname', { ascending: true })
+            .limit(20);
+
+        if (error) throw error;
+        res.json(users || []);
+    } catch (error) {
+        console.error('Search user error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 매칭권 수량 조정
+app.put('/api/admin/users/:id/tickets', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id, amount } = req.body;
+
+    if (!admin_user_id || typeof amount !== 'number') {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 현재 매칭권 조회
+        const { data: user } = await supabase
+            .from('users')
+            .select('free_tickets, nickname')
+            .eq('id', id)
+            .single();
+
+        if (!user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const newTickets = Math.max(0, (user.free_tickets || 0) + amount);
+
+        await supabase
+            .from('users')
+            .update({ free_tickets: newTickets })
+            .eq('id', id);
+
+        // 유저에게 알림
+        if (amount > 0) {
+            await supabase.from('notifications').insert([{
+                user_id: id,
+                type: 'admin_notice',
+                title: '🎁 매칭권이 지급되었습니다!',
+                message: `관리자로부터 매칭권 ${amount}장이 지급되었어요. 현재 보유: ${newTickets}장`,
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
+
+        console.log(`🎫 관리자가 유저 ${user.nickname}의 매칭권을 ${amount > 0 ? '+' : ''}${amount} 조정 (현재: ${newTickets}장)`);
+
+        res.json({ success: true, new_tickets: newTickets });
+    } catch (error) {
+        console.error('Update tickets error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 유저 정보 수정 (나이, 키, 성별, 찜 개수)
+app.put('/api/admin/users/:id/update-info', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id, updates } = req.body;
+
+    if (!admin_user_id || !updates) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 허용된 필드만 필터링 (보안)
+        const allowedFields = ['age', 'height', 'gender', 'major', 'region', 'intro', 'animal'];
+        const filteredUpdates = {};
+        for (const key of allowedFields) {
+            if (updates[key] !== undefined) {
+                filteredUpdates[key] = updates[key];
+            }
+        }
+
+        if (Object.keys(filteredUpdates).length === 0) {
+            return res.status(400).json({ error: '수정할 항목이 없습니다.' });
+        }
+
+        const { data: user } = await supabase
+            .from('users')
+            .select('nickname')
+            .eq('id', id)
+            .single();
+
+        await supabase
+            .from('users')
+            .update(filteredUpdates)
+            .eq('id', id);
+
+        console.log(`✏️ 관리자가 유저 ${user?.nickname} 정보 수정:`, filteredUpdates);
+
+        res.json({ success: true, updated: filteredUpdates });
+    } catch (error) {
+        console.error('Update user info error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. 특정 유저에게 알림 발송
+app.post('/api/admin/send-user-notification', async (req, res) => {
+    const { admin_user_id, target_user_id, title, message, link } = req.body;
+
+    if (!admin_user_id || !target_user_id || !title || !message) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        await supabase.from('notifications').insert([{
+            user_id: target_user_id,
+            type: 'admin_notice',
+            title: title,
+            message: message,
+            link: link || null,
+            is_read: false
+        }]);
+
+        console.log(`📢 관리자가 유저 ${target_user_id}에게 알림 발송: ${title}`);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Send user notification error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. 찜(좋아요) 개수 증가 (인기 많아 보이게)
+app.post('/api/admin/add-likes', async (req, res) => {
+    const { admin_user_id, card_id, amount } = req.body;
+
+    if (!admin_user_id || !card_id || typeof amount !== 'number') {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        const { data: card } = await supabase
+            .from('profiles')
+            .select('likes, user_id')
+            .eq('id', card_id)
+            .single();
+
+        if (!card) {
+            return res.status(404).json({ error: '카드를 찾을 수 없습니다.' });
+        }
+
+        const newLikes = Math.max(0, (card.likes || 0) + amount);
+
+        await supabase
+            .from('profiles')
+            .update({ likes: newLikes })
+            .eq('id', card_id);
+
+        console.log(`❤️ 관리자가 카드 ${card_id}의 찜 개수를 ${amount > 0 ? '+' : ''}${amount} 조정 (현재: ${newLikes})`);
+
+        res.json({ success: true, new_likes: newLikes });
+    } catch (error) {
+        console.error('Add likes error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  3.  좋아요(찜) 관련 API
 // ============================================================
 
@@ -2478,8 +2719,8 @@ app.put('/api/admin/reports/:id/dismiss', async (req, res) => {
     }
 });
 
-// 3. 카드 삭제 (이미 있음 - DELETE /api/profiles/:id)
-// 이미 존재하므로 추가 불필요
+
+
 
 // ============================================================
 //  ★★★ 이 부분은 반드시 파일의 가장 마지막에 위치! ★★★

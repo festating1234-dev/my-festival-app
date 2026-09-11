@@ -1607,6 +1607,18 @@
         <i class="fas fa-paper-plane"></i> 공지 발송하기
     </button>
 </div>
+<!-- ★★★ 유저 검색 및 관리 섹션 (새로 추가!) ★★★ -->
+<div id="adminUserSearchSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
+    <div style="font-weight:700; font-size:0.85rem; color:#f472b6; margin-bottom:8px;">🔍 유저 검색 및 관리</div>
+    <div style="font-size:0.6rem; color:#888; margin-bottom:8px;">아이디로 유저를 검색하여 관리할 수 있어요</div>
+    
+    <div style="display:flex; gap:4px;">
+        <input type="text" id="adminUserSearchInput" placeholder="유저 아이디 입력" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none; min-width:0;">
+        <button class="btn-sm primary" onclick="searchAdminUser()">🔍 검색</button>
+    </div>
+    
+    <div id="adminUserSearchResults" style="margin-top:10px;"></div>
+</div>
 </div>
 
                 <div style="text-align:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04);">
@@ -1734,6 +1746,88 @@
                 <textarea id="adminDeleteCustomInput" placeholder="삭제 사유를 상세히 적어주세요..." style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
             </div>
             <button class="btn-primary" onclick="confirmAdminDeleteCard(4)" style="width:100%; margin-top:4px;">확인</button>
+        </div>
+    </div>
+</div>
+<!-- 유저 관리 모달 -->
+<div class="modal-overlay" id="adminUserManageModal">
+    <div class="modal-box" style="max-width: 450px; max-height: 85vh; overflow-y: auto;">
+        <span class="close-btn" id="adminUserManageClose">&times;</span>
+        <h2>👤 유저 관리</h2>
+        <div id="adminUserManageTarget" style="font-size:0.7rem; color:#aaa; margin-bottom:12px;"></div>
+
+        <!-- 탭 -->
+        <div style="display:flex; gap:4px; margin-bottom:12px;">
+            <button class="btn-sm primary" id="userTabTickets" onclick="switchUserTab('tickets')" style="flex:1;">🎫 매칭권</button>
+            <button class="btn-sm" id="userTabInfo" onclick="switchUserTab('info')" style="flex:1;">✏️ 정보수정</button>
+            <button class="btn-sm" id="userTabNoti" onclick="switchUserTab('noti')" style="flex:1;">📢 알림</button>
+            <button class="btn-sm" id="userTabLikes" onclick="switchUserTab('likes')" style="flex:1;">❤️ 찜</button>
+        </div>
+
+        <!-- 탭 1: 매칭권 -->
+        <div id="userPanelTickets">
+            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(74,222,128,0.1); text-align:center;">
+                <div style="font-size:0.65rem; color:#888;">현재 보유 매칭권</div>
+                <div id="userCurrentTickets" style="font-size:1.6rem; font-weight:900; color:#4ade80; margin-top:4px;">0장</div>
+            </div>
+            
+            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:10px;">
+                <button class="btn-sm" onclick="adjustUserTickets(-5)">-5</button>
+                <button class="btn-sm" onclick="adjustUserTickets(-1)">-1</button>
+                <button class="btn-sm success" onclick="adjustUserTickets(1)">+1</button>
+                <button class="btn-sm success" onclick="adjustUserTickets(5)">+5</button>
+                <button class="btn-sm success" onclick="adjustUserTickets(10)">+10</button>
+            </div>
+            
+            <div style="display:flex; gap:4px;">
+                <input type="number" id="userCustomTicketAmount" placeholder="직접 입력 (음수 가능)" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                <button class="btn-sm primary" onclick="adjustUserTicketsCustom()">적용</button>
+            </div>
+        </div>
+
+        <!-- 탭 2: 정보 수정 -->
+        <div id="userPanelInfo" style="display:none;">
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">나이</label>
+                <input type="number" id="editUserAge" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">키 (cm)</label>
+                <input type="number" id="editUserHeight" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">성별</label>
+                <select id="editUserGender" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+                    <option value="female">여성</option>
+                    <option value="male">남성</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">자기소개</label>
+                <textarea id="editUserIntro" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none; resize:vertical; min-height:60px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="saveUserInfo()" style="width:100%;">정보 저장</button>
+        </div>
+
+        <!-- 탭 3: 알림 발송 -->
+        <div id="userPanelNoti" style="display:none;">
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">제목</label>
+                <input type="text" id="userNotiTitle" maxlength="50" placeholder="예: [안내] 회원님께 알립니다" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:0.7rem; color:#aaa;">내용</label>
+                <textarea id="userNotiMessage" maxlength="500" placeholder="알림 내용을 입력하세요" style="width:100%; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.8rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="sendUserNotification()" style="width:100%;">📢 알림 발송</button>
+        </div>
+
+        <!-- 탭 4: 찜 개수 조정 -->
+        <div id="userPanelLikes" style="display:none;">
+            <div style="background:rgba(244,114,182,0.05); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(244,114,182,0.1); text-align:center;">
+                <div style="font-size:0.65rem; color:#888;">이 유저의 카드 목록</div>
+                <div id="userCardsLikesList" style="margin-top:8px; text-align:left;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -7059,6 +7153,327 @@ async function confirmAdminDeleteCard(reasonCode) {
         showToast('⚠️ 서버 통신 오류');
     }
 }
+
+// ============================================================
+//  관리자: 유저 검색 및 관리
+// ============================================================
+
+let adminSelectedUser = null;
+let adminUserCards = [];
+
+// ===== 유저 검색 =====
+async function searchAdminUser() {
+    if (!isAdmin) return;
+    const keyword = document.getElementById('adminUserSearchInput').value.trim();
+    const resultsDiv = document.getElementById('adminUserSearchResults');
+
+    if (!keyword) {
+        resultsDiv.innerHTML = '<div style="color:#f87171; font-size:0.65rem;">⚠️ 검색어를 입력해주세요.</div>';
+        return;
+    }
+
+    resultsDiv.innerHTML = '<div style="color:#888; font-size:0.65rem; padding:8px 0;">⏳ 검색 중...</div>';
+
+    try {
+        const res = await fetch(`/api/admin/search-user?keyword=${encodeURIComponent(keyword)}&admin_user_id=${currentUser.id}`);
+        const users = await res.json();
+
+        if (!res.ok) {
+            resultsDiv.innerHTML = `<div style="color:#f87171; font-size:0.65rem;">❌ ${users.error}</div>`;
+            return;
+        }
+
+        if (users.length === 0) {
+            resultsDiv.innerHTML = '<div style="color:#666; font-size:0.65rem; padding:8px 0;">📭 검색 결과가 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        users.forEach(u => {
+            const badges = [];
+            if (u.is_admin) badges.push('<span style="background:rgba(251,191,36,0.2); color:#fbbf24; padding:1px 5px; border-radius:10px; font-size:0.45rem;">관리자</span>');
+            if (u.is_banned) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">정지</span>');
+            if (u.match_blocked) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">매칭제한</span>');
+            if (u.report_blocked) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">신고제한</span>');
+
+            html += `
+                <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:120px;">
+                        <div style="font-weight:700; font-size:0.8rem; color:#f472b6;">
+                            ${u.nickname}
+                            ${badges.join(' ')}
+                        </div>
+                        <div style="font-size:0.55rem; color:#888;">${u.school || ''} · ${u.age || '?'}세 · 🎫 ${u.free_tickets || 0}장</div>
+                    </div>
+                    <button class="btn-sm primary" onclick="openUserManageModal(${u.id})" style="font-size:0.55rem;">관리하기</button>
+                </div>
+            `;
+        });
+        resultsDiv.innerHTML = html;
+    } catch (error) {
+        console.error('Search user error:', error);
+        resultsDiv.innerHTML = '<div style="color:#f87171; font-size:0.65rem;">⚠️ 검색 중 오류가 발생했습니다.</div>';
+    }
+}
+
+// ===== 유저 관리 모달 열기 =====
+async function openUserManageModal(userId) {
+    try {
+        const res = await fetch(`/api/users/${userId}`);
+        if (!res.ok) {
+            showToast('❌ 유저 정보를 불러올 수 없습니다.');
+            return;
+        }
+        const user = await res.json();
+        adminSelectedUser = user;
+
+        // 헤더
+        document.getElementById('adminUserManageTarget').innerHTML = `
+            👤 <strong style="color:#fbbf24;">${user.nickname}</strong> (ID: ${user.id})<br>
+            ${user.school || ''} · ${user.major || ''} · ${user.age || '?'}세
+        `;
+
+        // 매칭권 탭
+        document.getElementById('userCurrentTickets').textContent = (user.free_tickets || 0) + '장';
+
+        // 정보 수정 탭
+        document.getElementById('editUserAge').value = user.age || '';
+        document.getElementById('editUserHeight').value = user.height || '';
+        document.getElementById('editUserGender').value = user.gender || 'female';
+        document.getElementById('editUserIntro').value = user.intro || '';
+
+        // 알림 탭 초기화
+        document.getElementById('userNotiTitle').value = '';
+        document.getElementById('userNotiMessage').value = '';
+
+        // 찜 탭: 유저의 카드 목록 로드
+        await loadUserCardsForLikes(userId);
+
+        // 첫 탭 활성화
+        switchUserTab('tickets');
+
+        document.getElementById('adminUserManageModal').classList.add('active');
+    } catch (error) {
+        console.error('Open user manage modal error:', error);
+        showToast('⚠️ 오류가 발생했습니다.');
+    }
+}
+
+function closeUserManageModal() {
+    document.getElementById('adminUserManageModal').classList.remove('active');
+    adminSelectedUser = null;
+    adminUserCards = [];
+}
+
+// ===== 탭 전환 =====
+function switchUserTab(tab) {
+    ['tickets', 'info', 'noti', 'likes'].forEach(t => {
+        const btn = document.getElementById(`userTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const panel = document.getElementById(`userPanel${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === tab) {
+            btn?.classList.add('primary');
+            if (panel) panel.style.display = 'block';
+        } else {
+            btn?.classList.remove('primary');
+            if (panel) panel.style.display = 'none';
+        }
+    });
+}
+
+// ===== 매칭권 조정 =====
+async function adjustUserTickets(amount) {
+    if (!adminSelectedUser) return;
+    await updateUserTickets(adminSelectedUser.id, amount);
+}
+
+async function adjustUserTicketsCustom() {
+    if (!adminSelectedUser) return;
+    const amount = parseInt(document.getElementById('userCustomTicketAmount').value);
+    if (isNaN(amount) || amount === 0) {
+        showToast('⚠️ 유효한 숫자를 입력해주세요.');
+        return;
+    }
+    await updateUserTickets(adminSelectedUser.id, amount);
+    document.getElementById('userCustomTicketAmount').value = '';
+}
+
+async function updateUserTickets(userId, amount) {
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/tickets`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                amount: amount
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            document.getElementById('userCurrentTickets').textContent = data.new_tickets + '장';
+            adminSelectedUser.free_tickets = data.new_tickets;
+            showToast(`✅ 매칭권 ${amount > 0 ? '+' : ''}${amount}장 조정 (현재: ${data.new_tickets}장)`);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Update tickets error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 유저 정보 저장 =====
+async function saveUserInfo() {
+    if (!adminSelectedUser) return;
+
+    const updates = {
+        age: parseInt(document.getElementById('editUserAge').value) || undefined,
+        height: parseInt(document.getElementById('editUserHeight').value) || undefined,
+        gender: document.getElementById('editUserGender').value,
+        intro: document.getElementById('editUserIntro').value.trim() || undefined
+    };
+
+    if (!confirm('유저 정보를 수정하시겠습니까?')) return;
+
+    try {
+        const res = await fetch(`/api/admin/users/${adminSelectedUser.id}/update-info`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                updates: updates
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('✅ 유저 정보가 수정되었습니다.');
+            await fetchUsers();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Save user info error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 유저에게 알림 발송 =====
+async function sendUserNotification() {
+    if (!adminSelectedUser) return;
+
+    const title = document.getElementById('userNotiTitle').value.trim();
+    const message = document.getElementById('userNotiMessage').value.trim();
+
+    if (!title || !message) {
+        showToast('⚠️ 제목과 내용을 모두 입력해주세요.');
+        return;
+    }
+
+    if (!confirm(`${adminSelectedUser.nickname}님에게 알림을 발송하시겠습니까?`)) return;
+
+    try {
+        const res = await fetch('/api/admin/send-user-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                target_user_id: adminSelectedUser.id,
+                title: title,
+                message: message,
+                link: null
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('✅ 알림이 발송되었습니다.');
+            document.getElementById('userNotiTitle').value = '';
+            document.getElementById('userNotiMessage').value = '';
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Send notification error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 유저 카드 목록 로드 (찜 조정용) =====
+async function loadUserCardsForLikes(userId) {
+    const container = document.getElementById('userCardsLikesList');
+    container.innerHTML = '<div style="color:#888; font-size:0.65rem; text-align:center; padding:8px 0;">⏳ 로딩 중...</div>';
+
+    try {
+        const res = await fetch('/api/profiles');
+        const allProfiles = await res.json();
+        adminUserCards = allProfiles.filter(p => String(p.user_id) === String(userId));
+
+        if (adminUserCards.length === 0) {
+            container.innerHTML = '<div style="color:#666; font-size:0.65rem; text-align:center; padding:8px 0;">📭 등록된 카드가 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        adminUserCards.forEach(c => {
+            const typeLabel = c.type === 'solo' ? '1:1' : c.type === 'group' ? '다대다' : '동성';
+            html += `
+                <div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                    <div style="flex:1;">
+                        <div style="font-size:0.6rem; color:#a855f7;">${typeLabel}</div>
+                        <div style="font-weight:700; font-size:0.7rem;">${c.emoji} ${c.school}</div>
+                        <div style="font-size:0.55rem; color:#888;">❤️ 찜: <strong style="color:#f472b6;" id="cardLikes_${c.id}">${c.likes || 0}</strong></div>
+                    </div>
+                    <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 10)" style="font-size:0.45rem; padding:2px 6px;">+10</button>
+                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 50)" style="font-size:0.45rem; padding:2px 6px;">+50</button>
+                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, -10)" style="font-size:0.45rem; padding:2px 6px;">-10</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Load user cards error:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.6rem;">⚠️ 카드 로드 실패</div>';
+    }
+}
+
+// ===== 카드 찜 개수 조정 =====
+async function adjustCardLikes(cardId, amount) {
+    if (!isAdmin) return;
+    try {
+        const res = await fetch('/api/admin/add-likes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                card_id: cardId,
+                amount: amount
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            const el = document.getElementById(`cardLikes_${cardId}`);
+            if (el) el.textContent = data.new_likes;
+            showToast(`❤️ 찜 개수 ${amount > 0 ? '+' : ''}${amount} 조정 (현재: ${data.new_likes})`);
+            await fetchProfiles();
+            renderProfiles();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Adjust likes error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('adminUserManageClose')?.addEventListener('click', closeUserManageModal);
+document.getElementById('adminUserManageModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeUserManageModal();
+});
 
 // 모달 닫기 이벤트
 document.getElementById('adminDeleteCardClose')?.addEventListener('click', closeAdminDeleteCardModal);
