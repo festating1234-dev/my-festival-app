@@ -1573,7 +1573,7 @@ app.put('/api/admin/reviews/:id/reject', async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // ===== ★★★ 매칭 상대 카드 ID 찾기 (알림 클릭 시 활용) ★★★ =====
+        // ===== ★ 매칭 상대 카드 ID 찾기 (card_type 필터 적용) ★ =====
         let targetCardId = null;
         if (review.match_id) {
             const { data: matchData } = await supabase
@@ -1584,16 +1584,27 @@ app.put('/api/admin/reviews/:id/reject', async (req, res) => {
 
             if (matchData) {
                 if (String(matchData.from_user_id) === String(review.user_id)) {
-                    // 내가 신청자 → 상대방 카드가 target
+                    // 내가 신청자 → to_card_id가 상대 카드
                     targetCardId = matchData.to_card_id;
                 } else {
-                    // 내가 수락자 → 상대방(from_user)의 카드 중 하나
+                    // 내가 수락자 → 상대(from_user)의 카드 중 같은 type 찾기
                     const { data: fromCards } = await supabase
                         .from('profiles')
                         .select('id')
                         .eq('user_id', matchData.from_user_id)
+                        .eq('type', review.card_type)
                         .limit(1);
                     targetCardId = fromCards?.[0]?.id || null;
+
+                    // 위에서 못 찾으면 type 무관하게 하나 가져오기 (fallback)
+                    if (!targetCardId) {
+                        const { data: anyCard } = await supabase
+                            .from('profiles')
+                            .select('id')
+                            .eq('user_id', matchData.from_user_id)
+                            .limit(1);
+                        targetCardId = anyCard?.[0]?.id || null;
+                    }
                 }
             }
         }
@@ -1603,7 +1614,7 @@ app.put('/api/admin/reviews/:id/reject', async (req, res) => {
                          review.card_type === 'same' ? '동성친구' : '매칭';
         const targetInfo = `${review.target_school || ''} ${review.target_major || ''}`.trim() || '상대방';
 
-        // 알림 생성 (card_id, match_id 함께 저장)
+        // ===== ★ 알림 생성 (match_id도 함께 저장!) ★ =====
         await supabase.from('notifications').insert([{
             user_id: review.user_id,
             type: 'review_rejected',
@@ -1611,6 +1622,7 @@ app.put('/api/admin/reviews/:id/reject', async (req, res) => {
             message: `(${typeLabel}) ${targetInfo}과의 매칭 후기가 반려되었어요. 반려 사유: ${reason}. 좀 더 진정성 있는 후기를 남겨 주세요.`,
             link: null,
             card_id: targetCardId,
+            match_id: review.match_id || null,
             is_read: false
         }]);
 
