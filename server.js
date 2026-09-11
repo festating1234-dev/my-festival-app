@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 
@@ -464,22 +463,23 @@ app.post('/api/send-verification', async (req, res) => {
         return res.status(500).json({ error: '인증번호 저장 중 오류가 발생했습니다.' });
     }
 
-    // ===== ★★★ 실제 이메일 발송 (nodemailer + Mailtrap) ★★★ =====
-    try {
-        const transporter = nodemailer.createTransport({
-            host: process.env.MAILTRAP_HOST,
-            port: parseInt(process.env.MAILTRAP_PORT) || 2525,
-            auth: {
-                user: process.env.MAILTRAP_USER,
-                pass: process.env.MAILTRAP_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: '"페스타팅" <noreply@festating.com>',
-            to: email,
+    // ===== ★★★ 실제 이메일 발송 (Brevo HTTP API) ★★★ =====
+try {
+    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            sender: {
+                name: process.env.BREVO_SENDER_NAME || '페스타팅',
+                email: process.env.BREVO_SENDER_EMAIL
+            },
+            to: [{ email: email }],
             subject: '[페스타팅] 이메일 인증번호',
-            html: `
+            htmlContent: `
                 <div style="font-family: 'Noto Sans KR', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f5f5f5; border-radius: 10px;">
                     <h2 style="color: #a855f7;">🎉 페스타팅 이메일 인증</h2>
                     <p style="color: #333;">안녕하세요! 페스타팅입니다.</p>
@@ -488,22 +488,28 @@ app.post('/api/send-verification', async (req, res) => {
                         <span style="font-size: 28px; font-weight: 700; color: #a855f7; letter-spacing: 6px;">${code}</span>
                     </div>
                     <p style="color: #888; font-size: 12px;">⏰ 이 인증번호는 10분 후에 만료됩니다.</p>
+                    <p style="color: #888; font-size: 12px;">스팸함에 들어갔다면, 스팸 해제 부탁드려요!</p>
                     <p style="color: #888; font-size: 12px;">문의사항이 있으시면 카카오톡 ID: <strong>festivalting</strong>으로 연락주세요.</p>
                     <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
                     <p style="color: #aaa; font-size: 11px; text-align: center;">본 메일은 발신 전용입니다. 회신하실 필요가 없습니다.</p>
                 </div>
             `
-        };
+        })
+    });
 
-        await transporter.sendMail(mailOptions);
-        console.log(`📧 인증번호 발송 완료: ${email} → ${code}`);
-
-    } catch (emailError) {
-        console.error('Email send error:', emailError);
-        return res.status(500).json({ 
-            error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.' 
-        });
+    if (!brevoResponse.ok) {
+        const errorBody = await brevoResponse.text();
+        console.error('Brevo API error:', brevoResponse.status, errorBody);
+        throw new Error(`Brevo API 오류 (${brevoResponse.status})`);
     }
+
+    console.log(`📧 Brevo 인증번호 발송 완료: ${email} → ${code}`);
+} catch (emailError) {
+    console.error('Brevo email send error:', emailError);
+    return res.status(500).json({
+        error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+    });
+}
 
     res.json({ 
         success: true, 
