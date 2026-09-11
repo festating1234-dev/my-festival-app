@@ -3588,56 +3588,62 @@ async function fetchBlocks() {
     const myCards = allProfiles.filter(p => p.user_id === currentUserId);
     const myCardIds = myCards.map(c => c.id);
 
-    // 보낸 매칭
+    // 보낸 매칭 (pending + accepted + rejected + cancelled + expired 모두)
     matchingData.sent = allMatches
-        .filter(m => m.from_user_id === currentUserId && m.status === 'pending')
+        .filter(m => String(m.from_user_id) === String(currentUserId))
         .map(m => {
             const card = allProfiles.find(p => p.id === m.to_card_id);
             if (!card) return null;
-            const owner = allUsers.find(u => u.id === card.user_id);
+            const owner = allUsers.find(u => String(u.id) === String(card.user_id));
             return {
                 id: m.id,
                 cardId: card.id,
                 type: m.type || 'normal',
+                status: m.status,
                 school: owner ? owner.school : '알 수 없음',
                 major: owner ? owner.major : '알 수 없음',
                 age: card.age || '?',
                 gender: card.gender || '?',
                 matchType: card.type || 'solo',
+                a_tickets_used: m.a_tickets_used || 0,
+                b_tickets_used: m.b_tickets_used || 0,
+                expires_at: m.expires_at,
                 createdAt: m.created_at
             };
         }).filter(Boolean);
 
-    // 받은 매칭
+    // 받은 매칭 (내 카드가 대상 + pending 상태만)
     matchingData.received = allMatches
-        .filter(m => myCardIds.includes(m.to_card_id) && m.status === 'pending')
+        .filter(m => myCardIds.some(id => String(id) === String(m.to_card_id)) && m.status === 'pending')
         .map(m => {
-            const fromUser = allUsers.find(u => u.id === m.from_user_id);
-            const targetCard = allProfiles.find(p => p.user_id === m.from_user_id);
+            const fromUser = allUsers.find(u => String(u.id) === String(m.from_user_id));
+            const targetCard = allProfiles.find(p => String(p.user_id) === String(m.from_user_id));
             if (!fromUser || !targetCard) return null;
             return {
                 id: m.id,
                 cardId: targetCard.id,
                 type: m.type || 'normal',
+                status: m.status,
                 school: fromUser.school || '알 수 없음',
                 major: fromUser.major || '알 수 없음',
                 age: fromUser.age || '?',
                 gender: fromUser.gender || '?',
                 matchType: targetCard.type || 'solo',
                 fromUserId: m.from_user_id,
+                expires_at: m.expires_at,
                 createdAt: m.created_at
             };
         }).filter(Boolean);
 
-    // 성사된 매칭
+    // 성사된 매칭 (내가 신청자이거나 내 카드가 대상 + accepted 상태)
     matchingData.matched = allMatches
-        .filter(m => (m.from_user_id === currentUserId || myCardIds.includes(m.to_card_id)) && m.status === 'accepted')
+        .filter(m => (String(m.from_user_id) === String(currentUserId) || myCardIds.some(id => String(id) === String(m.to_card_id))) && m.status === 'accepted')
         .map(m => {
-            const otherId = m.from_user_id === currentUserId ?
+            const otherId = String(m.from_user_id) === String(currentUserId) ?
                 allProfiles.find(p => p.id === m.to_card_id)?.user_id :
                 m.from_user_id;
-            const otherUser = allUsers.find(u => u.id === otherId);
-            const otherCard = allProfiles.find(p => p.user_id === otherId);
+            const otherUser = allUsers.find(u => String(u.id) === String(otherId));
+            const otherCard = allProfiles.find(p => String(p.user_id) === String(otherId));
             if (!otherUser || !otherCard) return null;
             return {
                 id: m.id,
@@ -4752,6 +4758,44 @@ function handleCardRegisterRedirect() {
     }
 }
 
+// ===== 매칭 신청 취소 (A가 pending 매칭 취소 → 환급) =====
+async function cancelMatch(matchId) {
+    if (!currentUser) return;
+
+    if (!confirm('매칭 신청을 취소하시겠습니까?\n\n사용한 매칭권이 환급됩니다.')) return;
+
+    try {
+        const res = await fetch(`/api/matches/${matchId}?userId=${currentUser.id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            // 매칭권 정보 갱신
+            const userRes = await fetch(`/api/users/${currentUser.id}`);
+            if (userRes.ok) {
+                const updatedUser = await userRes.json();
+                currentUser.free_tickets = updatedUser.free_tickets || 0;
+            }
+
+            await fetchMatches();
+            updateMatchingData();
+            updateUI();
+
+            showToast(`🚫 매칭 신청이 취소되었습니다. (매칭권 ${data.refunded}장 환급)`);
+            
+            // 모달 다시 열기 (갱신된 상태 반영)
+            closeModal();
+            setTimeout(() => openMatchingStatus(), 300);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Cancel match error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
     function switchToLogin() {
         document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
         document.querySelector('[data-tab="mypage"]').classList.add('active');
@@ -4768,6 +4812,136 @@ function handleCardRegisterRedirect() {
         switchToLogin();
         return;
     }
+    updateMatchingData();
+
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+
+    const matchTypeMap = {
+        'solo': '💕 둘이서 (1:1)',
+        'group': '🍻 여럿이서 (다대다)',
+        'same': '👬 동성친구 찾기'
+    };
+    const typeLabelMap = {
+        'normal': '일반 매칭',
+        'premium': '슈퍼 매칭'
+    };
+
+    function getDisplayInfo(user) {
+        if (!user) return { school: '알 수 없음', major: '알 수 없음' };
+        let school = user.school || '알 수 없음';
+        let major = user.major || '알 수 없음';
+        if (user.hide_school) school = '학교비공개';
+        if (user.hide_major) major = '계열비공개';
+        return { school, major };
+    }
+
+    // ===== 보낸 매칭 =====
+    const sentHtml = matchingData.sent.length > 0 ? matchingData.sent.map(m => {
+        const display = getDisplayInfo({ school: m.school, major: m.major, hide_school: false, hide_major: false });
+        const isPending = m.status === 'pending';
+        const isAccepted = m.status === 'accepted';
+        const isRejected = m.status === 'rejected';
+        const isCancelled = m.status === 'cancelled';
+        const isExpired = m.status === 'expired';
+
+        // 상태 배지
+        let statusBadge = '';
+        if (isPending) {
+            const daysLeft = m.expires_at ? Math.max(0, Math.ceil((new Date(m.expires_at) - new Date()) / (1000 * 60 * 60 * 24))) : '?';
+            statusBadge = `<div style="font-size:0.6rem; color:#fbbf24;">⏳ 상대방 응답 대기 중 (${daysLeft}일 남음)</div>`;
+        } else if (isAccepted) {
+            statusBadge = `<div style="font-size:0.6rem; color:#4ade80;">✅ 매칭 성사</div>`;
+        } else if (isRejected) {
+            statusBadge = `<div style="font-size:0.6rem; color:#f87171;">❌ 상대방이 거절했어요 (매칭권 환급됨)</div>`;
+        } else if (isCancelled) {
+            statusBadge = `<div style="font-size:0.6rem; color:#888;">🚫 신청 취소됨 (매칭권 환급됨)</div>`;
+        } else if (isExpired) {
+            statusBadge = `<div style="font-size:0.6rem; color:#888;">⏰ 응답 없음으로 만료 (매칭권 환급됨)</div>`;
+        }
+
+        // 취소 버튼 (pending 상태일 때만)
+        const cancelBtn = isPending ? `
+            <button class="btn-sm danger" onclick="cancelMatch(${m.id})" style="font-size:0.5rem; padding:2px 10px; margin-top:4px;">
+                <i class="fas fa-times"></i> 신청 취소
+            </button>
+        ` : '';
+
+        // 매칭권 사용 정보
+        const ticketInfo = m.a_tickets_used > 0 ? 
+            `<div style="font-size:0.5rem; color:#888;">🎫 사용한 매칭권: ${m.a_tickets_used}장</div>` : '';
+
+        return `
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin-bottom:6px;">
+                <div style="font-size:0.6rem; color:#888; margin-bottom:2px;">${matchTypeMap[m.matchType] || '기타'}</div>
+                <div style="font-weight:700; font-size:0.8rem;">${display.school} / ${display.major} / ${m.age}세</div>
+                ${statusBadge}
+                ${ticketInfo}
+                ${cancelBtn}
+                <div style="font-size:0.55rem; color:#666; margin-top:4px;">신청일: ${m.createdAt}</div>
+            </div>
+        `;
+    }).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">보낸 매칭이 없습니다</div>';
+
+    // ===== 받은 매칭 =====
+    const receivedHtml = matchingData.received.length > 0 ? matchingData.received.map(m => {
+        const display = getDisplayInfo({ school: m.school, major: m.major, hide_school: false, hide_major: false });
+        const daysLeft = m.expires_at ? Math.max(0, Math.ceil((new Date(m.expires_at) - new Date()) / (1000 * 60 * 60 * 24))) : '?';
+        
+        return `
+            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:10px; margin-bottom:6px;">
+                <div style="font-size:0.6rem; color:#888; margin-bottom:2px;">${matchTypeMap[m.matchType] || '기타'}</div>
+                <div style="font-weight:700; font-size:0.8rem;">${display.school} / ${display.major} / ${m.age}세</div>
+                <div style="font-size:0.65rem; color:#4ade80;">💬 나와 만나고 싶어하는 상대가 있어요! (${typeLabelMap[m.type] || m.type})</div>
+                <div style="font-size:0.55rem; color:#fbbf24; margin-top:2px;">⏰ ${daysLeft}일 내에 응답해주세요</div>
+                <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                    <button class="btn-sm success" onclick="respondMatching(${m.id}, true)">수락</button>
+                    <button class="btn-sm danger" onclick="respondMatching(${m.id}, false)">거절</button>
+                    <button class="btn-sm primary" onclick="showProfileDetailFromMatching(${m.cardId}, null, '${m.school}', null)">📋 카드 보기</button>
+                </div>
+            </div>
+        `;
+    }).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">들어온 매칭이 없습니다</div>';
+
+    // ===== 성사된 매칭 =====
+    const matchedHtml = matchingData.matched.length > 0 ? matchingData.matched.map(m => {
+        const display = getDisplayInfo({ school: m.school, major: m.major, hide_school: false, hide_major: false });
+        return `
+            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:10px; margin-bottom:6px; border:1px solid rgba(74,222,128,0.1);">
+                <div style="font-size:0.6rem; color:#888; margin-bottom:2px;">${matchTypeMap[m.matchType] || '기타'}</div>
+                <div style="font-weight:700; font-size:0.8rem;">✅ ${display.school} / ${display.major} / ${m.age}세</div>
+                <div style="font-size:0.65rem; color:#4ade80;">🎉 매칭이 성공하였어요! (${typeLabelMap[m.type] || m.type})</div>
+                <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                    <button class="btn-sm primary" onclick="showProfileDetailFromMatching(${m.cardId}, '${m.phone}', '${m.school}', ${m.id})">📞 연락처 확인하기</button>
+                </div>
+                <div style="font-size:0.55rem; color:#666; margin-top:4px;">성사일: ${m.createdAt}</div>
+            </div>
+        `;
+    }).join('') : '<div style="color:#666; font-size:0.7rem; padding:10px 0;">성사된 매칭이 없습니다</div>';
+
+    content.innerHTML = `
+        <h2>💌 매칭 현황</h2>
+        <div class="subtitle">나의 매칭 상태를 한눈에 확인하세요</div>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:700; font-size:0.85rem; color:#fbbf24; margin-bottom:4px;">📤 내가 보낸 매칭</div>
+            ${sentHtml}
+        </div>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:700; font-size:0.85rem; color:#4ade80; margin-bottom:4px;">📥 들어온 매칭</div>
+            ${receivedHtml}
+        </div>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:700; font-size:0.85rem; color:#a855f7; margin-bottom:4px;">✅ 성사된 매칭</div>
+            ${matchedHtml}
+        </div>
+
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+    `;
+    modal.classList.add('active');
+}
     updateMatchingData();
 
     const modal = document.getElementById('commonModal');
