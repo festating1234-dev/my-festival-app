@@ -2772,6 +2772,182 @@ document.getElementById('reviewModal')?.addEventListener('click', function (e) {
     if (e.target === this) closeReviewModal();
 });
 
+// ============================================================
+//  관리자: 공지 발송
+// ============================================================
+
+let noticeTargetType = 'all'; // 'all' 또는 'specific'
+let noticeSelectedUserIds = []; // 특정 유저 선택 시 사용
+
+// ===== 발송 대상 선택 =====
+function selectNoticeTarget(type) {
+    noticeTargetType = type;
+    const allBtn = document.getElementById('noticeTargetAllBtn');
+    const specificBtn = document.getElementById('noticeTargetSpecificBtn');
+    const specificArea = document.getElementById('noticeSpecificArea');
+
+    if (type === 'all') {
+        allBtn.classList.add('primary');
+        specificBtn.classList.remove('primary');
+        specificArea.style.display = 'none';
+        noticeSelectedUserIds = [];
+        document.getElementById('noticeSearchResult').innerHTML = '';
+        document.getElementById('noticeUserSearch').value = '';
+    } else {
+        allBtn.classList.remove('primary');
+        specificBtn.classList.add('primary');
+        specificArea.style.display = 'block';
+    }
+    updateNoticeRecipientCount();
+}
+
+// ===== 유저 검색 =====
+function searchNoticeUser() {
+    const keyword = document.getElementById('noticeUserSearch').value.trim();
+    const resultDiv = document.getElementById('noticeSearchResult');
+
+    if (!keyword) {
+        resultDiv.innerHTML = '<span style="color:#f87171;">닉네임을 입력해주세요</span>';
+        return;
+    }
+
+    // allUsers에서 부분 매칭으로 검색 (최대 10명)
+    const matches = allUsers.filter(u =>
+        u.nickname && u.nickname.toLowerCase().includes(keyword.toLowerCase())
+    ).slice(0, 10);
+
+    if (matches.length === 0) {
+        resultDiv.innerHTML = '<span style="color:#f87171;">검색 결과가 없습니다</span>';
+        return;
+    }
+
+    let html = '<div style="font-size:0.55rem; color:#888; margin-bottom:4px;">검색 결과 (클릭하여 선택/해제)</div>';
+    matches.forEach(u => {
+        const isSelected = noticeSelectedUserIds.includes(u.id);
+        html += `
+            <div onclick="toggleNoticeUser(${u.id})" style="padding:6px 10px; margin-bottom:3px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:${isSelected ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isSelected ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.05)'};">
+                <span style="font-size:0.65rem; color:#fff;">${isSelected ? '✅ ' : ''}${u.nickname}</span>
+                <span style="font-size:0.55rem; color:#888;">${u.school || ''}</span>
+            </div>
+        `;
+    });
+    resultDiv.innerHTML = html;
+}
+
+// ===== 유저 선택/해제 토글 =====
+function toggleNoticeUser(userId) {
+    const idx = noticeSelectedUserIds.indexOf(userId);
+    if (idx > -1) {
+        noticeSelectedUserIds.splice(idx, 1);
+    } else {
+        noticeSelectedUserIds.push(userId);
+    }
+    searchNoticeUser(); // 다시 렌더링
+    updateNoticeRecipientCount();
+}
+
+// ===== 예상 수신자 수 업데이트 =====
+function updateNoticeRecipientCount() {
+    const countEl = document.getElementById('noticeRecipientCount');
+    if (!countEl) return;
+
+    let count = 0;
+    if (noticeTargetType === 'all') {
+        count = allUsers.length;
+    } else {
+        count = noticeSelectedUserIds.length;
+    }
+
+    countEl.innerHTML = `📊 예상 수신자: <strong>${count}</strong>명`;
+}
+
+// ===== 공지 발송 =====
+async function sendAdminNotice() {
+    if (!currentUser || !isAdmin) {
+        showToast('⚠️ 관리자 권한이 필요합니다');
+        return;
+    }
+
+    const title = document.getElementById('noticeTitle').value.trim();
+    const message = document.getElementById('noticeMessage').value.trim();
+    const link = document.getElementById('noticeLink').value;
+
+    if (!title) {
+        showToast('⚠️ 제목을 입력해주세요');
+        return;
+    }
+    if (!message) {
+        showToast('⚠️ 내용을 입력해주세요');
+        return;
+    }
+
+    // 대상 결정
+    let targetUserIds = [];
+    if (noticeTargetType === 'all') {
+        targetUserIds = allUsers.map(u => u.id);
+    } else {
+        if (noticeSelectedUserIds.length === 0) {
+            showToast('⚠️ 발송할 유저를 선택해주세요');
+            return;
+        }
+        targetUserIds = [...noticeSelectedUserIds];
+    }
+
+    if (targetUserIds.length === 0) {
+        showToast('⚠️ 발송 대상이 없습니다');
+        return;
+    }
+
+    if (!confirm(`[${title}]\n\n위 공지를 ${targetUserIds.length}명에게 발송하시겠습니까?`)) return;
+
+    // 청크 처리 (100명씩 나눠서 발송 - 서버 부하 방지)
+    const CHUNK_SIZE = 100;
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+        for (let i = 0; i < targetUserIds.length; i += CHUNK_SIZE) {
+            const chunk = targetUserIds.slice(i, i + CHUNK_SIZE);
+
+            const res = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userIds: chunk,
+                    title: title,
+                    message: message,
+                    link: link || null
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                successCount += data.count || chunk.length;
+            } else {
+                failCount += chunk.length;
+            }
+        }
+
+        showToast(`✅ 공지 발송 완료! (성공: ${successCount}명${failCount > 0 ? `, 실패: ${failCount}명` : ''})`);
+        console.log(`📢 공지 발송 결과 - 성공: ${successCount}, 실패: ${failCount}`);
+
+        // 폼 초기화
+        document.getElementById('noticeTitle').value = '';
+        document.getElementById('noticeMessage').value = '';
+        document.getElementById('noticeLink').value = '';
+        document.getElementById('noticeUserSearch').value = '';
+        document.getElementById('noticeSearchResult').innerHTML = '';
+        noticeSelectedUserIds = [];
+        noticeTargetType = 'all';
+        selectNoticeTarget('all');
+        updateNoticeRecipientCount();
+
+    } catch (error) {
+        console.error('Send notice error:', error);
+        showToast('❌ 공지 발송 중 오류가 발생했습니다');
+    }
+}
+
 // ===== 알림 관련 함수 =====
 
 // ===== 알림 생성 헬퍼 함수 (cardId 추가) =====
@@ -5804,7 +5980,8 @@ function updateUI() {
     renderPendingList();
     renderReportList();
     renderBannedUsersList();
-    renderAdminReviews();  // ★ 후기 검수 목록 렌더링 추가!
+    renderAdminReviews();
+    updateNoticeRecipientCount();  // ★ 추가!
 } else {
     document.getElementById('adminPanel').classList.add('hidden');
 }
