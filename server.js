@@ -1879,6 +1879,142 @@ app.delete('/api/blocks/:id', async (req, res) => {
 });
 
 // ============================================================
+//  관리자: 카드 직접 삭제 API
+// ============================================================
+
+app.post('/api/admin/delete-card', async (req, res) => {
+    const { admin_user_id, card_id, reason } = req.body;
+
+    if (!admin_user_id || !card_id || !reason) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 1. 관리자 검증
+        const { data: adminUser } = await supabase
+            .from('users')
+            .select('id, is_admin, nickname')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!adminUser || !adminUser.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 2. 카드 정보 조회
+        const { data: card } = await supabase
+            .from('profiles')
+            .select('id, user_id, type, school, major, age, gender, emoji')
+            .eq('id', card_id)
+            .single();
+
+        if (!card) {
+            return res.status(404).json({ error: '카드를 찾을 수 없습니다.' });
+        }
+
+        // 3. 카드 소유자 정보
+        const { data: owner } = await supabase
+            .from('users')
+            .select('id, nickname')
+            .eq('id', card.user_id)
+            .single();
+
+        const typeLabel = card.type === 'solo' ? '둘이서 (1:1)' :
+                         card.type === 'group' ? '여럿이서 (다대다)' :
+                         card.type === 'same' ? '동성친구 찾기' : '카드';
+
+        // 4. 관련 데이터 정리
+        // 4-1. 좋아요 삭제
+        await supabase.from('likes').delete().eq('card_id', card_id);
+
+        // 4-2. pending 매칭 삭제 (A 환급 처리)
+        const { data: pendingMatches } = await supabase
+            .from('matches')
+            .select('*')
+            .eq('to_card_id', card_id)
+            .eq('status', 'pending');
+
+        if (pendingMatches && pendingMatches.length > 0) {
+            for (const match of pendingMatches) {
+                // A의 매칭권 환급
+                if (match.a_tickets_used > 0) {
+                    const { data: fromUser } = await supabase
+                        .from('users')
+                        .select('free_tickets')
+                        .eq('id', match.from_user_id)
+                        .single();
+
+                    if (fromUser) {
+                        await supabase
+                            .from('users')
+                            .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                            .eq('id', match.from_user_id);
+                    }
+                }
+
+                await supabase
+                    .from('matches')
+                    .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+                    .eq('id', match.id);
+
+                // A에게 알림
+                await supabase.from('notifications').insert([{
+                    user_id: match.from_user_id,
+                    type: 'match_cancelled',
+                    title: '🚫 매칭이 취소되었어요',
+                    message: `관리자에 의해 대상 카드가 삭제되어 매칭이 취소되었어요. 사용한 매칭권 ${match.a_tickets_used}장이 환급되었어요.`,
+                    link: 'matching',
+                    is_read: false
+                }]);
+            }
+        }
+
+        // 5. 카드 삭제
+        const { error: deleteError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', card_id);
+
+        if (deleteError) throw deleteError;
+
+        // 6. 삭제 로그 저장 (선택)
+        try {
+            await supabase.from('admin_card_deletions').insert([{
+                admin_user_id,
+                target_user_id: card.user_id,
+                card_id,
+                card_type: card.type,
+                reason: reason
+            }]);
+        } catch (logErr) {
+            console.warn('삭제 로그 저장 실패 (무시):', logErr);
+        }
+
+        // 7. 카드 소유자에게 알림
+        await supabase.from('notifications').insert([{
+            user_id: card.user_id,
+            type: 'card_deleted_by_admin',
+            title: '🚫 관리자에 의해 카드가 삭제되었습니다.',
+            message: `회원님의 "${typeLabel}" 카드가 관리자에 의해 삭제되었어요. 삭제사유: ${reason}`,
+            link: 'mypage',
+            is_read: false
+        }]);
+
+        console.log(`🗑️ 관리자(${adminUser.nickname})가 카드 ${card_id} 삭제 (사유: ${reason})`);
+
+        res.json({ 
+            success: true, 
+            deleted_card_id: card_id,
+            owner_nickname: owner?.nickname || '알 수 없음'
+        });
+
+    } catch (error) {
+        console.error('Admin delete card error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  매칭 후기 관련 API
 // ============================================================
 

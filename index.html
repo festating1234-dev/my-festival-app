@@ -1703,6 +1703,41 @@
     </div>
 </div>
 
+<!-- 카드 삭제 사유 모달 -->
+<div class="modal-overlay" id="adminDeleteCardModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="adminDeleteCardClose">&times;</span>
+        <h2>🗑️ 카드 삭제</h2>
+        <div class="subtitle">삭제 사유를 선택해 주세요</div>
+
+        <div id="adminDeleteCardTargetInfo" style="background:rgba(239,68,68,0.05); border-radius:12px; padding:10px; margin:12px 0; font-size:0.65rem; color:#aaa; line-height:1.6; border:1px solid rgba(239,68,68,0.1);"></div>
+
+        <div style="margin:12px 0;">
+            <button class="btn-sm" onclick="confirmAdminDeleteCard(1)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">①</span> 자기소개 불성실
+            </button>
+            <button class="btn-sm" onclick="confirmAdminDeleteCard(2)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">②</span> 욕설 또는 성적 표현 포함
+            </button>
+            <button class="btn-sm" onclick="confirmAdminDeleteCard(3)" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-bottom:6px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">③</span> 버그성 카드 추정
+            </button>
+            <button class="btn-sm" onclick="showAdminDeleteCustomInput()" style="width:100%; padding:10px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; color:#ccc; cursor:pointer;">
+                <span style="font-weight:700;">④</span> 직접 입력
+            </button>
+        </div>
+
+        <!-- 직접 입력 영역 -->
+        <div id="adminDeleteCustomArea" style="display:none;">
+            <div class="form-group">
+                <label>삭제 사유를 직접 입력해주세요</label>
+                <textarea id="adminDeleteCustomInput" placeholder="삭제 사유를 상세히 적어주세요..." style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="confirmAdminDeleteCard(4)" style="width:100%; margin-top:4px;">확인</button>
+        </div>
+    </div>
+</div>
+
 <!-- 후기 반려 사유 선택 모달 -->
 <div class="modal-overlay" id="reviewRejectModal">
     <div class="modal-box" style="max-width: 400px;">
@@ -4601,13 +4636,18 @@ content.innerHTML = `
                     </div>
                 ` : ''}
             </div>
-        ` : `
+                ` : `
             <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                 <div style="font-size:0.6rem; color:#666;">
                     <i class="fas fa-lock"></i> 매칭 성사 후 연락처가 공개됩니다
                 </div>
                 ${!isMyCard && isLoggedIn && !isAdminMode ? `
                     <div style="display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap;">
+                        ${isAdmin ? `
+                        <button class="btn-sm" onclick="event.stopPropagation(); openAdminDeleteCardModal(${profile.id}, ${profile.user_id}, '${profile.school || ''}', ${profile.age || 0}, '${profile.type}')" style="font-size:0.5rem; padding:2px 8px; background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.2);">
+                            🗑️ 관리자 삭제
+                        </button>
+                        ` : ''}
                         <button class="btn-sm danger" onclick="openReportModal(${profile.id}, ${profile.user_id})" style="font-size:0.5rem; padding:2px 8px;">🚨 신고</button>
                         <button class="btn-sm" onclick="event.stopPropagation(); blockUser(${profile.user_id}, '${profile.school || ''}', ${profile.age || 0})" style="font-size:0.5rem; padding:2px 8px; background:rgba(100,100,100,0.15); color:#aaa; border-color:rgba(150,150,150,0.2);">
                             <i class="fas fa-ban"></i> 차단
@@ -6921,6 +6961,99 @@ async function renderReportList() {
         container.innerHTML = '<div style="color:#f87171; font-size:0.6rem;">⚠️ 신고 목록을 불러오는데 실패했습니다.</div>';
     }
 }
+
+    // ============================================================
+//  관리자: 카드 직접 삭제
+// ============================================================
+
+let adminDeleteTarget = null; // { cardId, userId, school, age, type }
+
+// ===== 삭제 모달 열기 =====
+function openAdminDeleteCardModal(cardId, userId, school, age, type) {
+    if (!isAdmin) {
+        showToast('⚠️ 관리자 권한이 필요합니다.');
+        return;
+    }
+
+    adminDeleteTarget = { cardId, userId, school, age, type };
+
+    const typeLabel = type === 'solo' ? '둘이서 (1:1)' :
+                     type === 'group' ? '여럿이서 (다대다)' :
+                     type === 'same' ? '동성친구 찾기' : '카드';
+
+    document.getElementById('adminDeleteCardTargetInfo').innerHTML = `
+        📌 <strong style="color:#fbbf24;">${school}</strong> · ${age}세 · ${typeLabel}<br>
+        <span style="font-size:0.55rem; color:#888;">삭제 시 카드 소유자에게 알림이 발송됩니다.</span>
+    `;
+    document.getElementById('adminDeleteCustomArea').style.display = 'none';
+    document.getElementById('adminDeleteCustomInput').value = '';
+
+    closeModal();
+    document.getElementById('adminDeleteCardModal').classList.add('active');
+}
+
+function closeAdminDeleteCardModal() {
+    document.getElementById('adminDeleteCardModal').classList.remove('active');
+    adminDeleteTarget = null;
+}
+
+function showAdminDeleteCustomInput() {
+    document.getElementById('adminDeleteCustomArea').style.display = 'block';
+}
+
+// ===== 삭제 실행 =====
+async function confirmAdminDeleteCard(reasonCode) {
+    if (!adminDeleteTarget) {
+        showToast('⚠️ 오류가 발생했습니다.');
+        return;
+    }
+
+    let reason = '';
+    if (reasonCode === 1) reason = '자기소개 불성실';
+    else if (reasonCode === 2) reason = '욕설 또는 성적 표현 포함';
+    else if (reasonCode === 3) reason = '버그성 카드 추정';
+    else if (reasonCode === 4) {
+        reason = document.getElementById('adminDeleteCustomInput').value.trim();
+        if (!reason) {
+            showToast('⚠️ 삭제 사유를 입력해주세요.');
+            return;
+        }
+    }
+
+    if (!confirm(`이 카드를 삭제하시겠습니까?\n\n삭제 사유: ${reason}`)) return;
+
+    try {
+        const res = await fetch('/api/admin/delete-card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                card_id: adminDeleteTarget.cardId,
+                reason: reason
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            closeAdminDeleteCardModal();
+            showToast(`✅ 카드가 삭제되었습니다. (소유자: ${data.owner_nickname})`);
+            await fetchProfiles();
+            renderProfiles();
+            console.log('🗑️ 카드 삭제 완료:', data);
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Admin delete card error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('adminDeleteCardClose')?.addEventListener('click', closeAdminDeleteCardModal);
+document.getElementById('adminDeleteCardModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAdminDeleteCardModal();
+});
 
     // ================================================================
     // 17. 이상형 찾기
