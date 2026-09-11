@@ -4034,10 +4034,10 @@ async function renderProfiles() {
     ).length;
 
     // ★ 나를 찜한 카드 중, 현재 모드에서 실제로 나를 찜한 유저의 카드 수
+    // (내가 찜했는지 여부는 상관없음 - 배지 로직과 동일하게)
     const likedByUserIdsForMode = getLikedByUserIdsForMode(currentMode);
     const likedByCountByMode = allProfiles.filter(p =>
         p.type === currentMode &&
-        !likedIds.has(p.id) &&  // (선택) 내가 찜한 카드는 제외할지 여부
         likedByUserIdsForMode.has(String(p.user_id))
     ).length;
 
