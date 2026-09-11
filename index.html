@@ -6409,10 +6409,17 @@ function openEmailVerificationModal() {
 }
 
 function closeEmailVerificationModal() {
+    // 쿨다운 타이머 정리
+    if (resendCooldownTimer) {
+        clearInterval(resendCooldownTimer);
+        resendCooldownTimer = null;
+    }
     document.getElementById('emailVerificationModal').classList.remove('active');
 }
 
-// 인증번호 발송
+// 인증번호 발송 (1분 쿨다운 + 5회 제한)
+let resendCooldownTimer = null;
+
 async function sendVerificationCode() {
     const email = document.getElementById('emailVerificationInput').value.trim();
     if (!email) {
@@ -6422,6 +6429,12 @@ async function sendVerificationCode() {
     if (!email.includes('@')) {
         showToast('⚠️ 올바른 이메일 형식이 아닙니다.');
         return;
+    }
+
+    const sendBtn = document.querySelector('#emailStep1 button.btn-primary');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.style.opacity = '0.5';
     }
 
     try {
@@ -6435,6 +6448,7 @@ async function sendVerificationCode() {
 
         if (!data.valid) {
             showToast('❌ ' + data.message);
+            if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
             return;
         }
 
@@ -6442,31 +6456,92 @@ async function sendVerificationCode() {
         const sendRes = await fetch('/api/send-verification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email, 
-                userId: currentUser.id, 
-                school: currentUser.school 
+            body: JSON.stringify({
+                email,
+                userId: currentUser.id,
+                school: currentUser.school
             })
         });
         const sendData = await sendRes.json();
 
         if (!sendRes.ok) {
+            // ★ 5회 초과
+            if (sendData.code === 'MAX_SEND_EXCEEDED') {
+                if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+                showToast('❌ 이메일 전송 횟수를 초과했어요. 문의하기로 연락주세요.');
+                setTimeout(() => {
+                    if (confirm('이메일 전송 횟수를 초과했습니다.\n\n문의하기로 이동하시겠습니까?')) {
+                        closeEmailVerificationModal();
+                        openInquiry();
+                    }
+                }, 500);
+                return;
+            }
+            // ★ 쿨다운
+            if (sendData.code === 'COOLDOWN') {
+                if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+                showToast(`⏳ ${sendData.remaining_seconds}초 후 다시 시도해주세요.`);
+                return;
+            }
             showToast('❌ ' + sendData.error);
+            if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
             return;
         }
 
-        // 2단계로 전환
+        // 3. 2단계로 전환
         document.getElementById('emailStep1').style.display = 'none';
         document.getElementById('emailStep2').style.display = 'block';
         document.getElementById('emailDisplayForCode').textContent = email;
         emailVerificationData.email = email;
-        showToast('✅ 인증번호가 발송되었습니다! (콘솔에서 확인 가능)');
-        console.log('📧 인증번호:', sendData.code); // 개발용
+        showToast(`✅ 인증번호가 발송되었습니다! (남은 횟수: ${sendData.remaining_sends}회)`);
+
+        // ★ 재발송 버튼 쿨다운 시작
+        startResendCooldown();
     } catch (error) {
         showToast('⚠️ 서버 통신 오류');
         console.error('Send verification error:', error);
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
     }
 }
+
+// ===== 재발송 쿨다운 타이머 =====
+function startResendCooldown() {
+    let remaining = 60;
+    const resendEl = document.querySelector('#emailStep2 span[onclick*="resendVerificationCode"]');
+
+    if (resendCooldownTimer) clearInterval(resendCooldownTimer);
+
+    if (!resendEl) return;
+
+    const updateText = () => {
+        if (remaining > 0) {
+            resendEl.textContent = `⏳ ${remaining}초 후 재발송 가능`;
+            resendEl.style.color = '#888';
+            resendEl.style.cursor = 'not-allowed';
+            resendEl.style.textDecoration = 'none';
+            remaining--;
+        } else {
+            resendEl.textContent = '인증번호 재발송';
+            resendEl.style.color = '#fbbf24';
+            resendEl.style.cursor = 'pointer';
+            resendEl.style.textDecoration = 'underline';
+            clearInterval(resendCooldownTimer);
+            resendCooldownTimer = null;
+        }
+    };
+
+    updateText();
+    resendCooldownTimer = setInterval(updateText, 1000);
+}
+
+// ===== 재발송 =====
+async function resendVerificationCode() {
+    if (resendCooldownTimer) {
+        showToast('⏳ 잠시 후 다시 시도해주세요.');
+        return;
+    }
+    await sendVerificationCode();
+}ㄴ
 
 // 인증번호 확인
 async function verifyEmailCode() {

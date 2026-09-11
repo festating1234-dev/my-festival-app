@@ -414,107 +414,175 @@ app.post('/api/check-email-domain', async (req, res) => {
     }
 });
 
-// 2. 인증번호 발송 (실제 이메일 발송)
+// 2. 인증번호 발송 (1분 쿨다운 + 하루 5회 제한 + 5분 만료)
 app.post('/api/send-verification', async (req, res) => {
     const { email, userId, school } = req.body;
-    
-    // 이메일 도메인 검증
-    const domain = email.split('@')[1];
-    const { data: domainData, error: domainError } = await supabase
-        .from('university_domains')
-        .select('school_name')
-        .eq('domain', domain)
-        .single();
 
-    if (domainError || !domainData || domainData.school_name !== school) {
-        return res.status(400).json({ error: '학교 이메일이 아닙니다.' });
+    if (!email || !userId) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
 
-    // 이미 인증된 이메일인지 확인
-    const { data: existing } = await supabase
-        .from('email_verifications')
-        .select('id')
-        .eq('email', email)
-        .eq('verified', true)
-        .single();
+    try {
+        // ===== 1. 유저 정보 조회 =====
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('email_verify_send_count, email_verify_reset_at, email_verify_last_sent_at')
+            .eq('id', userId)
+            .single();
 
-    if (existing) {
-        return res.status(400).json({ error: '이미 인증된 이메일입니다.' });
+        if (userError || !user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const now = new Date();
+
+        // ===== 2. 카운트 초기화 필요 여부 확인 (다음 자정 지났으면 리셋) =====
+        let sendCount = user.email_verify_send_count || 0;
+        let resetAt = user.email_verify_reset_at ? new Date(user.email_verify_reset_at) : null;
+
+        if (!resetAt || now > resetAt) {
+            sendCount = 0;
+            // 다음 자정 계산
+            const nextMidnight = new Date(now);
+            nextMidnight.setHours(24, 0, 0, 0);
+            resetAt = nextMidnight;
+        }
+
+        // ===== 3. 하루 5회 제한 확인 =====
+        if (sendCount >= 5) {
+            return res.status(429).json({
+                error: '이메일 전송 횟수를 초과했습니다. 문의하기로 연락주세요.',
+                code: 'MAX_SEND_EXCEEDED',
+                reset_at: resetAt
+            });
+        }
+
+        // ===== 4. 1분 쿨다운 확인 =====
+        if (user.email_verify_last_sent_at) {
+            const lastSent = new Date(user.email_verify_last_sent_at);
+            const diffSec = Math.floor((now - lastSent) / 1000);
+            if (diffSec < 60) {
+                return res.status(429).json({
+                    error: `잠시 후 다시 시도해주세요. (${60 - diffSec}초 후 재발송 가능)`,
+                    code: 'COOLDOWN',
+                    remaining_seconds: 60 - diffSec
+                });
+            }
+        }
+
+        // ===== 5. 이메일 도메인 검증 =====
+        const domain = email.split('@')[1];
+        const { data: domainData, error: domainError } = await supabase
+            .from('university_domains')
+            .select('school_name')
+            .eq('domain', domain)
+            .single();
+
+        if (domainError || !domainData || domainData.school_name !== school) {
+            return res.status(400).json({ error: '학교 이메일이 아닙니다.' });
+        }
+
+        // ===== 6. 이미 인증된 이메일인지 확인 =====
+        const { data: existing } = await supabase
+            .from('email_verifications')
+            .select('id')
+            .eq('email', email)
+            .eq('verified', true)
+            .single();
+
+        if (existing) {
+            return res.status(400).json({ error: '이미 인증된 이메일입니다.' });
+        }
+
+        // ===== 7. 인증번호 생성 (5분 만료) =====
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // ★ 5분
+
+        // 기존 인증번호 삭제
+        await supabase
+            .from('email_verifications')
+            .delete()
+            .eq('user_id', userId)
+            .eq('email', email);
+
+        // 새 인증번호 저장
+        const { error: insertError } = await supabase
+            .from('email_verifications')
+            .insert([{ user_id: userId, email, code, expires_at: expiresAt }]);
+
+        if (insertError) {
+            console.error('Insert error:', insertError);
+            return res.status(500).json({ error: '인증번호 저장 중 오류가 발생했습니다.' });
+        }
+
+        // ===== 8. Brevo로 이메일 발송 =====
+        try {
+            const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: {
+                        name: process.env.BREVO_SENDER_NAME || '페스타팅',
+                        email: process.env.BREVO_SENDER_EMAIL
+                    },
+                    to: [{ email: email }],
+                    subject: '[페스타팅] 이메일 인증번호',
+                    htmlContent: `
+                        <div style="font-family: 'Noto Sans KR', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f5f5f5; border-radius: 10px;">
+                            <h2 style="color: #a855f7;">🎉 페스타팅 이메일 인증</h2>
+                            <p style="color: #333;">안녕하세요! 페스타팅입니다.</p>
+                            <p style="color: #333;">아래 인증번호를 입력하시면 이메일 인증이 완료됩니다.</p>
+                            <div style="text-align: center; padding: 16px; background: white; border-radius: 8px; margin: 16px 0;">
+                                <span style="font-size: 28px; font-weight: 700; color: #a855f7; letter-spacing: 6px;">${code}</span>
+                            </div>
+                            <p style="color: #888; font-size: 12px;">⏰ 이 인증번호는 <strong>5분</strong> 후에 만료됩니다.</p>
+                            <p style="color: #888; font-size: 12px;">스팸함에 들어갔다면, 스팸 해제 부탁드려요!</p>
+                            <p style="color: #888; font-size: 12px;">문의사항이 있으시면 카카오톡 ID: <strong>festivalting</strong>으로 연락주세요.</p>
+                            <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
+                            <p style="color: #aaa; font-size: 11px; text-align: center;">본 메일은 발신 전용입니다. 회신하실 필요가 없습니다.</p>
+                        </div>
+                    `
+                })
+            });
+
+            if (!brevoResponse.ok) {
+                const errorBody = await brevoResponse.text();
+                console.error('Brevo API error:', brevoResponse.status, errorBody);
+                throw new Error(`Brevo API 오류 (${brevoResponse.status})`);
+            }
+
+            console.log(`📧 Brevo 인증번호 발송 완료: ${email} → ${code} (오늘 ${sendCount + 1}회차)`);
+        } catch (emailError) {
+            console.error('Brevo email send error:', emailError);
+            return res.status(500).json({
+                error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+            });
+        }
+
+        // ===== 9. 유저 발송 정보 업데이트 =====
+        await supabase
+            .from('users')
+            .update({
+                email_verify_send_count: sendCount + 1,
+                email_verify_reset_at: resetAt.toISOString(),
+                email_verify_last_sent_at: now.toISOString()
+            })
+            .eq('id', userId);
+
+        res.json({
+            success: true,
+            message: '인증번호가 이메일로 발송되었습니다.',
+            send_count: sendCount + 1,
+            remaining_sends: 5 - (sendCount + 1)
+        });
+    } catch (err) {
+        console.error('Send verification error:', err);
+        res.status(500).json({ error: err.message });
     }
-
-    // 6자리 인증번호 생성
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    // 기존 인증번호 삭제 (갱신)
-    await supabase
-        .from('email_verifications')
-        .delete()
-        .eq('user_id', userId)
-        .eq('email', email);
-
-    // 새 인증번호 저장
-    const { error: insertError } = await supabase
-        .from('email_verifications')
-        .insert([{ user_id: userId, email, code, expires_at: expiresAt }]);
-
-    if (insertError) {
-        console.error('Insert error:', insertError);
-        return res.status(500).json({ error: '인증번호 저장 중 오류가 발생했습니다.' });
-    }
-
-    // ===== ★★★ 실제 이메일 발송 (Brevo HTTP API) ★★★ =====
-try {
-    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-            'accept': 'application/json',
-            'api-key': process.env.BREVO_API_KEY,
-            'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-            sender: {
-                name: process.env.BREVO_SENDER_NAME || '페스타팅',
-                email: process.env.BREVO_SENDER_EMAIL
-            },
-            to: [{ email: email }],
-            subject: '[페스타팅] 이메일 인증번호',
-            htmlContent: `
-                <div style="font-family: 'Noto Sans KR', sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f5f5f5; border-radius: 10px;">
-                    <h2 style="color: #a855f7;">🎉 페스타팅 이메일 인증</h2>
-                    <p style="color: #333;">안녕하세요! 페스타팅입니다.</p>
-                    <p style="color: #333;">아래 인증번호를 입력하시면 이메일 인증이 완료됩니다.</p>
-                    <div style="text-align: center; padding: 16px; background: white; border-radius: 8px; margin: 16px 0;">
-                        <span style="font-size: 28px; font-weight: 700; color: #a855f7; letter-spacing: 6px;">${code}</span>
-                    </div>
-                    <p style="color: #888; font-size: 12px;">⏰ 이 인증번호는 10분 후에 만료됩니다.</p>
-                    <p style="color: #888; font-size: 12px;">스팸함에 들어갔다면, 스팸 해제 부탁드려요!</p>
-                    <p style="color: #888; font-size: 12px;">문의사항이 있으시면 카카오톡 ID: <strong>festivalting</strong>으로 연락주세요.</p>
-                    <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
-                    <p style="color: #aaa; font-size: 11px; text-align: center;">본 메일은 발신 전용입니다. 회신하실 필요가 없습니다.</p>
-                </div>
-            `
-        })
-    });
-
-    if (!brevoResponse.ok) {
-        const errorBody = await brevoResponse.text();
-        console.error('Brevo API error:', brevoResponse.status, errorBody);
-        throw new Error(`Brevo API 오류 (${brevoResponse.status})`);
-    }
-
-    console.log(`📧 Brevo 인증번호 발송 완료: ${email} → ${code}`);
-} catch (emailError) {
-    console.error('Brevo email send error:', emailError);
-    return res.status(500).json({
-        error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
-    });
-}
-
-    res.json({ 
-        success: true, 
-        message: '인증번호가 이메일로 발송되었습니다.'
-    });
 });
 
 // 3. 인증번호 확인
