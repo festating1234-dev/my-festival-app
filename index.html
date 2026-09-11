@@ -1518,8 +1518,8 @@
     <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
     <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
     <div class="admin-buttons">
-        <button class="btn-sm" onclick="adminAddDummy()"><i class="fas fa-user-plus"></i> 더미추가</button>
-        <button class="btn-sm" onclick="adminViewUsers()"><i class="fas fa-users"></i> 회원조회</button>
+        <button class="btn-sm" onclick="openDummyModal()"><i class="fas fa-user-plus"></i> 더미추가</button>
+        <button class="btn-sm" onclick="openUserListModal()"><i class="fas fa-users"></i> 회원조회</button>
     </div>
     <div style="margin-top:8px; font-size:0.55rem; color:#666;">
         📌 학생증 인증 대기: <span id="pendingCount">0</span>건
@@ -1832,6 +1832,70 @@
     </div>
 </div>
 
+<!-- 더미 추가 모달 -->
+<div class="modal-overlay" id="adminDummyModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="adminDummyClose">&times;</span>
+        <h2>➕ 더미 프로필 추가</h2>
+        <div class="subtitle">테스트용 가짜 프로필을 생성합니다</div>
+
+        <div style="background:rgba(251,191,36,0.05); border-radius:10px; padding:10px 12px; margin:12px 0; border:1px solid rgba(251,191,36,0.1); font-size:0.6rem; color:#fbbf24; line-height:1.6;">
+            💡 더미 프로필은 실제 유저와 연결되지 않아 매칭/신고 대상이 되지 않아요.<br>
+            삭제하려면 카드 상세에서 "관리자 삭제"를 사용하세요.
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">카드 타입</label>
+            <select id="dummyType" style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none;">
+                <option value="all">🎲 랜덤 (모든 타입)</option>
+                <option value="solo">💕 둘이서 (1:1)</option>
+                <option value="group">🍻 여럿이서 (다대다)</option>
+                <option value="same">👬 동성친구 찾기</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:0.7rem; color:#aaa;">생성 개수 (1~50)</label>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px;">
+                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 1">1</button>
+                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 5">5</button>
+                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 10">10</button>
+                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 20">20</button>
+                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 50">50</button>
+            </div>
+            <input type="number" id="dummyCount" min="1" max="50" value="5" style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none;">
+        </div>
+
+        <button class="btn-primary" onclick="confirmAddDummy()" style="width:100%; margin-top:6px;">
+            <i class="fas fa-user-plus"></i> 더미 프로필 생성
+        </button>
+    </div>
+</div>
+
+<!-- 회원 조회 모달 -->
+<div class="modal-overlay" id="adminUserListModal">
+    <div class="modal-box" style="max-width: 450px; max-height: 80vh; overflow-y: auto;">
+        <span class="close-btn" id="adminUserListClose">&times;</span>
+        <h2>👥 회원 조회</h2>
+        <div class="subtitle" id="adminUserListSubtitle">전체 회원 목록</div>
+
+        <div style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;">
+            <button class="btn-sm primary" id="userListFilterAll" onclick="filterUserList('all')">전체</button>
+            <button class="btn-sm" id="userListFilterBanned" onclick="filterUserList('banned')">🚫 정지</button>
+            <button class="btn-sm" id="userListFilterVerified" onclick="filterUserList('verified')">✅ 인증</button>
+            <button class="btn-sm" id="userListFilterAdmin" onclick="filterUserList('admin')">👑 관리자</button>
+        </div>
+
+        <div style="display:flex; gap:4px; margin-bottom:10px;">
+            <input type="text" id="userListSearch" placeholder="닉네임 검색" oninput="renderUserList()" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none; min-width:0;">
+        </div>
+
+        <div id="adminUserListContainer" style="max-height:50vh; overflow-y:auto;">
+            <div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>
+        </div>
+    </div>
+</div>
+
 <!-- 후기 반려 사유 선택 모달 -->
 <div class="modal-overlay" id="reviewRejectModal">
     <div class="modal-box" style="max-width: 400px;">
@@ -2133,8 +2197,181 @@ function hasCardForMode(mode) {
     return allProfiles.some(p => p.user_id === currentUser.id && p.type === mode);
 }
 
-// ===== 관리자: 신고 대상 카드 관리 액션 =====
+// ============================================================
+//  관리자: 더미 추가
+// ============================================================
 
+function openDummyModal() {
+    if (!isAdmin) return;
+    document.getElementById('dummyType').value = 'all';
+    document.getElementById('dummyCount').value = 5;
+    document.getElementById('adminDummyModal').classList.add('active');
+}
+
+function closeDummyModal() {
+    document.getElementById('adminDummyModal').classList.remove('active');
+}
+
+async function confirmAddDummy() {
+    if (!isAdmin) return;
+
+    const count = parseInt(document.getElementById('dummyCount').value);
+    const type = document.getElementById('dummyType').value;
+
+    if (isNaN(count) || count < 1 || count > 50) {
+        showToast('⚠️ 1~50 사이의 개수를 입력해주세요.');
+        return;
+    }
+
+    if (!confirm(`더미 프로필 ${count}개를 생성하시겠습니까?`)) return;
+
+    try {
+        const res = await fetch('/api/admin/add-dummy-profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                admin_user_id: currentUser.id,
+                count: count,
+                type: type
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            closeDummyModal();
+            showToast(`✅ 더미 프로필 ${data.count}개가 생성되었습니다.`);
+            await fetchProfiles();
+            renderProfiles();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Add dummy error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+document.getElementById('adminDummyClose')?.addEventListener('click', closeDummyModal);
+document.getElementById('adminDummyModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDummyModal();
+});
+
+// ============================================================
+//  관리자: 회원 조회
+// ============================================================
+
+let userListFilter = 'all';
+
+function openUserListModal() {
+    if (!isAdmin) return;
+    userListFilter = 'all';
+    document.getElementById('userListSearch').value = '';
+    
+    // 필터 버튼 초기화
+    ['all', 'banned', 'verified', 'admin'].forEach(f => {
+        const btn = document.getElementById(`userListFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
+        if (btn) {
+            if (f === 'all') btn.classList.add('primary');
+            else btn.classList.remove('primary');
+        }
+    });
+
+    document.getElementById('adminUserListModal').classList.add('active');
+    renderUserList();
+}
+
+function closeUserListModal() {
+    document.getElementById('adminUserListModal').classList.remove('active');
+}
+
+function filterUserList(filter) {
+    userListFilter = filter;
+    ['all', 'banned', 'verified', 'admin'].forEach(f => {
+        const btn = document.getElementById(`userListFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
+        if (btn) {
+            if (f === filter) btn.classList.add('primary');
+            else btn.classList.remove('primary');
+        }
+    });
+    renderUserList();
+}
+
+async function renderUserList() {
+    const container = document.getElementById('adminUserListContainer');
+    const keyword = document.getElementById('userListSearch')?.value.trim().toLowerCase() || '';
+    const subtitle = document.getElementById('adminUserListSubtitle');
+
+    container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
+
+    try {
+        // 최신 유저 목록 로드
+        await fetchUsers();
+
+        let filtered = [...allUsers];
+
+        // 필터 적용
+        if (userListFilter === 'banned') {
+            filtered = filtered.filter(u => u.is_banned);
+        } else if (userListFilter === 'verified') {
+            filtered = filtered.filter(u => u.email_verified || u.card_status === 'approved');
+        } else if (userListFilter === 'admin') {
+            filtered = filtered.filter(u => u.is_admin);
+        }
+
+        // 검색어 필터
+        if (keyword) {
+            filtered = filtered.filter(u =>
+                (u.nickname || '').toLowerCase().includes(keyword)
+            );
+        }
+
+        // 통계 표시
+        if (subtitle) {
+            subtitle.textContent = `전체 ${allUsers.length}명 · 현재 표시: ${filtered.length}명`;
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 해당하는 회원이 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(u => {
+            const badges = [];
+            if (u.is_admin) badges.push('<span style="background:rgba(251,191,36,0.2); color:#fbbf24; padding:1px 5px; border-radius:10px; font-size:0.45rem;">👑 관리자</span>');
+            if (u.is_banned) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">🚫 정지</span>');
+            if (u.email_verified) badges.push('<span style="background:rgba(74,222,128,0.2); color:#4ade80; padding:1px 5px; border-radius:10px; font-size:0.45rem;">✅ 메일</span>');
+            if (u.card_status === 'approved') badges.push('<span style="background:rgba(96,165,250,0.2); color:#60a5fa; padding:1px 5px; border-radius:10px; font-size:0.45rem;">✅ 학생증</span>');
+            if (u.match_blocked) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">매칭X</span>');
+            if (u.report_blocked) badges.push('<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:1px 5px; border-radius:10px; font-size:0.45rem;">신고X</span>');
+
+            html += `
+                <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:150px;">
+                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">
+                            ${u.nickname} ${badges.join(' ')}
+                        </div>
+                        <div style="font-size:0.55rem; color:#888;">
+                            ${u.school || ''} · ${u.gender === 'female' ? '♀' : '♂'} ${u.age || '?'}세 · 🎫 ${u.free_tickets || 0}장
+                        </div>
+                    </div>
+                    <button class="btn-sm primary" onclick="closeUserListModal(); openUserManageModal(${u.id})" style="font-size:0.5rem;">관리하기</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Render user list error:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.65rem; padding:20px 0; text-align:center;">⚠️ 회원 목록을 불러오지 못했습니다.</div>';
+    }
+}
+
+document.getElementById('adminUserListClose')?.addEventListener('click', closeUserListModal);
+document.getElementById('adminUserListModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeUserListModal();
+});
+
+// ===== 관리자: 신고 대상 카드 관리 액션 =====
 
 // 1. 카드 삭제 + 신고 수리 (자동)
 async function adminDeleteCardAndDismiss(cardId, reportId) {

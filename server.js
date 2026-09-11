@@ -2256,6 +2256,96 @@ app.post('/api/admin/delete-card', async (req, res) => {
 });
 
 // ============================================================
+//  관리자: 더미 프로필 생성
+// ============================================================
+
+app.post('/api/admin/add-dummy-profiles', async (req, res) => {
+    const { admin_user_id, count, type } = req.body;
+
+    if (!admin_user_id || !count || count < 1 || count > 50) {
+        return res.status(400).json({ error: '1~50 사이의 개수를 입력해주세요.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 더미 데이터 풀
+        const EMOJIS = ['🐶','🐱','🦊','🐰','🐻','🐼','🐨','🦝','🐯','🦁','🐸','🐷','🐹','🐮'];
+        const SCHOOLS = [
+            '서울대학교', '연세대학교', '고려대학교', '서강대학교', '성균관대학교',
+            '한양대학교', '중앙대학교', '경희대학교', '이화여자대학교', '홍익대학교',
+            '건국대학교', '동국대학교', '국민대학교', '숙명여자대학교', '숭실대학교'
+        ];
+        const MAJORS = ['이공계열','어문계열','상경계열','예체능','메디컬','서비스','기타계열'];
+        const ANIMALS = ['🐶 강아지상','🐱 고양이상','🐰 토끼상','🦊 여우상','🐻 곰상','🦕 공룡상'];
+        const REGIONS = ['서울특별시','경기도','인천광역시','부산광역시','대구광역시','대전광역시'];
+        const INTROS = [
+            '안녕하세요! 긍정적인 에너지를 가진 사람이에요. 함께 즐거운 추억 만들어요!',
+            '조용한 편이지만 친해지면 재밌어요. 축제 같이 즐기실 분 찾아요!',
+            '맛집 탐방 좋아하고, 새로운 거 배우는 걸 즐겨요.',
+            '운동 좋아하고 밝은 성격이에요. 편하게 연락주세요!',
+            '음악 듣는 걸 좋아하고, 카페 투어 즐겨요.',
+            '축제 처음이라 두근두근해요! 좋은 인연 만들고 싶어요.',
+            '영화랑 드라마 자주 보고, 사진 찍는 것도 좋아해요.',
+            '밝고 활발한 성격이에요. 새로운 친구 만나고 싶어요!'
+        ];
+
+        const types = type === 'all' ? ['solo', 'group', 'same'] : [type || 'solo'];
+
+        const newProfiles = [];
+        for (let i = 0; i < count; i++) {
+            const gender = Math.random() > 0.5 ? 'female' : 'male';
+            const profileType = types[Math.floor(Math.random() * types.length)];
+            const intro = INTROS[Math.floor(Math.random() * INTROS.length)];
+
+            newProfiles.push({
+                user_id: null,
+                type: profileType,
+                emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+                school: SCHOOLS[Math.floor(Math.random() * SCHOOLS.length)],
+                major: MAJORS[Math.floor(Math.random() * MAJORS.length)],
+                grade: (18 + Math.floor(Math.random() * 8)) + '학번',
+                gender: gender,
+                age: 18 + Math.floor(Math.random() * 8),
+                height: gender === 'female' ? 155 + Math.floor(Math.random() * 20) : 168 + Math.floor(Math.random() * 20),
+                animal: ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
+                region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
+                detail: intro,
+                preview: intro.slice(0, 18) + '...',
+                likes: Math.floor(Math.random() * 30)
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .insert(newProfiles)
+            .select();
+
+        if (error) throw error;
+
+        console.log(`✅ 관리자가 더미 프로필 ${data.length}개 생성`);
+
+        res.status(201).json({ 
+            success: true, 
+            count: data.length,
+            profiles: data
+        });
+    } catch (error) {
+        console.error('Add dummy profiles error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  매칭 후기 관련 API
 // ============================================================
 
