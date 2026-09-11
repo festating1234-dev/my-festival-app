@@ -5633,7 +5633,9 @@ async function cancelMatch(matchId) {
     // ================================================================
     // 11. 매칭 현황
     // ================================================================
-    function openMatchingStatus() {
+   function openMatchingStatus() {
+    console.log('🚨 openMatchingStatus called (강제 종료)');
+    return;  // ★★★ 임시로 강제 종료! ★★★
     // ★★★ 임시 추적 코드 (원인 찾으면 삭제 예정) ★★★
     console.log('🚨🚨🚨 openMatchingStatus 호출됨!');
     console.trace('호출 스택:');
