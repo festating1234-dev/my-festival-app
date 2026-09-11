@@ -2814,6 +2814,7 @@ async function loadNotifications() {
         notifications.forEach(n => {
             const isUnread = !n.is_read;
             const time = new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const isReviewRejected = n.type === 'review_rejected';
 
             html += `
                 <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; transition:0.2s; position:relative;">
@@ -2826,9 +2827,16 @@ async function loadNotifications() {
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
                         ${isUnread ? '<div style="font-size:0.45rem; color:#a855f7;">● 새 알림</div>' : '<div></div>'}
-                        <button class="btn-sm danger" onclick="event.stopPropagation(); deleteNotification(${n.id})" style="font-size:0.45rem; padding:2px 8px;">
-                            <i class="fas fa-trash"></i> 삭제
-                        </button>
+                        <div style="display:flex; gap:4px;">
+                            ${isReviewRejected && n.card_id ? `
+                                <button class="btn-sm primary" onclick="event.stopPropagation(); openMatchingFromReviewNotification(${n.card_id}, ${n.id})" style="font-size:0.45rem; padding:2px 8px;">
+                                    ✍️ 리뷰 다시 작성하기
+                                </button>
+                            ` : ''}
+                            <button class="btn-sm danger" onclick="event.stopPropagation(); deleteNotification(${n.id})" style="font-size:0.45rem; padding:2px 8px;">
+                                <i class="fas fa-trash"></i> 삭제
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2843,7 +2851,6 @@ async function loadNotifications() {
 
 // 알림 클릭 처리
 async function handleNotificationClick(notificationId, link, type, cardId) {
-    
     // 읽음 처리
     try {
         await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
@@ -2853,7 +2860,14 @@ async function handleNotificationClick(notificationId, link, type, cardId) {
 
     closeNotificationModal();
 
-    // ===== 🆕 '찜' 알림: 해당 카드 상세 모달 띄우기 =====
+    // ===== 🆕 리뷰 반려 알림: 클릭해도 탭 이동하지 않음 =====
+    if (type === 'review_rejected') {
+        // '리뷰 다시 작성하기' 버튼으로만 열 수 있음
+        updateNotificationBadge();
+        return;
+    }
+
+    // ===== '찜' 알림: 해당 카드 상세 모달 띄우기 =====
     if (type === 'liked' && cardId) {
         const profile = allProfiles.find(p => p.id === cardId);
         if (profile) {
@@ -2947,6 +2961,40 @@ async function updateNotificationBadge() {
         }
     } catch (error) {
         console.error('Badge update error:', error);
+    }
+}
+
+// ===== 리뷰 반려 알림에서 매칭 상세 열기 =====
+function openMatchingFromReviewNotification(cardId, notificationId) {
+    if (!cardId) {
+        showToast('⚠️ 매칭 정보를 찾을 수 없습니다.');
+        return;
+    }
+
+    // 매칭 상대 카드 찾기
+    const profile = allProfiles.find(p => p.id === cardId);
+    if (!profile) {
+        showToast('⚠️ 해당 카드를 찾을 수 없습니다.');
+        return;
+    }
+
+    // 성사된 매칭에서 찾기 (matchingData.matched)
+    const matched = (matchingData?.matched || []).find(m => String(m.cardId) === String(cardId));
+
+    if (!matched) {
+        showToast('⚠️ 매칭 정보를 찾을 수 없습니다. 매칭 현황을 확인해주세요.');
+        return;
+    }
+
+    // 매칭 상세 모달 열기
+    closeNotificationModal();
+    showProfileDetailFromMatching(cardId, matched.phone, matched.school, matched.id);
+
+    // 알림 읽음 처리
+    if (notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' })
+            .then(() => updateNotificationBadge())
+            .catch(err => console.error('읽음 처리 오류:', err));
     }
 }
 
