@@ -34,6 +34,95 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
+// ============================================================
+//  매칭권 관련 헬퍼 함수
+// ============================================================
+
+// 매칭권 비용 계산
+// 반환: { a: A가 쓸 매칭권, b: B가 쓸 매칭권 }
+function calculateTicketCost(cardType, matchType) {
+    // 동성친구: A만 1장
+    if (cardType === 'same') {
+        return { a: 1, b: 0 };
+    }
+    // 슈퍼매칭: A만 2장
+    if (matchType === 'premium') {
+        return { a: 2, b: 0 };
+    }
+    // 일반매칭: A 1장 + B 1장
+    return { a: 1, b: 1 };
+}
+
+// 만료된 pending 매칭 처리 (Lazy Evaluation)
+// - 특정 유저와 관련된 만료된 매칭을 찾아 A의 매칭권 환급 + status='expired'
+async function processExpiredMatches(userId) {
+    try {
+        // 해당 유저의 카드 ID 목록
+        const { data: myCards } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', userId);
+
+        const myCardIds = (myCards || []).map(c => c.id);
+
+        // 만료된 pending 매칭 조회 (내가 신청자이거나, 내 카드가 수신 대상인 경우)
+        let query = supabase
+            .from('matches')
+            .select('*')
+            .eq('status', 'pending')
+            .lt('expires_at', new Date().toISOString());
+
+        if (myCardIds.length > 0) {
+            query = query.or(`from_user_id.eq.${userId},to_card_id.in.(${myCardIds.join(',')})`);
+        } else {
+            query = query.eq('from_user_id', userId);
+        }
+
+        const { data: expiredMatches } = await query;
+
+        if (!expiredMatches || expiredMatches.length === 0) return;
+
+        // 각 만료 매칭 처리
+        for (const match of expiredMatches) {
+            // A의 매칭권 환급
+            if (match.a_tickets_used > 0) {
+                const { data: fromUser } = await supabase
+                    .from('users')
+                    .select('free_tickets')
+                    .eq('id', match.from_user_id)
+                    .single();
+
+                if (fromUser) {
+                    await supabase
+                        .from('users')
+                        .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                        .eq('id', match.from_user_id);
+                }
+            }
+
+            // 매칭 상태 만료 처리
+            await supabase
+                .from('matches')
+                .update({ status: 'expired', responded_at: new Date().toISOString() })
+                .eq('id', match.id);
+
+            // A에게 알림
+            await supabase.from('notifications').insert([{
+                user_id: match.from_user_id,
+                type: 'match_expired',
+                title: '⏰ 매칭이 자동 취소되었어요',
+                message: '매칭 상대방의 무응답으로 매칭이 자동 취소되었어요. 사용했던 매칭권은 환급되었어요.',
+                link: 'matching',
+                is_read: false
+            }]);
+
+            console.log(`⏰ 매칭 ${match.id} 만료 처리 완료 (A 환급: ${match.a_tickets_used}장)`);
+        }
+    } catch (error) {
+        console.error('Process expired matches error:', error);
+    }
+}
+
 // ---------------------- 추천인/이벤트 코드 설정 ----------------------
 
 // 6자리 랜덤 코드 생성 (숫자 + 소문자)
@@ -791,9 +880,16 @@ app.post('/api/likes', async (req, res) => {
 //  4.  매칭 관련 API
 // ============================================================
 
-// 4-1. 매칭 목록 조회 (★ 추가됨)
+// 4-1. 매칭 목록 조회 (Lazy 만료 처리 포함)
 app.get('/api/matches', async (req, res) => {
+    const { userId } = req.query;
+
     try {
+        // 로그인 유저가 있으면 만료 처리 먼저 실행
+        if (userId) {
+            await processExpiredMatches(userId);
+        }
+
         const { data, error } = await supabase
             .from('matches')
             .select('*')
@@ -807,27 +903,112 @@ app.get('/api/matches', async (req, res) => {
     }
 });
 
-// 4-2. 매칭 신청
+// 4-2. 매칭 신청 (선불제: A가 신청 시 매칭권 즉시 차감)
 app.post('/api/matches', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('matches')
-            .insert([req.body])
-            .select();
+    const { from_user_id, to_card_id, type } = req.body;
 
-        if (error) {
-            console.error('Match insert error:', error);
-            return res.status(400).json({ error: error.message });
+    if (!from_user_id || !to_card_id) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // 1. 대상 카드의 타입 확인
+        const { data: targetCard } = await supabase
+            .from('profiles')
+            .select('id, type, user_id')
+            .eq('id', to_card_id)
+            .single();
+
+        if (!targetCard) {
+            return res.status(404).json({ error: '대상 카드를 찾을 수 없습니다.' });
         }
 
-        res.status(201).json(data[0]);
+        // 2. 매칭권 비용 계산
+        const cost = calculateTicketCost(targetCard.type, type);
+
+        // 3. A의 매칭권 확인
+        const { data: fromUser } = await supabase
+            .from('users')
+            .select('free_tickets, nickname')
+            .eq('id', from_user_id)
+            .single();
+
+        if (!fromUser) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const currentTickets = fromUser.free_tickets || 0;
+        if (currentTickets < cost.a) {
+            return res.status(400).json({ 
+                error: `매칭권이 부족합니다. (필요: ${cost.a}장, 보유: ${currentTickets}장)`,
+                needed: cost.a,
+                owned: currentTickets
+            });
+        }
+
+        // 4. 이미 신청한 매칭인지 확인 (pending 상태)
+        const { data: existing } = await supabase
+            .from('matches')
+            .select('id')
+            .eq('from_user_id', from_user_id)
+            .eq('to_card_id', to_card_id)
+            .eq('status', 'pending')
+            .limit(1);
+
+        if (existing && existing.length > 0) {
+            return res.status(400).json({ error: '이미 신청한 매칭입니다.' });
+        }
+
+        // 5. A의 매칭권 즉시 차감
+        await supabase
+            .from('users')
+            .update({ free_tickets: currentTickets - cost.a })
+            .eq('id', from_user_id);
+
+        // 6. 매칭 저장 (3일 만료)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 3);
+
+        const { data, error } = await supabase
+            .from('matches')
+            .insert([{
+                from_user_id,
+                to_card_id,
+                type: type || 'normal',
+                status: 'pending',
+                a_tickets_used: cost.a,
+                b_tickets_used: 0,
+                expires_at: expiresAt.toISOString()
+            }])
+            .select();
+
+        if (error) throw error;
+
+        // 7. 알림 발송 (B에게)
+        if (targetCard.user_id) {
+            await supabase.from('notifications').insert([{
+                user_id: targetCard.user_id,
+                type: 'match_request',
+                title: '💌 새 매칭 신청이 도착했어요!',
+                message: `${fromUser.nickname || '누군가'}님이 매칭을 신청했어요. 3일 내에 응답해주세요!`,
+                link: 'matching',
+                is_read: false
+            }]);
+        }
+
+        res.status(201).json({ 
+            success: true, 
+            match: data[0],
+            tickets_used: cost.a,
+            tickets_remaining: currentTickets - cost.a
+        });
     } catch (err) {
-        console.error('Server error:', err);
+        console.error('Match create error:', err);
         res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
     }
 });
 
-// 4-3. 매칭 응답 (수락/거절)
+// 4-3. 매칭 응답 (수락/거절) - 선불제
 app.put('/api/matches/:id', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -837,19 +1018,198 @@ app.put('/api/matches/:id', async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase
+        // 1. 매칭 정보 조회
+        const { data: match, error: fetchError } = await supabase
             .from('matches')
-            .update({ status, responded_at: new Date() })
+            .select('*')
             .eq('id', id)
-            .select();
+            .single();
 
-        if (error) throw error;
-        if (data.length === 0) {
+        if (fetchError || !match) {
             return res.status(404).json({ error: '매칭을 찾을 수 없습니다.' });
         }
-        res.json(data[0]);
+
+        if (match.status !== 'pending') {
+            return res.status(400).json({ error: '이미 처리된 매칭입니다.' });
+        }
+
+        // 2. 대상 카드 타입 확인
+        const { data: targetCard } = await supabase
+            .from('profiles')
+            .select('id, type, user_id')
+            .eq('id', match.to_card_id)
+            .single();
+
+        const cardType = targetCard?.type || 'solo';
+        const cost = calculateTicketCost(cardType, match.type);
+
+        // ===== 거절 처리 =====
+        if (status === 'rejected') {
+            // A 매칭권 환급
+            if (match.a_tickets_used > 0) {
+                const { data: fromUser } = await supabase
+                    .from('users')
+                    .select('free_tickets')
+                    .eq('id', match.from_user_id)
+                    .single();
+
+                if (fromUser) {
+                    await supabase
+                        .from('users')
+                        .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                        .eq('id', match.from_user_id);
+                }
+            }
+
+            await supabase
+                .from('matches')
+                .update({ status: 'rejected', responded_at: new Date().toISOString() })
+                .eq('id', id);
+
+            // A에게 알림
+            await supabase.from('notifications').insert([{
+                user_id: match.from_user_id,
+                type: 'match_rejected',
+                title: '💔 매칭이 거절되었습니다.',
+                message: `상대방이 매칭을 거절했어요. 사용했던 매칭권 ${match.a_tickets_used}장이 환급되었어요.`,
+                link: 'matching',
+                is_read: false
+            }]);
+
+            return res.json({ success: true, action: 'rejected', refunded: match.a_tickets_used });
+        }
+
+        // ===== 수락 처리 =====
+        // B의 매칭권 확인 (필요한 경우만)
+        if (cost.b > 0) {
+            const { data: toUser } = await supabase
+                .from('users')
+                .select('free_tickets')
+                .eq('id', targetCard.user_id)
+                .single();
+
+            const toUserTickets = toUser?.free_tickets || 0;
+            if (toUserTickets < cost.b) {
+                return res.status(400).json({ 
+                    error: `매칭권이 부족합니다. (필요: ${cost.b}장, 보유: ${toUserTickets}장)`,
+                    needed: cost.b,
+                    owned: toUserTickets
+                });
+            }
+
+            // B 매칭권 차감
+            await supabase
+                .from('users')
+                .update({ free_tickets: toUserTickets - cost.b })
+                .eq('id', targetCard.user_id);
+        }
+
+        // 매칭 성사
+        await supabase
+            .from('matches')
+            .update({ 
+                status: 'accepted', 
+                responded_at: new Date().toISOString(),
+                b_tickets_used: cost.b
+            })
+            .eq('id', id);
+
+        // A에게 알림
+        await supabase.from('notifications').insert([{
+            user_id: match.from_user_id,
+            type: 'match_accepted',
+            title: '💌 매칭이 수락되었습니다!',
+            message: '상대방이 매칭을 수락했어요. 연락처를 확인해보세요!',
+            link: 'matching',
+            is_read: false
+        }]);
+
+        res.json({ success: true, action: 'accepted', b_tickets_used: cost.b });
     } catch (err) {
         console.error('Match update error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4-4. 매칭 신청 취소 (A가 pending 매칭 취소 → 환급)
+app.delete('/api/matches/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { data: match, error: fetchError } = await supabase
+            .from('matches')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !match) {
+            return res.status(404).json({ error: '매칭을 찾을 수 없습니다.' });
+        }
+
+        // 본인의 매칭인지 확인
+        if (String(match.from_user_id) !== String(userId)) {
+            return res.status(403).json({ error: '본인의 매칭만 취소할 수 있습니다.' });
+        }
+
+        if (match.status !== 'pending') {
+            return res.status(400).json({ error: '대기 중인 매칭만 취소할 수 있습니다.' });
+        }
+
+        // A 매칭권 환급
+        if (match.a_tickets_used > 0) {
+            const { data: fromUser } = await supabase
+                .from('users')
+                .select('free_tickets')
+                .eq('id', match.from_user_id)
+                .single();
+
+            if (fromUser) {
+                await supabase
+                    .from('users')
+                    .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                    .eq('id', match.from_user_id);
+            }
+        }
+
+        // 매칭 취소 처리
+        await supabase
+            .from('matches')
+            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+            .eq('id', id);
+
+        res.json({ success: true, refunded: match.a_tickets_used });
+    } catch (err) {
+        console.error('Match cancel error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4-5. 사용 중인 매칭권 개수 조회 (pending 상태인 A의 매칭권 합계)
+app.get('/api/matches/in-use-tickets', async (req, res) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: '사용자 ID가 필요합니다.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('matches')
+            .select('a_tickets_used')
+            .eq('from_user_id', userId)
+            .eq('status', 'pending');
+
+        if (error) throw error;
+
+        const inUse = (data || []).reduce((sum, m) => sum + (m.a_tickets_used || 0), 0);
+        res.json({ in_use: inUse });
+    } catch (err) {
+        console.error('In-use tickets error:', err);
         res.status(500).json({ error: err.message });
     }
 });
