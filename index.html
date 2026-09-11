@@ -4458,7 +4458,7 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
     let schoolDisplay = profile.school;
     let majorDisplay = profile.major;
     if (profile.user_id !== null) {
-        const owner = allUsers.find(u => u.id === profile.user_id);
+        const owner = allUsers.find(u => String(u.id) === String(profile.user_id));
         if (owner) {
             if (owner.hide_school) schoolDisplay = '학교비공개';
             if (owner.hide_major) majorDisplay = '계열비공개';
@@ -4472,6 +4472,16 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
 
     const genderText = profile.gender === 'female' ? '여성' : '남성';
 
+    // ===== 🆕 매칭 이력 확인 =====
+    const previousMatches = isLoggedIn ? allMatches.filter(m =>
+        String(m.from_user_id) === String(currentUserId) &&
+        String(m.to_card_id) === String(profile.id)
+    ) : [];
+
+    const hasAccepted = previousMatches.some(m => m.status === 'accepted');
+    const hasPending = previousMatches.some(m => m.status === 'pending');
+    const hasRejected = previousMatches.some(m => ['rejected', 'cancelled', 'expired'].includes(m.status));
+
     let showMatchBtn = false;
     if (isLoggedIn && !isMyCard && hasCardForMode(currentMode)) {
         if (currentMode === 'same') {
@@ -4480,6 +4490,21 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
             if (currentUser && profile.gender !== currentUser.gender) {
                 showMatchBtn = true;
             }
+        }
+    }
+
+    // ===== 매칭 버튼 HTML 결정 =====
+    let matchButtonHtml = '';
+    if (!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender))) {
+        if (hasAccepted) {
+            // 이미 매칭 성사된 상대
+            matchButtonHtml = `<button class="btn-sm" disabled style="flex:1; opacity:0.5; cursor:not-allowed;">✅ 이미 매칭이 성사되었던 상대입니다</button>`;
+        } else if (hasPending) {
+            // 이미 신청 중
+            matchButtonHtml = `<button class="btn-sm" disabled style="flex:1; opacity:0.5; cursor:not-allowed;">⏳ 이미 매칭 신청 중입니다</button>`;
+        } else {
+            // 신규 또는 이전 이력 있음 (재신청 가능)
+            matchButtonHtml = `<button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>`;
         }
     }
 
@@ -4499,9 +4524,7 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         <button class="btn-sm danger" onclick="closeModal(); deleteCard(${profile.id})" style="flex:1;"><i class="fas fa-trash"></i> 삭제</button>
     ` : ''}
     ${!isLoggedIn ? `<button class="btn-sm primary" onclick="switchToLogin()" style="flex:1;"><i class="fas fa-sign-in-alt"></i> 로그인</button>` : ''}
-    ${!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender)) ? `
-    <button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>
-` : ''}
+    ${matchButtonHtml}
     <button class="btn-sm" onclick="closeModal()" style="flex:1;">닫기</button>
 </div>
         ${!showMatchBtn && !isMyCard && isLoggedIn && currentMode !== 'same' ? '' : ''}
@@ -4586,6 +4609,21 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
         document.getElementById('cardRequiredModal').classList.add('active');
         return;
     }
+
+    // ===== 🆕 이전 매칭 이력 확인 (거절/취소/만료) =====
+    const previousMatches = allMatches.filter(m =>
+        String(m.from_user_id) === String(currentUserId) &&
+        String(m.to_card_id) === String(cardId)
+    );
+    const hasRejectedHistory = previousMatches.some(m =>
+        ['rejected', 'cancelled', 'expired'].includes(m.status)
+    );
+
+    if (hasRejectedHistory) {
+        const confirmed = confirm('이전에 매칭 신청 했었던 유저입니다.\n다시 한 번 매칭 신청하겠습니까?');
+        if (!confirmed) return;
+    }
+
     openMatchingTypeSelection(cardId);
 }
 
