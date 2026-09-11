@@ -2417,8 +2417,23 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
             .eq('id', admin_user_id)
             .single();
 
-        if (!admin?.is_admin) {
+                if (!admin?.is_admin) {
             return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // ★★★ 자기 자신 또는 다른 관리자를 제한하지 못하도록 방지 ★★★
+        if (String(admin_user_id) === String(id)) {
+            return res.status(403).json({ error: '본인 계정은 제한할 수 없습니다.' });
+        }
+
+        const { data: targetUser } = await supabase
+            .from('users')
+            .select('is_admin, nickname')
+            .eq('id', id)
+            .single();
+
+        if (targetUser?.is_admin) {
+            return res.status(403).json({ error: '관리자 계정은 제한할 수 없습니다.' });
         }
 
         // 업데이트할 필드 구성
