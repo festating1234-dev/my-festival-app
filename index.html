@@ -1424,7 +1424,14 @@
     <span class="label">내 추천인 코드</span>
     <span class="value" id="profileReferralCode" style="font-family: 'Courier New', monospace; letter-spacing:2px; color:#fbbf24;">------</span>
 </div>
-                    <div class="profile-row"><span class="label">무료 매치권</span><span class="value" id="freeTicketDisplay">0장</span></div>
+                    <div class="profile-row">
+    <span class="label">무료 매치권</span>
+    <span class="value" id="freeTicketDisplay">0장</span>
+</div>
+<div class="profile-row">
+    <span class="label">사용 중 매칭권</span>
+    <span class="value" id="inUseTicketDisplay" style="color:#fbbf24;">0장</span>
+</div>
                 </div>
 
                 <!-- 개인정보 숨기기 설정 (별도 섹션) -->
@@ -3498,6 +3505,22 @@ async function fetchBlocks() {
             return [];
         }
     }
+
+    // ===== 사용 중 매칭권 개수 불러오기 =====
+async function fetchInUseTickets() {
+    if (!currentUserId) return 0;
+    try {
+        const res = await fetch(`/api/matches/in-use-tickets?userId=${currentUserId}`);
+        if (res.ok) {
+            const data = await res.json();
+            return data.in_use || 0;
+        }
+        return 0;
+    } catch (error) {
+        console.error('사용 중 매칭권 로드 오류:', error);
+        return 0;
+    }
+}
 
     // ================================================================
     // 5. 데이터 로드/저장 (서버 기반)
@@ -6155,6 +6178,26 @@ function updateUI() {
     document.getElementById('profilePhone').textContent = currentUser.phone || '-';
     document.getElementById('profileReferralCode').textContent = currentUser.referral_code || '------';
     document.getElementById('freeTicketDisplay').textContent = (currentUser.free_tickets || 0) + '장';
+
+// 사용 중 매칭권 표시 (비동기)
+const inUseEl = document.getElementById('inUseTicketDisplay');
+if (inUseEl) {
+    // 일단 캐시된 값으로 표시 후, 서버에서 최신값 조회
+    const cachedInUse = matchingData?.sent
+        ?.filter(m => m.status === 'pending')
+        ?.reduce((sum, m) => sum + (m.a_tickets_used || 0), 0) || 0;
+    inUseEl.textContent = cachedInUse + '장';
+
+    // 서버에서 최신값 조회 (실패해도 무시)
+    fetch(`/api/matches/in-use-tickets?userId=${currentUser.id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (typeof data.in_use === 'number') {
+                inUseEl.textContent = data.in_use + '장';
+            }
+        })
+        .catch(err => console.error('사용 중 매칭권 조회 오류:', err));
+}
 
     // ===== 5. 개인정보 숨기기 상태 =====
     document.getElementById('profileHideSchool').textContent = currentUser.hide_school ? '✅' : '❌';
