@@ -1512,13 +1512,6 @@
     </div>
 </div>
 
-                    <div style="background:linear-gradient(135deg, rgba(168,85,247,0.06), rgba(124,58,237,0.02)); border-radius:14px; padding:12px; margin-top:10px; border:1px solid rgba(168,85,247,0.08);">
-                        <div style="font-weight:700; font-size:0.8rem;">🎁 내 혜택</div>
-                        <div id="benefitDisplay" style="font-size:0.7rem; color:#aaa; margin-top:3px;">
-                            🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>
-                            🔹 학생증 인증: ❌ ('나를찜한' 확인 불가)
-                        </div>
-                    </div>
                 </div>
 
                <div id="adminPanel" class="admin-panel hidden">
@@ -6379,21 +6372,6 @@ function updateUI() {
         if (cardVerifyDesc) cardVerifyDesc.style.display = 'block';
         if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'flex';
     }
-
-    // ===== 9. 혜택 표시 =====
-    const benefit = document.getElementById('benefitDisplay');
-    let html = '';
-    if (isEmailVerified) {
-        html += '🔹 학교메일 인증: ✅ (무료 매치권 ' + (currentUser.free_tickets || 0) + '장)<br>';
-    } else {
-        html += '🔹 학교메일 인증: ❌ (무료 매치권 0장)<br>';
-    }
-    if (cardVerificationStatus === 'approved') {
-        html += '🔹 학생증 인증: ✅ (\'나를찜한\' 확인 가능)';
-    } else {
-        html += '🔹 학생증 인증: ❌ (\'나를찜한\' 확인 불가)';
-    }
-    benefit.innerHTML = html;
 
     // ===== 10. 관리자 패널 =====
     if (isAdmin) {
