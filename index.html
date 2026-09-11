@@ -3491,20 +3491,25 @@ async function fetchBlocks() {
         }
     }
 
-    // 4-4. 매칭 목록 불러오기
-    async function fetchMatches() {
-        try {
-            const res = await fetch('/api/matches');
-            if (res.ok) {
-                allMatches = await res.json();
-                return allMatches;
-            }
-            return [];
-        } catch (error) {
-            console.error('매칭 로드 오류:', error);
-            return [];
+    // 4-4. 매칭 목록 불러오기 (userId 전달 → Lazy 만료 처리)
+async function fetchMatches() {
+    try {
+        // userId를 함께 전달해야 서버에서 만료 매칭을 자동 처리함
+        const url = currentUserId 
+            ? `/api/matches?userId=${currentUserId}` 
+            : '/api/matches';
+        
+        const res = await fetch(url);
+        if (res.ok) {
+            allMatches = await res.json();
+            return allMatches;
         }
+        return [];
+    } catch (error) {
+        console.error('매칭 로드 오류:', error);
+        return [];
     }
+}
 
     // ===== 사용 중 매칭권 개수 불러오기 =====
 async function fetchInUseTickets() {
