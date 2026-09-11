@@ -1145,6 +1145,12 @@
     -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
 }
+/* 관리자 계정일 때 숨길 요소들 */
+body.admin-mode .privacy-settings-section,
+body.admin-mode .verify-section,
+body.admin-mode .user-action-buttons {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -1474,7 +1480,7 @@
                     </div>
                 </div>
 
-                <div style="display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;">
+                <div class="user-action-buttons" style="display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;">
     <button class="btn-sm primary" onclick="openCardManagement()"><i class="fas fa-plus"></i> 내 카드 관리</button>
     <button class="btn-sm primary" onclick="openInviteModal()"><i class="fas fa-user-plus"></i> 친구 초대하기</button>
     <button class="btn-sm" onclick="openBlockedListModal()"><i class="fas fa-ban"></i> 차단 유저 관리</button>
@@ -1606,18 +1612,6 @@
     <button class="btn-primary" onclick="sendAdminNotice()" style="width:100%;">
         <i class="fas fa-paper-plane"></i> 공지 발송하기
     </button>
-</div>
-<!-- ★★★ 유저 검색 및 관리 섹션 (새로 추가!) ★★★ -->
-<div id="adminUserSearchSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
-    <div style="font-weight:700; font-size:0.85rem; color:#f472b6; margin-bottom:8px;">🔍 유저 검색 및 관리</div>
-    <div style="font-size:0.6rem; color:#888; margin-bottom:8px;">아이디로 유저를 검색하여 관리할 수 있어요</div>
-    
-    <div style="display:flex; gap:4px;">
-        <input type="text" id="adminUserSearchInput" placeholder="유저 아이디 입력" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none; min-width:0;">
-        <button class="btn-sm primary" onclick="searchAdminUser()">🔍 검색</button>
-    </div>
-    
-    <div id="adminUserSearchResults" style="margin-top:10px;"></div>
 </div>
 <!-- ★★★ 축제 관리 섹션 ★★★ -->
 <div id="adminFestivalSection" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
@@ -3592,14 +3586,13 @@ async function handleNotificationClick(notificationId, link, type, cardId) {
 
     closeNotificationModal();
 
-    // ===== 🆕 리뷰 반려 알림: 클릭해도 탭 이동하지 않음 =====
+    // 리뷰 반려 알림: 클릭해도 탭 이동 안 함
     if (type === 'review_rejected') {
-        // '리뷰 다시 작성하기' 버튼으로만 열 수 있음
         updateNotificationBadge();
         return;
     }
 
-    // ===== '찜' 알림: 해당 카드 상세 모달 띄우기 =====
+    // '찜' 알림: 해당 카드 상세 모달
     if (type === 'liked' && cardId) {
         const profile = allProfiles.find(p => p.id === cardId);
         if (profile) {
@@ -3611,19 +3604,21 @@ async function handleNotificationClick(notificationId, link, type, cardId) {
         return;
     }
 
-    // ===== 기존 링크 이동 로직 (찜 외 알림) =====
-    if (link) {
+    // ★★★ 링크 이동 (link가 있을 때만!) ★★★
+    if (link && link !== 'null' && link !== '') {
         const tabMap = {
             'matching': 'find',
             'mypage': 'mypage',
             'find': 'find'
         };
         const tab = tabMap[link] || 'find';
+
         document.querySelectorAll('#mainTabs span').forEach(t => t.classList.remove('active'));
         document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(`page-${tab}`)?.classList.add('active');
 
+        // ★ matching 링크일 때만 매칭현황 열기
         if (link === 'matching') {
             setTimeout(() => openMatchingStatus(), 300);
         }
@@ -6429,8 +6424,9 @@ async function checkReferralCode() {
         isLoggedIn = false;
         currentUserId = null;
         currentUser = null;
-    isAdmin = false;  // ★ 추가!
-    sessionStorage.removeItem('isAdmin');  // ★ sessionStorage도 정리
+        isAdmin = false;  // ★ 추가!
+        document.body.classList.remove('admin-mode');
+        sessionStorage.removeItem('isAdmin');  // ★ sessionStorage도 정리
         setData('currentUser', null);
         document.getElementById('authSection').classList.remove('hidden');
         document.getElementById('profileSection').classList.add('hidden');
@@ -6937,6 +6933,13 @@ function openEditProfile() {
 // 15. 인증 시스템
 // ================================================================
 function updateUI() {
+    // ★★★ 관리자 모드일 때 body에 클래스 추가 (관리자 UI 정리용) ★★★
+    if (isAdmin) {
+        document.body.classList.add('admin-mode');
+    } else {
+        document.body.classList.remove('admin-mode');
+    }
+
     if (!currentUser) {
         document.getElementById('authSection').classList.remove('hidden');
         document.getElementById('profileSection').classList.add('hidden');
