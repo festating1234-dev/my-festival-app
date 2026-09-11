@@ -5634,6 +5634,11 @@ async function cancelMatch(matchId) {
     // 11. 매칭 현황
     // ================================================================
     function openMatchingStatus() {
+    // ★★★ 임시 추적 코드 (원인 찾으면 삭제 예정) ★★★
+    console.log('🚨🚨🚨 openMatchingStatus 호출됨!');
+    console.trace('호출 스택:');
+    // ★★★ 임시 추적 코드 끝 ★★★
+
     if (!isLoggedIn) {
         showToast('⚠️ 로그인 후 이용 가능합니다');
         switchToLogin();
