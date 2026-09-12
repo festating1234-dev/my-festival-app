@@ -963,7 +963,7 @@ app.get('/api/admin/search-user', async (req, res) => {
         // 유저 검색
         const { data: users, error } = await supabase
             .from('users')
-            .select('id, nickname, school, major, grade, gender, age, height, phone, intro, animal, region, free_tickets, invited_count, email_verified, card_status, is_banned, is_admin, match_blocked, report_blocked, report_block_reason, created_at')
+                        .select('id, name, nickname, school, major, grade, gender, age, height, phone, intro, animal, region, free_tickets, invited_count, email_verified, card_status, is_banned, is_admin, match_blocked, report_blocked, report_block_reason, created_at')
             .ilike('nickname', `%${keyword.trim()}%`)
             .order('nickname', { ascending: true })
             .limit(20);
