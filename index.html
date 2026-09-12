@@ -1535,7 +1535,7 @@ body.admin-mode .user-action-buttons {
     <div class="admin-title"><i class="fas fa-user-shield"></i> 관리자 패널</div>
     <div class="admin-desc">회원 관리, 인증 검토, 더미 프로필 생성</div>
     <div class="admin-buttons">
-        <button class="btn-sm" onclick="openDummyModal()"><i class="fas fa-user-plus"></i> 더미추가</button>
+        <button class="btn-sm" onclick="openDummyModal()"><i class="fas fa-user-plus"></i> 더미 관리</button>
         <button class="btn-sm" onclick="openUserListModal()"><i class="fas fa-users"></i> 회원조회</button>
     </div>
     <div style="margin-top:8px; font-size:0.55rem; color:#666;">
@@ -1918,43 +1918,246 @@ body.admin-mode .user-action-buttons {
     </div>
 </div>
 
-<!-- 더미 추가 모달 -->
-<div class="modal-overlay" id="adminDummyModal">
-    <div class="modal-box" style="max-width: 400px;">
-        <span class="close-btn" id="adminDummyClose">&times;</span>
-        <h2>➕ 더미 프로필 추가</h2>
-        <div class="subtitle">테스트용 가짜 프로필을 생성합니다</div>
+<!-- 더미 카드 수정 모달 -->
+<div class="modal-overlay" id="adminDummyEditModal">
+    <div class="modal-box" style="max-width: 450px; max-height: 85vh; overflow-y: auto;">
+        <span class="close-btn" id="adminDummyEditClose" onclick="closeDummyEditModal()">&times;</span>
+        <h2>✏️ 더미 카드 수정</h2>
+        <div class="subtitle">더미 카드 정보를 수정합니다</div>
 
-        <div style="background:rgba(251,191,36,0.05); border-radius:10px; padding:10px 12px; margin:12px 0; border:1px solid rgba(251,191,36,0.1); font-size:0.6rem; color:#fbbf24; line-height:1.6;">
-            💡 더미 프로필은 실제 유저와 연결되지 않아 매칭/신고 대상이 되지 않아요.<br>
-            삭제하려면 카드 상세에서 "관리자 삭제"를 사용하세요.
-        </div>
+        <input type="hidden" id="dummyEditId">
 
-        <div class="form-group" style="margin-bottom:10px;">
-            <label style="font-size:0.7rem; color:#aaa;">카드 타입</label>
-            <select id="dummyType" style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none;">
-                <option value="all">🎲 랜덤 (모든 타입)</option>
-                <option value="solo">💕 둘이서 (1:1)</option>
-                <option value="group">🍻 여럿이서 (다대다)</option>
-                <option value="same">👬 동성친구 찾기</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:10px;">
-            <label style="font-size:0.7rem; color:#aaa;">생성 개수 (1~50)</label>
-            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px;">
-                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 1">1</button>
-                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 5">5</button>
-                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 10">10</button>
-                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 20">20</button>
-                <button class="btn-sm" onclick="document.getElementById('dummyCount').value = 50">50</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">카드 타입</label>
+                <select id="dummyEditType" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                    <option value="solo">💕 둘이서</option>
+                    <option value="group">🍻 여럿이서</option>
+                    <option value="same">👬 동성친구</option>
+                </select>
             </div>
-            <input type="number" id="dummyCount" min="1" max="50" value="5" style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.85rem; outline:none;">
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">이모지</label>
+                <select id="dummyEditEmoji" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                    <option value="🐶">🐶 강아지</option>
+                    <option value="🐱">🐱 고양이</option>
+                    <option value="🦊">🦊 여우</option>
+                    <option value="🐰">🐰 토끼</option>
+                    <option value="🐻">🐻 곰</option>
+                    <option value="🐼">🐼 판다</option>
+                    <option value="🐨">🐨 코알라</option>
+                    <option value="🦝">🦝 너구리</option>
+                    <option value="🐯">🐯 호랑이</option>
+                    <option value="🦁">🦁 사자</option>
+                </select>
+            </div>
         </div>
 
-        <button class="btn-primary" onclick="confirmAddDummy()" style="width:100%; margin-top:6px;">
-            <i class="fas fa-user-plus"></i> 더미 프로필 생성
-        </button>
+        <div style="margin-bottom:8px;">
+            <label style="font-size:0.65rem; color:#aaa;">학교</label>
+            <input type="text" id="dummyEditSchool" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">학과계열</label>
+                <select id="dummyEditMajor" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                    <option value="이공계열">이공계열</option>
+                    <option value="어문계열">어문계열</option>
+                    <option value="상경계열">상경계열</option>
+                    <option value="예체능">예체능</option>
+                    <option value="메디컬">메디컬</option>
+                    <option value="서비스">서비스</option>
+                    <option value="기타계열">기타계열</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">학번</label>
+                <input type="text" id="dummyEditGrade" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">성별</label>
+                <select id="dummyEditGender" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+                    <option value="female">여성</option>
+                    <option value="male">남성</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">나이</label>
+                <input type="number" id="dummyEditAge" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+            </div>
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">키</label>
+                <input type="number" id="dummyEditHeight" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:8px; margin-bottom:8px;">
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">활동지역</label>
+                <select id="dummyEditRegion" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                    <option value="서울특별시">서울특별시</option>
+                    <option value="경기도">경기도</option>
+                    <option value="인천광역시">인천광역시</option>
+                    <option value="부산광역시">부산광역시</option>
+                    <option value="대구광역시">대구광역시</option>
+                    <option value="대전광역시">대전광역시</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.65rem; color:#aaa;">찜 개수</label>
+                <input type="number" id="dummyEditLikes" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+            </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+            <label style="font-size:0.65rem; color:#aaa;">자기소개</label>
+            <textarea id="dummyEditDetail" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none; resize:vertical; min-height:80px; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="display:flex; gap:6px;">
+            <button class="btn-primary" onclick="submitDummyEdit()" style="flex:1;">
+                <i class="fas fa-save"></i> 수정 완료
+            </button>
+            <button class="btn-sm danger" onclick="deleteThisDummy()">🗑️ 삭제</button>
+            <button class="btn-sm" onclick="closeDummyEditModal()" style="flex:1;">취소</button>
+        </div>
+    </div>
+</div>
+
+<!-- 더미 관리 모달 (탭 2개) -->
+<div class="modal-overlay" id="adminDummyModal">
+    <div class="modal-box" style="max-width: 450px; max-height: 85vh; overflow-y: auto;">
+        <span class="close-btn" id="adminDummyClose" onclick="closeDummyModal()">&times;</span>
+        <h2>🎭 더미 관리</h2>
+
+        <!-- 탭 -->
+        <div style="display:flex; gap:4px; margin-bottom:12px;">
+            <button class="btn-sm primary" id="dummyTabAdd" onclick="switchDummyTab('add')" style="flex:1;">➕ 더미 추가하기</button>
+            <button class="btn-sm" id="dummyTabList" onclick="switchDummyTab('list')" style="flex:1;">📋 더미 카드 목록</button>
+        </div>
+
+        <!-- 탭 1: 더미 추가하기 -->
+        <div id="dummyPanelAdd">
+            <div style="background:rgba(251,191,36,0.05); border-radius:10px; padding:10px 12px; margin-bottom:10px; border:1px solid rgba(251,191,36,0.1); font-size:0.6rem; color:#fbbf24; line-height:1.6;">
+                💡 더미 카드는 실제 유저와 연결되지 않아요.<br>
+                실제 유저 카드와 똑같이 보이지만, 관리자만 "더미" 배지로 구분 가능해요.
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">카드 타입 *</label>
+                    <select id="dummyFieldType" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                        <option value="solo">💕 둘이서</option>
+                        <option value="group">🍻 여럿이서</option>
+                        <option value="same">👬 동성친구</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">이모지 *</label>
+                    <select id="dummyFieldEmoji" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                        <option value="🐶">🐶 강아지</option>
+                        <option value="🐱">🐱 고양이</option>
+                        <option value="🦊">🦊 여우</option>
+                        <option value="🐰">🐰 토끼</option>
+                        <option value="🐻">🐻 곰</option>
+                        <option value="🐼">🐼 판다</option>
+                        <option value="🐨">🐨 코알라</option>
+                        <option value="🦝">🦝 너구리</option>
+                        <option value="🐯">🐯 호랑이</option>
+                        <option value="🦁">🦁 사자</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <label style="font-size:0.65rem; color:#aaa;">학교 *</label>
+                <input type="text" id="dummyFieldSchool" list="dummyUniList" placeholder="예: 서울대학교" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                <datalist id="dummyUniList"></datalist>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">학과계열</label>
+                    <select id="dummyFieldMajor" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                        <option value="이공계열">이공계열</option>
+                        <option value="어문계열">어문계열</option>
+                        <option value="상경계열">상경계열</option>
+                        <option value="예체능">예체능</option>
+                        <option value="메디컬">메디컬</option>
+                        <option value="서비스">서비스</option>
+                        <option value="기타계열">기타계열</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">학번</label>
+                    <input type="text" id="dummyFieldGrade" placeholder="예: 24학번" value="24학번" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">성별 *</label>
+                    <select id="dummyFieldGender" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+                        <option value="female">여성</option>
+                        <option value="male">남성</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">나이 *</label>
+                    <input type="number" id="dummyFieldAge" placeholder="22" value="22" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">키</label>
+                    <input type="number" id="dummyFieldHeight" placeholder="170" value="170" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">활동지역</label>
+                    <select id="dummyFieldRegion" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                        <option value="서울특별시">서울특별시</option>
+                        <option value="경기도">경기도</option>
+                        <option value="인천광역시">인천광역시</option>
+                        <option value="부산광역시">부산광역시</option>
+                        <option value="대구광역시">대구광역시</option>
+                        <option value="대전광역시">대전광역시</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.65rem; color:#aaa;">초기 찜</label>
+                    <input type="number" id="dummyFieldLikes" placeholder="0" value="0" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-size:0.65rem; color:#aaa;">자기소개</label>
+                <textarea id="dummyFieldDetail" placeholder="예: 안녕하세요! 잘 부탁드려요." style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none; resize:vertical; min-height:60px; font-family:inherit;"></textarea>
+            </div>
+
+            <button class="btn-primary" onclick="submitManualDummy()" style="width:100%;">
+                <i class="fas fa-plus"></i> 더미 카드 생성
+            </button>
+        </div>
+
+        <!-- 탭 2: 더미 카드 목록 -->
+        <div id="dummyPanelList" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px; flex-wrap:wrap;">
+                <div style="font-size:0.65rem; color:#888;">
+                    전체 더미: <strong id="dummyCountDisplay" style="color:#fbbf24;">0</strong>개
+                </div>
+                <button class="btn-sm danger" onclick="deleteAllDummies()" style="font-size:0.55rem;">
+                    🗑️ 전체 삭제
+                </button>
+            </div>
+            <div id="dummyListContainer" style="max-height:50vh; overflow-y:auto;">
+                <div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2364,13 +2567,25 @@ function hasCardForMode(mode) {
 }
 
 // ============================================================
-//  관리자: 더미 추가
+//  관리자: 더미 관리 (전면 개편)
 // ============================================================
 
+// ===== 더미 관리 모달 열기 =====
 function openDummyModal() {
     if (!isAdmin) return;
-    document.getElementById('dummyType').value = 'all';
-    document.getElementById('dummyCount').value = 5;
+
+    // 대학 목록 채우기
+    const uniList = document.getElementById('dummyUniList');
+    if (uniList && typeof KOREAN_UNIVERSITIES !== 'undefined') {
+        uniList.innerHTML = KOREAN_UNIVERSITIES.map(u => `<option value="${u}">`).join('');
+    }
+
+    // 폼 초기화
+    resetDummyForm();
+
+    // 첫 탭 활성화
+    switchDummyTab('add');
+
     document.getElementById('adminDummyModal').classList.add('active');
 }
 
@@ -2378,41 +2593,266 @@ function closeDummyModal() {
     document.getElementById('adminDummyModal').classList.remove('active');
 }
 
-async function confirmAddDummy() {
+// ===== 탭 전환 =====
+function switchDummyTab(tab) {
+    const addBtn = document.getElementById('dummyTabAdd');
+    const listBtn = document.getElementById('dummyTabList');
+    const addPanel = document.getElementById('dummyPanelAdd');
+    const listPanel = document.getElementById('dummyPanelList');
+
+    if (tab === 'add') {
+        addBtn.classList.add('primary');
+        listBtn.classList.remove('primary');
+        addPanel.style.display = 'block';
+        listPanel.style.display = 'none';
+    } else {
+        addBtn.classList.remove('primary');
+        listBtn.classList.add('primary');
+        addPanel.style.display = 'none';
+        listPanel.style.display = 'block';
+        loadDummyList();
+    }
+}
+
+// ===== 폼 초기화 =====
+function resetDummyForm() {
+    const fields = ['dummyFieldType', 'dummyFieldEmoji', 'dummyFieldSchool', 'dummyFieldMajor', 'dummyFieldGrade', 'dummyFieldGender', 'dummyFieldAge', 'dummyFieldHeight', 'dummyFieldRegion', 'dummyFieldLikes', 'dummyFieldDetail'];
+    if (document.getElementById('dummyFieldSchool')) document.getElementById('dummyFieldSchool').value = '';
+    if (document.getElementById('dummyFieldGrade')) document.getElementById('dummyFieldGrade').value = '24학번';
+    if (document.getElementById('dummyFieldAge')) document.getElementById('dummyFieldAge').value = '22';
+    if (document.getElementById('dummyFieldHeight')) document.getElementById('dummyFieldHeight').value = '170';
+    if (document.getElementById('dummyFieldLikes')) document.getElementById('dummyFieldLikes').value = '0';
+    if (document.getElementById('dummyFieldDetail')) document.getElementById('dummyFieldDetail').value = '';
+    if (document.getElementById('dummyFieldType')) document.getElementById('dummyFieldType').value = 'solo';
+    if (document.getElementById('dummyFieldEmoji')) document.getElementById('dummyFieldEmoji').value = '🐶';
+    if (document.getElementById('dummyFieldMajor')) document.getElementById('dummyFieldMajor').value = '이공계열';
+    if (document.getElementById('dummyFieldGender')) document.getElementById('dummyFieldGender').value = 'female';
+    if (document.getElementById('dummyFieldRegion')) document.getElementById('dummyFieldRegion').value = '서울특별시';
+}
+
+// ===== 수동 더미 생성 =====
+async function submitManualDummy() {
     if (!isAdmin) return;
 
-    const count = parseInt(document.getElementById('dummyCount').value);
-    const type = document.getElementById('dummyType').value;
+    const body = {
+        admin_user_id: currentUser.id,
+        type: document.getElementById('dummyFieldType').value,
+        emoji: document.getElementById('dummyFieldEmoji').value,
+        school: document.getElementById('dummyFieldSchool').value.trim(),
+        major: document.getElementById('dummyFieldMajor').value,
+        grade: document.getElementById('dummyFieldGrade').value.trim(),
+        gender: document.getElementById('dummyFieldGender').value,
+        age: parseInt(document.getElementById('dummyFieldAge').value),
+        height: parseInt(document.getElementById('dummyFieldHeight').value),
+        region: document.getElementById('dummyFieldRegion').value,
+        detail: document.getElementById('dummyFieldDetail').value.trim(),
+        likes: parseInt(document.getElementById('dummyFieldLikes').value) || 0
+    };
 
-    if (isNaN(count) || count < 1 || count > 50) {
-        showToast('⚠️ 1~50 사이의 개수를 입력해주세요.');
+    if (!body.school) {
+        showToast('⚠️ 학교명을 입력해주세요.');
+        return;
+    }
+    if (!body.age || body.age < 18 || body.age > 40) {
+        showToast('⚠️ 나이는 18~40 사이로 입력해주세요.');
         return;
     }
 
-    if (!confirm(`더미 프로필 ${count}개를 생성하시겠습니까?`)) return;
-
     try {
-        const res = await fetch('/api/admin/add-dummy-profiles', {
+        const res = await fetch('/api/admin/dummy/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                admin_user_id: currentUser.id,
-                count: count,
-                type: type
-            })
+            body: JSON.stringify(body)
         });
         const data = await res.json();
 
         if (res.ok) {
-            closeDummyModal();
-            showToast(`✅ 더미 프로필 ${data.count}개가 생성되었습니다.`);
+            showToast('✅ 더미 카드가 생성되었습니다.');
+            resetDummyForm();
             await fetchProfiles();
             renderProfiles();
         } else {
             showToast('❌ ' + data.error);
         }
     } catch (error) {
-        console.error('Add dummy error:', error);
+        console.error('Create dummy error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 더미 카드 목록 로드 =====
+async function loadDummyList() {
+    const container = document.getElementById('dummyListContainer');
+    const countDisplay = document.getElementById('dummyCountDisplay');
+    container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
+
+    try {
+        const res = await fetch('/api/profiles');
+        const profiles = await res.json();
+        const dummies = profiles.filter(p => p.user_id === null || p.user_id === undefined);
+
+        if (countDisplay) countDisplay.textContent = dummies.length;
+
+        if (dummies.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 더미 카드가 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        dummies.forEach(d => {
+            const typeLabel = d.type === 'solo' ? '💕' : d.type === 'group' ? '🍻' : '👬';
+            html += `
+                <div style="background:rgba(168,85,247,0.05); border-radius:10px; padding:10px; margin-bottom:6px; border:1px solid rgba(168,85,247,0.15); display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:150px;">
+                        <div style="font-size:0.6rem; color:#a855f7; margin-bottom:2px;">${typeLabel} ${d.type}</div>
+                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">
+                            ${d.emoji} ${d.school}
+                        </div>
+                        <div style="font-size:0.55rem; color:#888;">
+                            ${d.major || ''} · ${d.gender === 'female' ? '♀' : '♂'} ${d.age || '?'}세 · ${d.height || '?'}cm · ❤️ ${d.likes || 0}
+                        </div>
+                    </div>
+                    <button class="btn-sm primary" onclick="openDummyEditModal(${d.id})" style="font-size:0.5rem;">✏️ 수정</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Load dummy list error:', error);
+        container.innerHTML = '<div style="color:#f87171; font-size:0.65rem; padding:20px 0; text-align:center;">⚠️ 로드 실패</div>';
+    }
+}
+
+// ===== 더미 수정 모달 열기 =====
+function openDummyEditModal(cardId) {
+    if (!isAdmin) return;
+
+    const d = allProfiles.find(p => String(p.id) === String(cardId));
+    if (!d) {
+        showToast('⚠️ 더미 카드를 찾을 수 없습니다.');
+        return;
+    }
+
+    document.getElementById('dummyEditId').value = d.id;
+    document.getElementById('dummyEditType').value = d.type || 'solo';
+    document.getElementById('dummyEditEmoji').value = d.emoji || '🐶';
+    document.getElementById('dummyEditSchool').value = d.school || '';
+    document.getElementById('dummyEditMajor').value = d.major || '이공계열';
+    document.getElementById('dummyEditGrade').value = d.grade || '24학번';
+    document.getElementById('dummyEditGender').value = d.gender || 'female';
+    document.getElementById('dummyEditAge').value = d.age || 22;
+    document.getElementById('dummyEditHeight').value = d.height || 170;
+    document.getElementById('dummyEditRegion').value = d.region || '서울특별시';
+    document.getElementById('dummyEditLikes').value = d.likes || 0;
+    document.getElementById('dummyEditDetail').value = d.detail || '';
+
+    // z-index 강제로 위로
+    const editModal = document.getElementById('adminDummyEditModal');
+    editModal.classList.add('modal-front');
+    editModal.classList.add('active');
+}
+
+function closeDummyEditModal() {
+    const editModal = document.getElementById('adminDummyEditModal');
+    editModal.classList.remove('active');
+    editModal.classList.remove('modal-front');
+}
+
+// ===== 더미 수정 저장 =====
+async function submitDummyEdit() {
+    const id = document.getElementById('dummyEditId').value;
+    if (!id) return;
+
+    const body = {
+        admin_user_id: currentUser.id,
+        type: document.getElementById('dummyEditType').value,
+        emoji: document.getElementById('dummyEditEmoji').value,
+        school: document.getElementById('dummyEditSchool').value.trim(),
+        major: document.getElementById('dummyEditMajor').value,
+        grade: document.getElementById('dummyEditGrade').value.trim(),
+        gender: document.getElementById('dummyEditGender').value,
+        age: parseInt(document.getElementById('dummyEditAge').value),
+        height: parseInt(document.getElementById('dummyEditHeight').value),
+        region: document.getElementById('dummyEditRegion').value,
+        likes: parseInt(document.getElementById('dummyEditLikes').value) || 0,
+        detail: document.getElementById('dummyEditDetail').value.trim()
+    };
+
+    if (!body.school) {
+        showToast('⚠️ 학교명을 입력해주세요.');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/admin/dummy/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast('✅ 더미 카드가 수정되었습니다.');
+            closeDummyEditModal();
+            await fetchProfiles();
+            renderProfiles();
+            // 목록 갱신
+            if (document.getElementById('dummyPanelList').style.display !== 'none') {
+                loadDummyList();
+            }
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Update dummy error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 개별 더미 삭제 =====
+async function deleteThisDummy() {
+    const id = document.getElementById('dummyEditId').value;
+    if (!id) return;
+    if (!confirm('이 더미 카드를 삭제하시겠습니까?')) return;
+
+    try {
+        const res = await fetch(`/api/profiles/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            showToast('🗑️ 더미 카드가 삭제되었습니다.');
+            closeDummyEditModal();
+            await fetchProfiles();
+            renderProfiles();
+            loadDummyList();
+        } else {
+            showToast('❌ 삭제 실패');
+        }
+    } catch (error) {
+        console.error('Delete dummy error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 전체 더미 삭제 =====
+async function deleteAllDummies() {
+    if (!isAdmin) return;
+    if (!confirm('⚠️ 모든 더미 카드를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
+
+    try {
+        const res = await fetch(`/api/admin/dummy/all?admin_user_id=${currentUser.id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(`🗑️ 더미 카드 ${data.deleted_count}개가 삭제되었습니다.`);
+            await fetchProfiles();
+            renderProfiles();
+            loadDummyList();
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('Delete all dummies error:', error);
         showToast('⚠️ 서버 통신 오류');
     }
 }
@@ -4458,10 +4898,15 @@ const ownerEmailVerified = owner?.email_verified || false;
 const ownerCardApproved = owner?.card_status === 'approved';
 const hasAnyVerification = ownerEmailVerified || ownerCardApproved;
 
-card.innerHTML = `
-    <span class="card-type-badge">${typeLabel}</span>
-    ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
-    ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
+        // ★★★ 더미 카드 판별 (user_id가 null) ★★★
+        const isDummyCard = (p.user_id === null || p.user_id === undefined);
+        const showDummyBadge = isAdmin && isDummyCard;
+
+        card.innerHTML = `
+            <span class="card-type-badge">${typeLabel}</span>
+            ${isMyCard ? '<span class="my-card-badge">📌 내 카드</span>' : ''}
+            ${showDummyBadge ? '<span class="my-card-badge" style="background:rgba(168,85,247,0.25); color:#c084fc; border-color:rgba(168,85,247,0.3);">🎭 더미</span>' : ''}
+            ${showLikedByBadge ? '<span class="who-liked-badge">❤️ 나를찜</span>' : ''}
     <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px; margin-top:10px;">
     <span style="font-size:1.7rem; line-height:1; flex-shrink:0;">${p.emoji}</span>
         ${hasAnyVerification ? `
@@ -4491,7 +4936,14 @@ ${ownerCardApproved ? '<span style="font-size:0.42rem; background:rgba(96,165,25
         </span>
     </div>
 `;
-        card.addEventListener('click', () => showProfileDetail(p));
+                // ★★★ 관리자가 더미 카드 클릭 시 수정 모달 열기 ★★★
+        card.addEventListener('click', () => {
+            if (isAdmin && isDummyCard) {
+                openDummyEditModal(p.id);
+            } else {
+                showProfileDetail(p);
+            }
+        });
         grid.appendChild(card);
     }
 }
