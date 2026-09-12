@@ -1440,7 +1440,7 @@ body.admin-mode .user-action-buttons {
                     <div class="profile-row"><span class="label">나이</span><span class="value" id="profileAge">22세</span></div>
                     <div class="profile-row"><span class="label">키</span><span class="value" id="profileHeight">170 cm</span></div>
                     <div class="profile-row"><span class="label">성별</span><span class="value" id="profileGender">♀️ 여성</span></div>
-                    <div class="profile-row"><span class="label">학과계열</span><span class="value" id="profileMajor2">경영학과</span></div>
+                    <div class="profile-row"><span class="label">학과</span><span class="value" id="profileMajor2">경영학과</span></div>
                     <div class="profile-row"><span class="label">닮은꼴</span><span class="value" id="profileAnimal">🐶 강아지상</span></div>
                     <div class="profile-row"><span class="label">활동지역</span><span class="value" id="profileRegion">서울특별시</span></div>
                     <div class="profile-row"><span class="label">자기소개</span><span class="value" id="profileIntro" style="font-size:0.7rem; line-height:1.3;">안녕하세요! 긍정적인 에너지를 가진 사람이에요. 함께 즐거운 추억 만들어요!</span></div>
@@ -1463,7 +1463,7 @@ body.admin-mode .user-action-buttons {
                 <div class="privacy-settings-section">
                     <div class="section-title"><i class="fas fa-shield-alt"></i> 개인정보 숨기기 설정</div>
                     <div class="section-desc">※ 이 설정은 <strong>내 카드가 타인에게 보여질 때</strong> 적용됩니다. 내가 보는 타인의 카드에는 영향을 주지 않아요.</div>
-                    <div class="section-note">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+                    <div class="section-note">⚠️ 대학교 숨기기와 학과 숨기기는 하나만 할 수 있어요</div>
 
                     <div class="toggle-container">
                         <div class="toggle-switch" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
@@ -1476,8 +1476,8 @@ body.admin-mode .user-action-buttons {
                         <div class="toggle-switch" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
                             <div class="toggle-knob"></div>
                         </div>
-                        <label>학과계열 숨기기</label>
-                        <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+                        <label>학과 숨기기</label>
+                        <span class="toggle-description">(내 카드에 학과가 표시되지 않음)</span>
                     </div>
                     <div class="toggle-container">
                         <div class="toggle-switch" id="toggleHideSameSchool" onclick="toggleSwitch('hide_same_school')">
@@ -1487,7 +1487,7 @@ body.admin-mode .user-action-buttons {
                         <span class="toggle-description">(같은학교 학생에게 내 카드가 보이지 않음)</span>
                     </div>
                     <div style="margin-top:8px; font-size:0.6rem; color:#666;">
-                        현재 설정: 대학교 <span id="profileHideSchool">❌</span> · 학과계열 <span id="profileHideMajor">❌</span> · 같은학교 <span id="profileHideSameSchool">❌</span>
+                        현재 설정: 대학교 <span id="profileHideSchool">❌</span> · 학과 <span id="profileHideMajor">❌</span> · 같은학교 <span id="profileHideSameSchool">❌</span>
                     </div>
                 </div>
 
@@ -1960,7 +1960,7 @@ body.admin-mode .user-action-buttons {
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
             <div>
-                <label style="font-size:0.65rem; color:#aaa;">학과계열</label>
+                <label style="font-size:0.65rem; color:#aaa;">학과</label>
                 <select id="dummyEditMajor" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
                     <option value="이공계열">이공계열</option>
                     <option value="어문계열">어문계열</option>
@@ -2081,7 +2081,7 @@ body.admin-mode .user-action-buttons {
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
-                    <label style="font-size:0.65rem; color:#aaa;">학과계열</label>
+                    <label style="font-size:0.65rem; color:#aaa;">학과</label>
                     <select id="dummyFieldMajor" style="width:100%; padding:8px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
                         <option value="이공계열">이공계열</option>
                         <option value="어문계열">어문계열</option>
@@ -4386,20 +4386,40 @@ let isAdmin = false;
     }
 
     function getMajorCategory(major) {
-        const map = {
-            '이공계열': ['컴퓨터공학과','기계공학과','로봇학과','자동차공학과','화학공학과','전자공학과','정보통신공학과','소프트웨어학과','전기공학과','건축공학과'],
-            '어문계열': ['국문학과','영문학과','중문학과','일문학과','불문학과','독문학과','노어문학과','언어학과'],
-            '상경계열': ['경영학과','경제학과','무역학과','회계학과','금융보험학과','호텔경영학과'],
-            '예체능': ['연극영화과','서양화과','실용음악과','체육학과','무용학과','디자인학과','미술학과','음악학과'],
-            '메디컬': ['의예과','수의학과','간호학과','약학과','한의예과','치의학과','보건학과'],
-            '서비스': ['호텔조리과','항공운항학과','사회복지학과','관광학과','외식경영학과'],
-            '기타계열': ['철학과','사학과','심리학과','행정학과','정치외교학과','교육학과']
-        };
-        for (const [key, values] of Object.entries(map)) {
-            if (values.some(v => major.includes(v))) return key;
-        }
-        return '기타계열';
+    if (!major) return '자율/융합';
+
+    // 이미 새 카테고리인 경우 그대로 반환
+    const newCats = ['인문', '사회', '상경', '교육', '이공', '예체능', '의약', '서비스', '생활과학', '자율/융합'];
+    if (newCats.includes(major)) return major;
+
+    // 옛 카테고리 매핑 (혹시 남아있을 경우)
+    const legacyMap = {
+        '어문계열': '인문',
+        '이공계열': '이공',
+        '상경계열': '상경',
+        '메디컬': '의약',
+        '기타계열': '자율/융합'
+    };
+    if (legacyMap[major]) return legacyMap[major];
+
+    // 특정 학과명이 들어온 경우 (예: "컴퓨터공학과")
+    const specificMajorMap = {
+        '인문': ['국문','영문','철학','사학','어문','문학','언어'],
+        '사회': ['사회','심리','정치','외교','법학','행정','언론','미디어'],
+        '상경': ['경영','경제','회계','무역','금융','보험'],
+        '교육': ['교육','교원','사범'],
+        '이공': ['공학','컴퓨터','기계','수학','물리','화학','생물','전자','소프트웨어','건축'],
+        '예체능': ['음악','미술','체육','디자인','무용','연극','영화','조소'],
+        '의약': ['의예','의학','약학','간호','치의','한의','물리치료','보건'],
+        '서비스': ['호텔','관광','항공','조리','외식','카지노'],
+        '생활과학': ['가정','아동','의류','식품','영양','주거','소비자']
+    };
+    for (const [cat, keywords] of Object.entries(specificMajorMap)) {
+        if (keywords.some(kw => major.includes(kw))) return cat;
     }
+
+    return '자율/융합';
+}
 
     // ================================================================
     // 4. 서버 API 호출 함수들
@@ -5767,7 +5787,7 @@ content.innerHTML = `
     </div>
     ` : ''}
     ${isMyCard ? '<div style="text-align:center; font-size:0.6rem; color:#fbbf24; margin-bottom:6px;">📌 내 카드</div>' : ''}
-        <div class="detail-item"><strong>학교/학과계열</strong> ${schoolDisplay} / ${majorDisplay}</div>
+        <div class="detail-item"><strong>학교/학과</strong> ${schoolDisplay} / ${majorDisplay}</div>
         <div class="detail-item"><strong>성별/키</strong> ${genderText} / ${profile.height}cm</div>
         <div class="detail-item"><strong>학번/나이</strong> ${profile.grade} / ${profile.age}세</div>
         <div class="detail-item" style="border-bottom: none;"><strong>자기소개</strong><br>${detailDisplay}</div>
@@ -6450,13 +6470,20 @@ async function checkReferralCode() {
             </div>
             <div class="row-half">
                 <div class="form-group">
-                    <label>학과계열</label>
+                    <label>학과</label>
                     <select id="signupMajor" required>
-                        <option value="">선택</option>
-                        <option>이공계열</option><option>어문계열</option>
-                        <option>상경계열</option><option>예체능</option>
-                        <option>메디컬</option><option>서비스</option><option>기타계열</option>
-                    </select>
+    <option value="">선택</option>
+    <option value="인문">인문 (국문, 영문, 철학, 사학 등)</option>
+    <option value="사회">사회 (사회학, 심리, 정치외교, 법학 등)</option>
+    <option value="상경">상경 (경영, 경제, 회계, 무역 등)</option>
+    <option value="교육">교육 (교육학, 국어교육, 유아교육 등)</option>
+    <option value="이공">이공 (컴공, 기계, 수학, 물리 등)</option>
+    <option value="예체능">예체능 (음악, 미술, 체육, 디자인 등)</option>
+    <option value="의약">의약 (의예, 약학, 간호, 물리치료 등)</option>
+    <option value="서비스">서비스 (호텔, 관광, 항공, 조리 등)</option>
+    <option value="생활과학">생활과학 (가정, 아동, 의류, 식품영양 등)</option>
+    <option value="자율/융합">자율/융합 (자유전공, 융합학부 등)</option>
+</select>
                 </div>
                 <div class="form-group">
                     <label>성별</label>
@@ -6968,7 +6995,7 @@ function openEditProfile() {
             <hr style="border-color:rgba(255,255,255,0.05); margin:12px 0;">
 
             <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin-bottom:4px;">🔒 개인정보 숨기기 (내 카드가 타인에게 보여질 때 적용)</div>
-            <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과계열 숨기기는 하나만 할 수 있어요</div>
+            <div class="section-note" style="margin-bottom:8px;">⚠️ 대학교 숨기기와 학과 숨기기는 하나만 할 수 있어요</div>
 
             <div class="toggle-container">
                 <div class="toggle-switch ${currentUser.hide_school ? 'active' : ''}" id="toggleHideSchool" onclick="toggleSwitch('hide_school')">
@@ -6981,8 +7008,8 @@ function openEditProfile() {
                 <div class="toggle-switch ${currentUser.hide_major ? 'active' : ''}" id="toggleHideMajor" onclick="toggleSwitch('hide_major')">
                     <div class="toggle-knob"></div>
                 </div>
-                <label>학과계열 숨기기</label>
-                <span class="toggle-description">(내 카드에 학과계열이 표시되지 않음)</span>
+                <label>학과 숨기기</label>
+                <span class="toggle-description">(내 카드에 학과가 표시되지 않음)</span>
             </div>
 
             <div style="font-weight:700; font-size:0.8rem; color:#fbbf24; margin:12px 0 6px;">🚫 같은학교 숨기기</div>
@@ -7242,7 +7269,7 @@ function openEditProfile() {
                         <input type="text" value="${currentUser.school}" disabled style="opacity:0.6;">
                     </div>
                     <div class="form-group">
-                        <label>학과계열</label>
+                        <label>학과</label>
                         <input type="text" value="${currentUser.major}" disabled style="opacity:0.6;">
                     </div>
                 </div>
@@ -8820,17 +8847,20 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
                 </div>
 
                 <div class="priority-item">
-                    <div class="priority-badge">📚 학과계열 (복수선택)</div>
+                    <div class="priority-badge">📚 학과 (복수선택)</div>
                     <div class="priority-row">
                         <div class="multi-select-wrap" style="display:flex; gap:4px; flex-wrap:wrap; flex:2;">
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="이공계열"> 이공</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="어문계열"> 어문</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="상경계열"> 상경</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="예체능"> 예체능</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="메디컬"> 메디컬</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="서비스"> 서비스</label>
-                            <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="기타계열"> 기타</label>
-                        </div>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="인문"> 인문</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="사회"> 사회</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="상경"> 상경</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="교육"> 교육</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="이공"> 이공</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="예체능"> 예체능</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="의약"> 의약</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="서비스"> 서비스</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="생활과학"> 생활과학</label>
+    <label style="font-size:0.55rem; color:#aaa; display:flex; align-items:center; gap:2px;"><input type="checkbox" class="major-check" value="자율/융합"> 자율/융합</label>
+</div>
                     </div>
                 </div>
 
@@ -8869,7 +8899,7 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
                         <select id="idealPriority1" style="flex:2;">
                             <option value="height">키</option>
                             <option value="age">나이</option>
-                            <option value="major">학과계열</option>
+                            <option value="major">학과</option>
                             <option value="animal">닮은꼴</option>
                             <option value="school_tier">학교</option>
                         </select>
@@ -8882,7 +8912,7 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
                             <option value="none">선택 안 함</option>
                             <option value="height">키</option>
                             <option value="age">나이</option>
-                            <option value="major">학과계열</option>
+                            <option value="major">학과</option>
                             <option value="animal">닮은꼴</option>
                             <option value="school_tier">학교</option>
                         </select>
@@ -8895,7 +8925,7 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
                             <option value="none">선택 안 함</option>
                             <option value="height">키</option>
                             <option value="age">나이</option>
-                            <option value="major">학과계열</option>
+                            <option value="major">학과</option>
                             <option value="animal">닮은꼴</option>
                             <option value="school_tier">학교</option>
                         </select>
@@ -8983,7 +9013,7 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
         }
 
         const priorityLabels = priorities.map(p => {
-            const map = { 'height': '키', 'age': '나이', 'major': '학과계열', 'animal': '닮은꼴', 'school_tier': '학교' };
+            const map = { 'height': '키', 'age': '나이', 'major': '학과', 'animal': '닮은꼴', 'school_tier': '학교' };
             return map[p] || p;
         });
 
