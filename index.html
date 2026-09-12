@@ -1145,9 +1145,15 @@
     -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
 }
+
 /* 관리자 카드 상세 모달을 다른 모달 위에 표시 */
 #commonModal.modal-front {
     z-index: 1500 !important;
+}
+
+/* 찜 조정 모달을 카드 상세 위에 표시 */
+#adminLikesAdjustModal.modal-front {
+    z-index: 2000 !important;
 }
 
 /* 관리자 계정일 때 숨길 요소들 */
@@ -1657,7 +1663,7 @@ body.admin-mode .user-action-buttons {
 
 <div class="modal-overlay" id="commonModal">
     <div class="modal-box">
-        <span class="close-btn" id="modalCloseBtn">&times;</span>
+        <span class="close-btn" id="modalCloseBtn" onclick="closeModal()">&times;</span>
         <div id="modalContent"></div>
     </div>
 </div>
@@ -5218,6 +5224,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function showProfileDetail(profile, isFromMatching = false, phone = null, school = null, isAdminMode = false, reportId = null, reportReason = null, reportDescription = null, matchId = null) {
     const modal = document.getElementById('commonModal');
     const content = document.getElementById('modalContent');
+
+    // ★★★ 관리자이고 내 카드가 아니면 자동으로 관리자 모드 활성화 ★★★
+    const isMyCardCheck = isLoggedIn && String(profile.user_id) === String(currentUserId);
+    if (isAdmin && !isMyCardCheck && !isFromMatching) {
+        isAdminMode = true;
+    }
     let typeLabel = '';
     if (profile.type === 'solo') typeLabel = '💕 둘이서 만나요 (1:1)';
     else if (profile.type === 'group') typeLabel = '🍻 여럿이서 만나요 (2:2,3:3,4:4)';
@@ -5265,8 +5277,8 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         // ===== 매칭 버튼 HTML 결정 =====
     let matchButtonHtml = '';
 
-    // ★★★ 관리자 카드 뷰: 찜 조정 버튼 ★★★
-    if (isAdminMode && isAdmin) {
+    // ★★★ 관리자 카드 뷰: 찜 조정 버튼 (최우선) ★★★
+    if (isAdmin && !isMyCard && !isFromMatching) {
         matchButtonHtml = `
             <button class="btn-sm primary" onclick="openAdminLikesAdjust(${profile.id}, ${profile.likes || 0})" style="flex:1;">
                 ❤️ 찜 개수 조정 (현재: ${profile.likes || 0})
@@ -5274,7 +5286,7 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         `;
     }
     // 일반 유저: 기존 매칭 버튼 로직
-    else if (!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender))) {
+    else if (!isMyCard && isLoggedIn && !isFromMatching && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender))) {
         if (hasAccepted) {
             matchButtonHtml = `<button class="btn-sm" disabled style="flex:1; opacity:0.5; cursor:not-allowed;">✅ 이미 매칭이 성사되었던 상대입니다</button>`;
         } else if (hasPending) {
@@ -8178,11 +8190,17 @@ function openAdminLikesAdjust(cardId, currentLikes) {
     adminLikesAdjustCardId = cardId;
     document.getElementById('adminLikesCurrentValue').textContent = currentLikes || 0;
     document.getElementById('adminLikesCustomAmount').value = '';
-    document.getElementById('adminLikesAdjustModal').classList.add('active');
+    
+    // ★★★ 찜 조정 모달을 카드 상세 위에 표시 ★★★
+    const likesModal = document.getElementById('adminLikesAdjustModal');
+    likesModal.classList.add('modal-front');
+    likesModal.classList.add('active');
 }
 
 function closeAdminLikesAdjustModal() {
-    document.getElementById('adminLikesAdjustModal').classList.remove('active');
+    const likesModal = document.getElementById('adminLikesAdjustModal');
+    likesModal.classList.remove('active');
+    likesModal.classList.remove('modal-front');
     adminLikesAdjustCardId = null;
 }
 
@@ -8583,7 +8601,6 @@ document.getElementById('adminDeleteCardModal')?.addEventListener('click', funct
 function closeModal() {
     const commonModal = document.getElementById('commonModal');
     commonModal.classList.remove('active');
-    // ★★★ modal-front 클래스도 함께 제거 ★★★
     commonModal.classList.remove('modal-front');
 }
 
