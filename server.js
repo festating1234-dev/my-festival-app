@@ -2434,6 +2434,215 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
 });
 
 // ============================================================
+//  관리자: 더미 카드 관리 (신규)
+// ============================================================
+
+// 1. 더미 카드 개별 생성 (수동 입력)
+app.post('/api/admin/dummy/create', async (req, res) => {
+    const { admin_user_id, type, emoji, school, major, grade, gender, age, height, region, detail, likes } = req.body;
+
+    if (!admin_user_id || !type || !emoji || !school || !gender || !age) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다. (타입, 이모지, 학교, 성별, 나이)' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        const intro = detail || '안녕하세요! 잘 부탁드려요.';
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .insert([{
+                user_id: null,  // ★ 더미 표시
+                type: type,
+                emoji: emoji,
+                school: school,
+                major: major || '기타계열',
+                grade: grade || '25학번',
+                gender: gender,
+                age: parseInt(age) || 22,
+                height: parseInt(height) || 170,
+                region: region || '서울특별시',
+                detail: intro,
+                preview: intro.slice(0, 18) + '...',
+                likes: parseInt(likes) || 0
+            }])
+            .select();
+
+        if (error) throw error;
+
+        console.log(`✅ 더미 카드 생성: ${school} / ${emoji} / ${type}`);
+        res.status(201).json(data[0]);
+    } catch (error) {
+        console.error('Create dummy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 더미 카드 수정
+app.put('/api/admin/dummy/:id', async (req, res) => {
+    const { id } = req.params;
+    const { admin_user_id, ...updates } = req.body;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 실제로 더미 카드인지 확인 (user_id IS NULL)
+        const { data: card } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('id', id)
+            .single();
+
+        if (!card || card.user_id !== null) {
+            return res.status(400).json({ error: '더미 카드가 아닙니다. (user_id가 NULL이어야 함)' });
+        }
+
+        // 허용 필드
+        const allowedFields = ['type', 'emoji', 'school', 'major', 'grade', 'gender', 'age', 'height', 'region', 'detail', 'likes'];
+        const filteredUpdates = {};
+        for (const key of allowedFields) {
+            if (updates[key] !== undefined) {
+                if (key === 'age' || key === 'height' || key === 'likes') {
+                    filteredUpdates[key] = parseInt(updates[key]) || 0;
+                } else {
+                    filteredUpdates[key] = updates[key];
+                }
+            }
+        }
+
+        // preview 자동 업데이트
+        if (filteredUpdates.detail) {
+            filteredUpdates.preview = filteredUpdates.detail.slice(0, 18) + '...';
+        }
+
+        if (Object.keys(filteredUpdates).length === 0) {
+            return res.status(400).json({ error: '수정할 항목이 없습니다.' });
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(filteredUpdates)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: '더미 카드를 찾을 수 없습니다.' });
+        }
+
+        console.log(`✏️ 더미 카드 수정: ID ${id}`);
+        res.json(data[0]);
+    } catch (error) {
+        console.error('Update dummy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. 모든 더미 카드 삭제
+app.delete('/api/admin/dummy/all', async (req, res) => {
+    const { admin_user_id } = req.query;
+
+    if (!admin_user_id) {
+        return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
+    }
+
+    try {
+        // 관리자 검증
+        const { data: admin } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', admin_user_id)
+            .single();
+
+        if (!admin?.is_admin) {
+            return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+        }
+
+        // 더미 카드 ID 목록
+        const { data: dummyCards } = await supabase
+            .from('profiles')
+            .select('id')
+            .is('user_id', null);
+
+        if (!dummyCards || dummyCards.length === 0) {
+            return res.json({ success: true, deleted_count: 0 });
+        }
+
+        const cardIds = dummyCards.map(c => c.id);
+
+        // 관련 좋아요 삭제
+        await supabase.from('likes').delete().in('card_id', cardIds);
+
+        // pending 매칭 취소 (A 환급)
+        const { data: pendingMatches } = await supabase
+            .from('matches')
+            .select('*')
+            .in('to_card_id', cardIds)
+            .eq('status', 'pending');
+
+        if (pendingMatches && pendingMatches.length > 0) {
+            for (const match of pendingMatches) {
+                if (match.a_tickets_used > 0) {
+                    const { data: fromUser } = await supabase
+                        .from('users')
+                        .select('free_tickets')
+                        .eq('id', match.from_user_id)
+                        .single();
+
+                    if (fromUser) {
+                        await supabase
+                            .from('users')
+                            .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                            .eq('id', match.from_user_id);
+                    }
+                }
+                await supabase
+                    .from('matches')
+                    .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+                    .eq('id', match.id);
+            }
+        }
+
+        // 더미 카드 삭제
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .is('user_id', null);
+
+        if (error) throw error;
+
+        console.log(`🗑️ 더미 카드 ${cardIds.length}개 전체 삭제`);
+        res.json({ success: true, deleted_count: cardIds.length });
+    } catch (error) {
+        console.error('Delete all dummies error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  관리자: 매칭/신고 제한 설정/해제
 // ============================================================
 
