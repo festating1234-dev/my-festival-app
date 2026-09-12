@@ -1877,6 +1877,36 @@ body.admin-mode .user-action-buttons {
     </div>
 </div>
 
+<!-- 관리자: 찜 개수 조정 모달 -->
+<div class="modal-overlay" id="adminLikesAdjustModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <span class="close-btn" id="adminLikesAdjustClose">&times;</span>
+        <h2>❤️ 찜 개수 조정</h2>
+        <div class="subtitle">인기 있어 보이도록 찜 개수를 조절할 수 있어요</div>
+
+        <div style="background:rgba(244,114,182,0.05); border-radius:12px; padding:16px; margin:16px 0; border:1px solid rgba(244,114,182,0.15); text-align:center;">
+            <div style="font-size:0.65rem; color:#888;">현재 찜 개수</div>
+            <div id="adminLikesCurrentValue" style="font-size:2rem; font-weight:900; color:#f472b6; margin-top:4px;">0</div>
+        </div>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:12px;">
+            <button class="btn-sm" onclick="adminLikesAdjustNow(-10)">-10</button>
+            <button class="btn-sm" onclick="adminLikesAdjustNow(-1)">-1</button>
+            <button class="btn-sm success" onclick="adminLikesAdjustNow(1)">+1</button>
+            <button class="btn-sm success" onclick="adminLikesAdjustNow(10)">+10</button>
+            <button class="btn-sm success" onclick="adminLikesAdjustNow(50)">+50</button>
+            <button class="btn-sm success" onclick="adminLikesAdjustNow(100)">+100</button>
+        </div>
+
+        <div style="display:flex; gap:4px; margin-bottom:10px;">
+            <input type="number" id="adminLikesCustomAmount" placeholder="직접 입력 (음수 가능)" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.75rem; outline:none;">
+            <button class="btn-sm primary" onclick="adminLikesAdjustCustom()">적용</button>
+        </div>
+
+        <button class="btn-sm" onclick="closeAdminLikesAdjustModal()" style="width:100%;">닫기</button>
+    </div>
+</div>
+
 <!-- 더미 추가 모달 -->
 <div class="modal-overlay" id="adminDummyModal">
     <div class="modal-box" style="max-width: 400px;">
@@ -5227,17 +5257,24 @@ function showProfileDetail(profile, isFromMatching = false, phone = null, school
         }
     }
 
-    // ===== 매칭 버튼 HTML 결정 =====
+        // ===== 매칭 버튼 HTML 결정 =====
     let matchButtonHtml = '';
-    if (!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender))) {
+
+    // ★★★ 관리자 카드 뷰: 찜 조정 버튼 ★★★
+    if (isAdminMode && isAdmin) {
+        matchButtonHtml = `
+            <button class="btn-sm primary" onclick="openAdminLikesAdjust(${profile.id}, ${profile.likes || 0})" style="flex:1;">
+                ❤️ 찜 개수 조정 (현재: ${profile.likes || 0})
+            </button>
+        `;
+    }
+    // 일반 유저: 기존 매칭 버튼 로직
+    else if (!isMyCard && isLoggedIn && !isFromMatching && !isAdminMode && (currentMode === 'same' || (currentUser && profile.gender !== currentUser.gender))) {
         if (hasAccepted) {
-            // 이미 매칭 성사된 상대
             matchButtonHtml = `<button class="btn-sm" disabled style="flex:1; opacity:0.5; cursor:not-allowed;">✅ 이미 매칭이 성사되었던 상대입니다</button>`;
         } else if (hasPending) {
-            // 이미 신청 중
             matchButtonHtml = `<button class="btn-sm" disabled style="flex:1; opacity:0.5; cursor:not-allowed;">⏳ 이미 매칭 신청 중입니다</button>`;
         } else {
-            // 신규 또는 이전 이력 있음 (재신청 가능)
             matchButtonHtml = `<button class="btn-sm primary" onclick="handleMatchingRequest(${profile.id})" style="flex:1;"><i class="fas fa-heart"></i> 매칭신청</button>`;
         }
     }
@@ -8053,18 +8090,31 @@ async function loadUserCardsForLikes(userId) {
 
         let html = '';
         adminUserCards.forEach(c => {
-            const typeLabel = c.type === 'solo' ? '1:1' : c.type === 'group' ? '다대다' : '동성';
+            const typeLabel = c.type === 'solo' ? '💕 둘이서' : c.type === 'group' ? '🍻 여럿이서' : '👬 동성친구';
             html += `
-                <div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                    <div style="flex:1;">
-                        <div style="font-size:0.6rem; color:#a855f7;">${typeLabel}</div>
-                        <div style="font-weight:700; font-size:0.7rem;">${c.emoji} ${c.school}</div>
-                        <div style="font-size:0.55rem; color:#888;">❤️ 찜: <strong style="color:#f472b6;" id="cardLikes_${c.id}">${c.likes || 0}</strong></div>
+                <div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; margin-bottom:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:120px;">
+                            <div style="font-size:0.6rem; color:#a855f7; margin-bottom:2px;">${typeLabel}</div>
+                            <div style="font-weight:700; font-size:0.75rem;">${c.emoji} ${c.school}</div>
+                            <div style="font-size:0.55rem; color:#888;">
+                                ${c.gender === 'female' ? '♀' : '♂'} ${c.age}세 · ${c.height}cm · ${c.grade}
+                            </div>
+                            <div style="font-size:0.55rem; color:#888; margin-top:2px;">
+                                ❤️ 찜: <strong style="color:#f472b6;" id="cardLikes_${c.id}">${c.likes || 0}</strong>
+                            </div>
+                        </div>
+                        <button class="btn-sm primary" onclick="openAdminCardDetail(${c.id})" style="font-size:0.5rem; white-space:nowrap;">
+                            📋 카드 보기
+                        </button>
                     </div>
-                    <div style="display:flex; gap:3px; flex-wrap:wrap;">
-                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 10)" style="font-size:0.45rem; padding:2px 6px;">+10</button>
-                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 50)" style="font-size:0.45rem; padding:2px 6px;">+50</button>
-                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, -10)" style="font-size:0.45rem; padding:2px 6px;">-10</button>
+                    <!-- 찜 조정 버튼 -->
+                    <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+                        <input type="number" id="cardLikesInput_${c.id}" placeholder="±숫자" style="flex:1; min-width:60px; padding:4px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#fff; font-size:0.6rem; outline:none;">
+                        <button class="btn-sm" onclick="applyCardLikesChange(${c.id})" style="font-size:0.5rem;">적용</button>
+                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 10)" style="font-size:0.45rem;">+10</button>
+                        <button class="btn-sm" onclick="adjustCardLikes(${c.id}, 50)" style="font-size:0.45rem;">+50</button>
+                        <button class="btn-sm danger" onclick="adjustCardLikes(${c.id}, -10)" style="font-size:0.45rem;">-10</button>
                     </div>
                 </div>
             `;
@@ -8075,6 +8125,98 @@ async function loadUserCardsForLikes(userId) {
         container.innerHTML = '<div style="color:#f87171; font-size:0.6rem;">⚠️ 카드 로드 실패</div>';
     }
 }
+
+// ===== 관리자: 카드 상세 열기 =====
+function openAdminCardDetail(cardId) {
+    const profile = allProfiles.find(p => String(p.id) === String(cardId));
+    if (!profile) {
+        showToast('⚠️ 카드를 찾을 수 없습니다.');
+        return;
+    }
+    // isAdminMode = true로 열면 관리자 액션 버튼 표시됨
+    showProfileDetail(profile, false, null, null, true);
+}
+
+// ===== 관리자: 찜 개수 직접 입력 적용 =====
+async function applyCardLikesChange(cardId) {
+    const input = document.getElementById(`cardLikesInput_${cardId}`);
+    if (!input) return;
+    const amount = parseInt(input.value);
+    if (isNaN(amount) || amount === 0) {
+        showToast('⚠️ 0이 아닌 숫자를 입력해주세요.');
+        return;
+    }
+    await adjustCardLikes(cardId, amount);
+    input.value = '';
+}
+
+// ============================================================
+//  관리자: 찜 개수 조정 모달
+// ============================================================
+
+let adminLikesAdjustCardId = null;
+
+// ===== 찜 조정 모달 열기 =====
+function openAdminLikesAdjust(cardId, currentLikes) {
+    if (!isAdmin) {
+        showToast('⚠️ 관리자 권한이 필요합니다.');
+        return;
+    }
+
+    adminLikesAdjustCardId = cardId;
+    document.getElementById('adminLikesCurrentValue').textContent = currentLikes || 0;
+    document.getElementById('adminLikesCustomAmount').value = '';
+    document.getElementById('adminLikesAdjustModal').classList.add('active');
+}
+
+function closeAdminLikesAdjustModal() {
+    document.getElementById('adminLikesAdjustModal').classList.remove('active');
+    adminLikesAdjustCardId = null;
+}
+
+// ===== 프리셋 버튼으로 조정 =====
+async function adminLikesAdjustNow(amount) {
+    if (!adminLikesAdjustCardId) return;
+    await adjustCardLikes(adminLikesAdjustCardId, amount);
+    // 모달의 현재 값 갱신
+    await refreshAdminLikesAdjustValue();
+}
+
+// ===== 커스텀 값으로 조정 =====
+async function adminLikesAdjustCustom() {
+    if (!adminLikesAdjustCardId) return;
+    const amount = parseInt(document.getElementById('adminLikesCustomAmount').value);
+    if (isNaN(amount) || amount === 0) {
+        showToast('⚠️ 0이 아닌 숫자를 입력해주세요.');
+        return;
+    }
+    await adjustCardLikes(adminLikesAdjustCardId, amount);
+    document.getElementById('adminLikesCustomAmount').value = '';
+    await refreshAdminLikesAdjustValue();
+}
+
+// ===== 현재 찜 개수 갱신 =====
+async function refreshAdminLikesAdjustValue() {
+    if (!adminLikesAdjustCardId) return;
+    try {
+        const res = await fetch('/api/profiles');
+        if (res.ok) {
+            const profiles = await res.json();
+            const card = profiles.find(p => String(p.id) === String(adminLikesAdjustCardId));
+            if (card) {
+                document.getElementById('adminLikesCurrentValue').textContent = card.likes || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Refresh likes error:', error);
+    }
+}
+
+// 모달 닫기 이벤트
+document.getElementById('adminLikesAdjustClose')?.addEventListener('click', closeAdminLikesAdjustModal);
+document.getElementById('adminLikesAdjustModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAdminLikesAdjustModal();
+});
 
 // ===== 카드 찜 개수 조정 =====
 async function adjustCardLikes(cardId, amount) {
@@ -8092,9 +8234,18 @@ async function adjustCardLikes(cardId, amount) {
         const data = await res.json();
 
         if (res.ok) {
-            const el = document.getElementById(`cardLikes_${cardId}`);
-            if (el) el.textContent = data.new_likes;
+            // 모든 관련 UI 갱신
+            const el1 = document.getElementById(`cardLikes_${cardId}`);
+            if (el1) el1.textContent = data.new_likes;
+
+            const el2 = document.getElementById('adminLikesCurrentValue');
+            if (el2 && adminLikesAdjustCardId === cardId) {
+                el2.textContent = data.new_likes;
+            }
+
             showToast(`❤️ 찜 개수 ${amount > 0 ? '+' : ''}${amount} 조정 (현재: ${data.new_likes})`);
+
+            // 카드 목록 갱신
             await fetchProfiles();
             renderProfiles();
         } else {
