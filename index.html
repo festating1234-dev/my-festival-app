@@ -1847,15 +1847,18 @@ body.admin-mode .user-action-buttons {
             </div>
 
             <!-- 매칭 제한 -->
-            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05);">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                    <div style="flex:1;">
-                        <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">🚫 매칭 기능 제한</div>
-                        <div style="font-size:0.55rem; color:#888; margin-top:2px;">매칭 신청 및 수락이 불가능해집니다</div>
-                    </div>
-                    <button class="btn-sm" id="matchBlockBtn" onclick="toggleMatchBlock()" style="font-size:0.6rem; white-space:nowrap;">설정</button>
-                </div>
-            </div>
+<div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05);">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div style="flex:1;">
+            <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">🚫 매칭 기능 제한</div>
+            <div style="font-size:0.55rem; color:#888; margin-top:2px;">매칭 신청/수락 불가 + 카드 전체 삭제 + 등록/수정 불가</div>
+        </div>
+        <button class="btn-sm" id="matchBlockBtn" onclick="toggleMatchBlock()" style="font-size:0.6rem; white-space:nowrap;">설정</button>
+    </div>
+    <div id="matchBlockReasonArea" style="margin-top:8px; display:none;">
+        <input type="text" id="matchBlockReasonInput" placeholder="제한 사유 (선택)" style="width:100%; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:#fff; font-size:0.7rem; outline:none;">
+    </div>
+</div>
 
             <!-- 신고 제한 -->
             <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05);">
@@ -2209,6 +2212,12 @@ let reportTarget = null; // { cardId, targetUserId }
 async function openReportModal(cardId, targetUserId) {
     if (!currentUser) {
         showToast('⚠️ 로그인 후 이용 가능합니다');
+        return;
+    }
+
+    // ★★★ 신고 제한 확인 ★★★
+    if (currentUser?.report_blocked) {
+        showToast(`🚫 신고 기능이 제한된 계정입니다.${currentUser.report_block_reason ? ' 사유: ' + currentUser.report_block_reason : ''}`);
         return;
     }
 
@@ -5338,6 +5347,12 @@ window.showProfileDetailFromMatching = showProfileDetailFromMatching;
         showToast('⚠️ 로그인 후 이용 가능합니다');
         return;
     }
+
+    // ★★★ 매칭 제한 확인 ★★★
+    if (currentUser?.match_blocked) {
+        showToast(`🚫 매칭 기능이 제한된 계정입니다.${currentUser.match_block_reason ? ' 사유: ' + currentUser.match_block_reason : ''}`);
+        return;
+    }
     if (!hasCardForMode(currentMode)) {
         const modeLabel = currentMode === 'solo' ? '둘이서 (1:1)' : 
                          currentMode === 'group' ? '여럿이서 (2:2,3:3,4:4)' : 
@@ -6594,11 +6609,17 @@ function openEditProfile() {
     // 14. 내 카드 관리
     // ================================================================
     function openCardManagement() {
-        if (!isLoggedIn) {
-            showToast('⚠️ 로그인 후 이용 가능합니다');
-            switchToLogin();
-            return;
-        }
+    if (!isLoggedIn) {
+        showToast('⚠️ 로그인 후 이용 가능합니다');
+        switchToLogin();
+        return;
+    }
+
+    // ★★★ 매칭 제한 확인 ★★★
+    if (currentUser?.match_blocked) {
+        showToast(`🚫 매칭 기능이 제한된 계정입니다. 카드 관리를 이용할 수 없어요.${currentUser.match_block_reason ? ' 사유: ' + currentUser.match_block_reason : ''}`);
+        return;
+    }
         if (!currentUser) return;
         const modal = document.getElementById('commonModal');
         const content = document.getElementById('modalContent');
@@ -7751,15 +7772,23 @@ function updateRestrictButtons() {
     const reasonArea = document.getElementById('reportBlockReasonArea');
     const reasonInput = document.getElementById('reportBlockReasonInput');
 
-    // 매칭 제한 상태
+        // 매칭 제한 상태
+    const matchReasonArea = document.getElementById('matchBlockReasonArea');
+    const matchReasonInput = document.getElementById('matchBlockReasonInput');
     if (adminSelectedUser.match_blocked) {
         matchBtn.textContent = '✅ 해제';
         matchBtn.classList.add('success');
         matchBtn.classList.remove('danger');
+        if (matchReasonArea) matchReasonArea.style.display = 'none';
     } else {
         matchBtn.textContent = '🚫 제한';
         matchBtn.classList.add('danger');
         matchBtn.classList.remove('success');
+    }
+
+    // 기존 매칭 제한 사유 표시
+    if (adminSelectedUser.match_block_reason) {
+        matchReasonInput.value = adminSelectedUser.match_block_reason;
     }
 
     // 신고 제한 상태
@@ -7787,7 +7816,22 @@ async function toggleMatchBlock() {
     const newState = !adminSelectedUser.match_blocked;
     const action = newState ? '제한' : '해제';
 
-    if (!confirm(`매칭 기능을 ${action}하시겠습니까?`)) return;
+    let reason = '';
+    if (newState) {
+        // 제한 시 사유 입력창 표시
+        const reasonArea = document.getElementById('matchBlockReasonArea');
+        if (reasonArea.style.display === 'none') {
+            reasonArea.style.display = 'block';
+            showToast('⚠️ 제한 사유를 입력한 후 다시 버튼을 눌러주세요.');
+            return;
+        }
+        reason = document.getElementById('matchBlockReasonInput').value.trim();
+
+        // 경고
+        if (!confirm(`⚠️ 매칭 기능을 제한하시겠습니까?\n\n사유: ${reason || '(없음)'}\n\n※ 회원님의 모든 카드가 삭제되며,\n제한 기간 동안 카드 등록/수정이 불가능합니다.`)) return;
+    } else {
+        if (!confirm(`매칭 기능 제한을 해제하시겠습니까?`)) return;
+    }
 
     try {
         const res = await fetch(`/api/admin/users/${adminSelectedUser.id}/restrict`, {
@@ -7795,15 +7839,27 @@ async function toggleMatchBlock() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 admin_user_id: currentUser.id,
-                match_blocked: newState
+                match_blocked: newState,
+                match_block_reason: newState ? reason : null
             })
         });
         const data = await res.json();
 
         if (res.ok) {
             adminSelectedUser.match_blocked = newState;
+            adminSelectedUser.match_block_reason = newState ? reason : null;
+            document.getElementById('matchBlockReasonArea').style.display = 'none';
             updateRestrictButtons();
-            showToast(`✅ 매칭 기능이 ${action}되었습니다.`);
+            
+            let msg = `✅ 매칭 기능이 ${action}되었습니다.`;
+            if (data.deleted_cards > 0) {
+                msg += ` (카드 ${data.deleted_cards}개 삭제)`;
+            }
+            showToast(msg);
+            
+            // 카드 목록 갱신
+            await fetchProfiles();
+            renderProfiles();
         } else {
             showToast('❌ ' + data.error);
         }

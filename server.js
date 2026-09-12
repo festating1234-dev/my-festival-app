@@ -811,6 +811,20 @@ app.get('/api/profiles', async (req, res) => {
 app.post('/api/profiles', async (req, res) => {
     const { user_id, type } = req.body;
     try {
+        // ★★★ 매칭 제한 확인 ★★★
+        const { data: user } = await supabase
+            .from('users')
+            .select('match_blocked, match_block_reason')
+            .eq('id', user_id)
+            .single();
+
+        if (user?.match_blocked) {
+            return res.status(403).json({ 
+                error: `매칭 기능이 제한된 계정입니다. 카드 등록이 불가능합니다.${user.match_block_reason ? ' 사유: ' + user.match_block_reason : ''}`,
+                code: 'MATCH_BLOCKED'
+            });
+        }
+
         // ★★★ 동일 사용자 + 동일 타입 카드 존재 여부 확인 ★★★
         const { data: existing, error: checkError } = await supabase
             .from('profiles')
@@ -847,6 +861,28 @@ app.post('/api/profiles', async (req, res) => {
 app.put('/api/profiles/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // ★★★ 카드 소유자 매칭 제한 확인 ★★★
+        const { data: card } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('id', id)
+            .single();
+
+        if (card?.user_id) {
+            const { data: owner } = await supabase
+                .from('users')
+                .select('match_blocked, match_block_reason')
+                .eq('id', card.user_id)
+                .single();
+
+            if (owner?.match_blocked) {
+                return res.status(403).json({ 
+                    error: `매칭 기능이 제한된 계정입니다. 카드 수정이 불가능합니다.${owner.match_block_reason ? ' 사유: ' + owner.match_block_reason : ''}`,
+                    code: 'MATCH_BLOCKED'
+                });
+            }
+        }
+
         const { data, error } = await supabase
             .from('profiles')
             .update(req.body)
@@ -2403,7 +2439,7 @@ app.post('/api/admin/add-dummy-profiles', async (req, res) => {
 
 app.put('/api/admin/users/:id/restrict', async (req, res) => {
     const { id } = req.params;
-    const { admin_user_id, match_blocked, report_blocked, report_block_reason } = req.body;
+    const { admin_user_id, match_blocked, report_blocked, match_block_reason, report_block_reason } = req.body;
 
     if (!admin_user_id) {
         return res.status(400).json({ error: '관리자 ID가 필요합니다.' });
@@ -2417,11 +2453,11 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
             .eq('id', admin_user_id)
             .single();
 
-                if (!admin?.is_admin) {
+        if (!admin?.is_admin) {
             return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
         }
 
-        // ★★★ 자기 자신 또는 다른 관리자를 제한하지 못하도록 방지 ★★★
+        // 본인 또는 다른 관리자 제한 방지
         if (String(admin_user_id) === String(id)) {
             return res.status(403).json({ error: '본인 계정은 제한할 수 없습니다.' });
         }
@@ -2440,30 +2476,85 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
         const updates = {};
         if (typeof match_blocked === 'boolean') updates.match_blocked = match_blocked;
         if (typeof report_blocked === 'boolean') updates.report_blocked = report_blocked;
+        if (match_block_reason !== undefined) updates.match_block_reason = match_block_reason || null;
         if (report_block_reason !== undefined) updates.report_block_reason = report_block_reason || null;
 
         if (Object.keys(updates).length === 0) {
             return res.status(400).json({ error: '변경할 항목이 없습니다.' });
         }
 
-        const { data: user } = await supabase
-            .from('users')
-            .select('nickname')
-            .eq('id', id)
-            .single();
+        // ★★★ 매칭 제한 시 유저의 모든 카드 삭제 ★★★
+        let deletedCardsCount = 0;
+        if (match_blocked === true) {
+            // 카드 조회
+            const { data: userCards } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', id);
 
+            if (userCards && userCards.length > 0) {
+                const cardIds = userCards.map(c => c.id);
+
+                // 관련 좋아요 삭제
+                await supabase.from('likes').delete().in('card_id', cardIds);
+
+                // pending 매칭 취소 + A 환급
+                const { data: pendingMatches } = await supabase
+                    .from('matches')
+                    .select('*')
+                    .in('to_card_id', cardIds)
+                    .eq('status', 'pending');
+
+                if (pendingMatches && pendingMatches.length > 0) {
+                    for (const match of pendingMatches) {
+                        if (match.a_tickets_used > 0) {
+                            const { data: fromUser } = await supabase
+                                .from('users')
+                                .select('free_tickets')
+                                .eq('id', match.from_user_id)
+                                .single();
+
+                            if (fromUser) {
+                                await supabase
+                                    .from('users')
+                                    .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                                    .eq('id', match.from_user_id);
+                            }
+                        }
+
+                        await supabase
+                            .from('matches')
+                            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+                            .eq('id', match.id);
+                    }
+                }
+
+                // 카드 삭제
+                const { error: deleteCardsError } = await supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('user_id', id);
+
+                if (!deleteCardsError) {
+                    deletedCardsCount = cardIds.length;
+                    console.log(`🗑️ 매칭 제한으로 유저 ${targetUser?.nickname}의 카드 ${deletedCardsCount}개 삭제`);
+                }
+            }
+        }
+
+        // 유저 업데이트
         await supabase
             .from('users')
             .update(updates)
             .eq('id', id);
 
-        // 제한이 설정된 경우 유저에게 알림
+        // ===== 알림 발송 =====
         if (match_blocked === true) {
             await supabase.from('notifications').insert([{
                 user_id: id,
                 type: 'admin_notice',
                 title: '🚫 매칭 기능이 제한되었습니다.',
-                message: '관리자에 의해 매칭 신청이 제한되었어요. 문의사항이 있으시면 문의하기로 연락주세요.',
+                message: `관리자에 의해 매칭 기능이 제한되었어요.${match_block_reason ? ' 사유: ' + match_block_reason : ''}\n\n회원님의 모든 카드가 삭제되었으며, 제한 기간 동안 카드 등록/수정이 불가능합니다. 문의사항은 문의하기로 연락주세요.`,
                 link: 'mypage',
                 is_read: false
             }]);
@@ -2480,7 +2571,6 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
             }]);
         }
 
-        // 제한이 해제된 경우
         if (match_blocked === false) {
             await supabase.from('notifications').insert([{
                 user_id: id,
@@ -2503,9 +2593,13 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
             }]);
         }
 
-        console.log(`🚫 관리자가 유저 ${user?.nickname}의 제한 상태 변경:`, updates);
+        console.log(`🚫 관리자가 유저 ${targetUser?.nickname}의 제한 상태 변경:`, updates);
 
-        res.json({ success: true, updated: updates });
+        res.json({ 
+            success: true, 
+            updated: updates,
+            deleted_cards: deletedCardsCount
+        });
     } catch (error) {
         console.error('Update restriction error:', error);
         res.status(500).json({ error: error.message });
