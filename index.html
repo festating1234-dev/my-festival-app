@@ -7202,40 +7202,117 @@ function openEditProfile() {
     }
 
     function openGuideModal() {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>📖 페스타팅 이용 방법</h2>
-            <div class="subtitle">가입부터 만남까지, 한눈에 확인하세요</div>
-            <div style="margin:8px 0;">
-                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
-                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">1️⃣ 회원가입</div>
-                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">학교 정보를 입력하고 가입해주세요. 인증은 선택이며, 인증 시 특별 혜택이 있어요!</div>
-                </div>
-                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
-                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">2️⃣ 카드 등록</div>
-                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">둘이서(1:1), 여럿이서(2:2,3:3,4:4), 동성친구 찾기 각각 카드를 등록할 수 있어요!</div>
-                </div>
-                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
-                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">3️⃣ 상대 탐색 &amp; 찜하기</div>
-                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">마음에 드는 카드에 찜하거나 매칭 신청을 보내보세요</div>
-                </div>
-                <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
-                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">4️⃣ 매칭 성사</div>
-                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">매칭이 성사되면 전화번호가 공개됩니다</div>
-                </div>
-                <div style="background:rgba(251,191,36,0.06); border-radius:12px; padding:12px;">
-                    <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">💰 결제 안내</div>
-                    <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">
-                        • 일반 매칭: 5,000원 (양측 결제)<br>
-                        • 슈퍼 매칭: 10,000원 (신청자만 결제, 상대방 무료)
-                    </div>
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>📖 페스타팅 이용 방법</h2>
+        <div class="subtitle">가입부터 만남까지, 한눈에 확인하세요</div>
+        <div style="margin:8px 0; max-height:60vh; overflow-y:auto; padding-right:4px;">
+
+            <!-- 1. 회원가입 -->
+            <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">1️⃣ 회원가입</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
+                    학교, 학과 등 자신의 정보를 입력하고 가입해주세요.<br>
+                    학교메일 및 학생증 인증은 선택이지만, 인증 시 특별한 혜택이 있어요!
                 </div>
             </div>
-            <button class="btn-sm primary" onclick="closeModal()" style="width:100%; margin-top:8px;">확인했어요</button>
-        `;
-        modal.classList.add('active');
-    }
+
+            <!-- 2. 카드 등록하기 -->
+            <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">2️⃣ 카드 등록하기</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
+                    매칭을 위해서는 먼저 자신의 카드를 등록해야 해요.<br>
+                    각 매칭 방식 별로 따로 카드를 등록할 수 있고,<br>
+                    소개문구 또한 다르게 입력할 수 있어요.
+                </div>
+            </div>
+
+            <!-- 3. 매칭하기 -->
+            <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">3️⃣ 매칭하기</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
+                    현재 지원하는 매칭 방식은 <strong style="color:#fff;">둘이서</strong>, <strong style="color:#fff;">여럿이서</strong>, <strong style="color:#fff;">동성친구찾기</strong>가 있어요.<br>
+                    원하는 방식을 선택해서 소개팅, 미팅, 같이 축제 놀러갈 친구를 찾아보아요!
+                </div>
+            </div>
+
+            <!-- 4. 매칭권 -->
+            <div style="background:rgba(74,222,128,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">4️⃣ 매칭권</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.7;">
+                    매칭에 필요한 매칭권은 아래 경로로 얻을 수 있어요.<br>
+                    🎉 <strong>가입 시</strong>: 2개<br>
+                    👥 <strong>추천인 코드 입력 시</strong>: 1개<br>
+                    🎁 <strong>다른 사람이 내 추천인 코드를 입력 시</strong>: 1개 (친구초대 보상)<br>
+                    📧 <strong>학교메일 인증 시</strong>: 3개<br>
+                    🎓 <strong>학생증 인증 시</strong>: 3개<br>
+                    ✍️ <strong>매칭 후기 작성 시</strong>: 1~2개 (30자 이상 1개 / 100자 이상 2개)<br>
+                    <span style="color:#888; font-size:0.65rem;">테스트를 위해 넉넉히 드리고 있지만, 혹시 매칭권이 더 필요하다면 문의하기 기능을 사용해 주세요!</span>
+                </div>
+            </div>
+
+            <!-- 5. 매칭 신청 방식 -->
+            <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">5️⃣ 매칭 신청 방식</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.7;">
+                    <strong style="color:#c084fc;">▶ 둘이서 / 여럿이서</strong><br>
+                    💕 <strong>일반 매칭</strong>: 성사 시 양측 각 1장씩 소진<br>
+                    ✨ <strong>슈퍼 매칭</strong>: 성사 시 신청자만 2장 소진 (상대는 무료 수락)<br>
+                    <br>
+                    <strong style="color:#c084fc;">▶ 동성친구 찾기</strong><br>
+                    👬 <strong>친구 신청</strong>: 신청자만 1장 소진<br>
+                    <br>
+                    <span style="color:#888; font-size:0.65rem;">매칭에 필요한 개수 이상의 매칭권을 소유 중일 때에만 매칭을 신청할 수 있어요.<br>
+                    하지만 매칭권은 상대방의 매칭 거절, 무응답 시 자동으로 반환되니 부담 없이 매칭 신청해 보세요!</span>
+                </div>
+            </div>
+
+            <!-- 6. 매칭 성사 -->
+            <div style="background:rgba(74,222,128,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">6️⃣ 매칭 성사</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
+                    매칭이 성사되면 <strong style="color:#4ade80;">전화번호가 공개</strong>됩니다.<br>
+                    상대방에게 인사를 건네보세요! 🎉
+                </div>
+            </div>
+
+            <!-- 7. 매너 이용 안내 -->
+            <div style="background:rgba(239,68,68,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#f87171;">7️⃣ 매너 이용 안내</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.7;">
+                    • 비매너 언행 / 허위 프로필은 <strong style="color:#fbbf24;">신고</strong>해주세요<br>
+                    • 상습 신고 / 비매너 시 <strong style="color:#fbbf24;">이용 제한</strong>될 수 있어요<br>
+                    • 불편한 상대는 <strong style="color:#fbbf24;">차단</strong> 기능을 사용하세요 (주 3명 제한)
+                </div>
+            </div>
+
+            <!-- 8. 기타 편리한 기능들 -->
+            <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">8️⃣ 기타 편리한 기능들</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.7;">
+                    • <strong>찜하기</strong>: 맘에 드는 카드가 보이면 찜할 수 있고, 나를 찜한 카드도 확인할 수 있어요.<br>
+                    • <strong>이상형 찾기</strong>: 이상형 찾기 기능을 통해 자신이 원하는 조건의 상대방을 간편하게 찾아보아요!<br>
+                    • <strong>학교 숨기기 / 학과 숨기기</strong>: 프라이버시 보호를 위해 자신의 학교 / 학과 중 하나를 비공개 처리할 수 있어요.<br>
+                    • <strong>같은 학교 숨기기</strong>: 같은학교 학생에게 내 카드가 보이지 않아요.<br>
+                    • <strong>동성친구찾기</strong>: 동성친구찾기에 올린 카드는 '동일한 성별의 사용자'만 확인할 수 있어요. 눈치 보지 말고 편한 친구를 찾아봐요!
+                </div>
+            </div>
+
+            <!-- 문의하기 -->
+            <div style="background:rgba(251,191,36,0.06); border-radius:12px; padding:12px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">💬 문의하기</div>
+                <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
+                    궁금한 점이나 불편한 사항이 있으시면 언제든지 연락주세요.<br>
+                    카카오톡 ID: <strong style="color:#fff;">festivalting</strong>
+                </div>
+            </div>
+
+        </div>
+        <button class="btn-sm primary" onclick="closeModal()" style="width:100%; margin-top:10px;">확인했어요</button>
+    `;
+    modal.classList.add('active');
+}
 
     // ================================================================
     // 14. 내 카드 관리
