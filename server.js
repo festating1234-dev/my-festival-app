@@ -237,8 +237,8 @@ app.post('/api/users', async (req, res) => {
         // 2. 내 추천인 코드 생성
         const myReferralCode = await getUniqueReferralCode();
         
-        // 3. 초기 매칭권 계산
-        let initialTickets = 0;
+        // 3. 초기 매칭권 계산 (가입 축하 2개 + 추천인 1개)
+        let initialTickets = 2;  // ★ 가입 축하 매칭권 2개
         
         // 3-2. 추천인 코드 확인
         let referrer = null;
@@ -624,11 +624,26 @@ app.post('/api/verify-email-code', async (req, res) => {
             .update({ verified: true })
             .eq('id', data.id);
 
-        // users 테이블에 이메일 인증 상태 업데이트
+                // ★ 이메일 인증 시 매칭권 3개 지급
+        const { data: currentUser } = await supabase
+            .from('users')
+            .select('free_tickets')
+            .eq('id', userId)
+            .single();
+
+        const currentTickets = currentUser?.free_tickets || 0;
+
+        // users 테이블에 이메일 인증 상태 + 매칭권 3개 추가 지급
         await supabase
             .from('users')
-            .update({ email_verified: true, email: email })
+            .update({ 
+                email_verified: true, 
+                email: email,
+                free_tickets: currentTickets + 3  // ★ +3
+            })
             .eq('id', userId);
+
+        console.log(`📧 이메일 인증 완료: 유저 ${userId}, 매칭권 +3 (총 ${currentTickets + 3}개)`);
 
         res.json({ success: true, message: '이메일 인증이 완료되었습니다!' });
     } catch (err) {
@@ -763,7 +778,7 @@ app.post('/api/upload-card', upload.single('cardImage'), async (req, res) => {
     }
 });
 
-// 2. 관리자 승인/반려
+// 2. 관리자 승인/반려 (학생증 인증)
 app.put('/api/admin/card/:userId', async (req, res) => {
     const { userId } = req.params;
     const { status } = req.body;
@@ -773,12 +788,58 @@ app.put('/api/admin/card/:userId', async (req, res) => {
     }
 
     try {
-        const { error } = await supabase
-            .from('users')
-            .update({ card_status: status })
-            .eq('id', userId);
+        // ★ 승인 시 매칭권 3개 지급
+        if (status === 'approved') {
+            const { data: user } = await supabase
+                .from('users')
+                .select('free_tickets, nickname, card_status')
+                .eq('id', userId)
+                .single();
 
-        if (error) throw error;
+            // 이미 승인된 상태면 중복 지급 방지
+            if (user?.card_status === 'approved') {
+                return res.status(400).json({ error: '이미 승인된 학생증입니다.' });
+            }
+
+            const currentTickets = user?.free_tickets || 0;
+            const newTickets = currentTickets + 3;
+
+            await supabase
+                .from('users')
+                .update({ 
+                    card_status: 'approved',
+                    free_tickets: newTickets
+                })
+                .eq('id', userId);
+
+            // ★ 알림 발송
+            await supabase.from('notifications').insert([{
+                user_id: userId,
+                type: 'card_verified',
+                title: '✅ 학생증 인증이 승인되었습니다!',
+                message: `인증이 완료되어 '나를찜한카드' 기능을 사용할 수 있어요. 축하 매칭권 3개가 지급되었어요!`,
+                link: 'mypage',
+                is_read: false
+            }]);
+
+            console.log(`✅ 학생증 승인: ${user?.nickname}, 매칭권 +3 (총 ${newTickets}개)`);
+        } else {
+            // 반려 처리
+            await supabase
+                .from('users')
+                .update({ card_status: 'rejected' })
+                .eq('id', userId);
+
+            // 반려 알림
+            await supabase.from('notifications').insert([{
+                user_id: userId,
+                type: 'card_verified',
+                title: '❌ 학생증 인증이 반려되었습니다.',
+                message: '학생증 사진을 다시 확인하여 제출해주세요.',
+                link: 'mypage',
+                is_read: false
+            }]);
+        }
 
         res.json({ success: true, message: `학생증이 ${status === 'approved' ? '승인' : '반려'}되었습니다.` });
     } catch (error) {

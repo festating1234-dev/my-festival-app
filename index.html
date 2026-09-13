@@ -1504,7 +1504,7 @@ body.admin-mode .user-action-buttons {
 
                     <div class="verify-box" id="emailVerifyBox">
     <div class="title"><i class="fas fa-envelope"></i> 학교메일 인증</div>
-    <div class="desc" id="emailVerifyDesc">인증 시 <strong>무료 매치권 1회</strong> 지급!</div>
+    <div class="desc" id="emailVerifyDesc">인증 시 <strong>매칭권 3개</strong> 지급!</div>
     <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;" id="emailVerifyInputArea">
         <button class="btn-sm primary" id="emailVerifyBtn" onclick="openEmailVerificationModal()">
             <i class="fas fa-envelope"></i> 이메일 인증하러 가기
@@ -1516,7 +1516,7 @@ body.admin-mode .user-action-buttons {
 </div>
                     <div class="verify-box" id="cardVerifyBox">
     <div class="title"><i class="fas fa-id-card"></i> 학생증 인증 (관리자 확인)</div>
-    <div class="desc" id="cardVerifyDesc">인증 시 <strong>'나를 찜한 사람'</strong> 확인 가능!</div>
+    <div class="desc" id="cardVerifyDesc">인증 시 <strong>'나를찜한카드' 확인 + 매칭권 3개</strong> 지급!</div>
     <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;" id="cardVerifyInputArea">
         <input type="file" accept="image/*" id="cardInput" style="color:#aaa; font-size:0.6rem; flex:1;">
         <button class="btn-sm primary" onclick="submitCardVerification()">제출</button>
@@ -6553,9 +6553,10 @@ async function checkReferralCode() {
                 <div class="char-count"><span id="introCharCount">0</span> / 최소 20자</div>
             </div>
 
-            <div style="margin:8px 0; font-size:0.7rem; color:#fbbf24; text-align:center;">
-                💡 가입 후 학교메일, 학생증 인증시 추가 혜택이 있어요!
-            </div>
+            <div style="margin:8px 0; padding:10px; background:rgba(74,222,128,0.05); border-radius:10px; border:1px solid rgba(74,222,128,0.1); font-size:0.65rem; color:#4ade80; text-align:center; line-height:1.7;">
+    🎁 <strong>가입 축하 매칭권 2개 지급!</strong><br>
+    <span style="color:#aaa;">+ 추천인 입력 시 1개 / 학교메일 인증 시 3개<br>+ 학생증 인증 시 3개 / 매칭 후기 작성 시 1~2개</span>
+</div>
 
             <button type="submit" class="btn-primary" style="width:100%; margin-top:4px;">
                 <i class="fas fa-user-plus"></i> 회원가입 완료
@@ -7516,8 +7517,8 @@ function updateUI() {
     const emailVerifyInputArea = document.getElementById('emailVerifyInputArea');
     const emailVerifyDesc = document.getElementById('emailVerifyDesc');
 
-    if (isEmailVerified) {
-        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료!</span>';
+        if (isEmailVerified) {
+        emailStatus.innerHTML = '<span style="color:#4ade80;">✅ 인증 완료! (매칭권 3개 지급됨)</span>';
         if (emailBox) emailBox.classList.add('success');
         if (emailVerifyInputArea) emailVerifyInputArea.style.display = 'none';
         if (emailVerifyDesc) emailVerifyDesc.style.display = 'none';
@@ -7541,8 +7542,8 @@ function updateUI() {
         if (rejectReason) rejectReason.style.display = 'none';
         if (cardVerifyDesc) cardVerifyDesc.style.display = 'block';
         if (cardVerifyInputArea) cardVerifyInputArea.style.display = 'none';
-    } else if (cardVerificationStatus === 'approved') {
-        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한카드" 확인 가능</span>';
+        } else if (cardVerificationStatus === 'approved') {
+        cardStatus.innerHTML = '<span class="status-badge approved">✅ 인증 승인 완료! "나를찜한카드" 확인 + 매칭권 3개 지급</span>';
         if (cardBox) { cardBox.classList.add('success'); cardBox.classList.remove('rejected'); }
         if (rejectReason) rejectReason.style.display = 'none';
         if (cardVerifyDesc) cardVerifyDesc.style.display = 'none';
