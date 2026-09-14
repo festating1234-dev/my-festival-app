@@ -1433,6 +1433,17 @@
     ::-webkit-scrollbar-thumb:hover {
         background: rgba(107, 182, 255, 0.5);
     }
+/* ============================================================
+   Batch 2: 인라인 스타일 정리 (라이트 테마)
+   ============================================================ */
+
+/* 관리자 패널: 반투명 → 완전 흰색 */
+#adminPanel,
+.admin-panel {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(107, 182, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(107, 182, 255, 0.12) !important;
+}
 </style>
 </head>
 <body>
@@ -5817,7 +5828,6 @@ function renderFestivalSchoolList() {
 
     if (monthEvents.length === 0) return;
 
-    // 학교별로 축제 기간 통합
     const schoolMap = {};
     monthEvents.forEach(ev => {
         if (!schoolMap[ev.school]) {
@@ -5828,11 +5838,10 @@ function renderFestivalSchoolList() {
         }
     });
 
-    // ★ 가나다 순 정렬
     const sortedSchools = Object.keys(schoolMap).sort((a, b) => a.localeCompare(b, 'ko'));
 
-    let html = '<div id="festivalSchoolListContainer" style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">';
-    html += '<div style="font-size:0.65rem; color:#888; margin-bottom:8px;">📋 이번 달 축제 일정</div>';
+    let html = '<div id="festivalSchoolListContainer" style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(107,182,255,0.15);">';
+    html += '<div style="font-size:0.7rem; color:#6B7280; margin-bottom:8px; font-weight:600;">📋 이번 달 축제 일정</div>';
     html += '<div style="display:flex; flex-direction:column; gap:6px;">';
 
     sortedSchools.forEach(school => {
@@ -5840,7 +5849,6 @@ function renderFestivalSchoolList() {
         const startParts = range.start.split('-');
         const endParts = range.end.split('-');
 
-        // ★ 월/일 ~ 월/일 형태로 변경
         const startMonth = parseInt(startParts[1]);
         const startDay = parseInt(startParts[2]);
         const endMonth = parseInt(endParts[1]);
@@ -5848,10 +5856,10 @@ function renderFestivalSchoolList() {
         const dateDisplay = `${startMonth}/${startDay}~${endMonth}/${endDay}`;
 
         html += `
-            <div style="font-size:0.7rem; color:#ccc; display:flex; gap:6px; align-items:baseline;">
-                <span style="color:#fbbf24; font-weight:600; min-width:90px;">${school}</span>
-                <span style="color:#888;">:</span>
-                <span style="color:#ddd;">${dateDisplay}</span>
+            <div style="font-size:0.75rem; display:flex; gap:8px; align-items:baseline;">
+                <span style="color:#2563EB; font-weight:700; min-width:90px;">${school}</span>
+                <span style="color:#9CA3AF;">:</span>
+                <span style="color:#1F2937; font-weight:600;">${dateDisplay}</span>
             </div>
         `;
     });
