@@ -266,31 +266,6 @@ app.post('/api/users', async (req, res) => {
 
         // ===== 추천인/이벤트 코드 분리 =====
         const usedReferralCode = userData.used_referral_code;
-
-        // ★★★ 재가입 여부 확인 (Phase 2 기반 작업) ★★★
-        const checkPhone = userData.phone;  // 신규 가입 시 입력한 전화번호
-        let isRejoin = false;
-        let previousUser = null;
-
-        if (checkPhone) {
-            const { data: prevUsers } = await supabase
-                .from('users')
-                .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed, original_phone, phone')
-                .or(`phone.eq.${checkPhone},original_phone.eq.${checkPhone}`)
-                .limit(1);
-
-            if (prevUsers && prevUsers.length > 0) {
-                previousUser = prevUsers[0];
-                if (previousUser.is_deleted) {
-                    isRejoin = true;
-                    console.log(`🔄 재가입 감지: 전화번호 ${checkPhone}의 이전 계정 ${previousUser.id}`);
-                }
-            }
-        }
-
-        // 이 정보를 임시로 userData에 저장 (Phase 2에서 활용)
-        userData._is_rejoin = isRejoin;
-        userData._previous_user_id = previousUser?.id || null;
         delete userData.used_referral_code;
         delete userData.referral_code; // 혹시 몰라서 제거
         
@@ -1125,6 +1100,7 @@ app.put('/api/admin/card/:userId', async (req, res) => {
                     card_reward_claimed: true  // ★ 수령 표시
                 })
                 .eq('id', userId);
+                
             // ★ 알림 발송
             await supabase.from('notifications').insert([{
                 user_id: userId,
