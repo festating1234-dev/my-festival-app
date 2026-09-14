@@ -7,1202 +7,1433 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        /* (기존 스타일 동일, 생략) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: #0b0b1a;
-            color: #fff;
-            min-height: 100vh;
-        }
-        .bg-firework {
-            position: fixed;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.12;
-            font-size: 7rem;
-            user-select: none;
-        }
-        .fw1 { top: 3%; left: 3%; transform: rotate(-15deg); }
-        .fw2 { bottom: 8%; right: 3%; transform: rotate(20deg); }
-        .fw3 { top: 40%; left: 50%; transform: translateX(-50%) rotate(5deg); font-size: 10rem; opacity: 0.06; }
-        .festival-bg {
-            position: relative;
-            z-index: 1;
-            min-height: 100vh;
-            background: radial-gradient(circle at 20% 30%, rgba(26, 11, 46, 0.7), rgba(11, 11, 26, 0.95) 80%);
-            padding-bottom: 20px;
-        }
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 14px 14px 20px;
-        }
-        .header { text-align: center; padding: 6px 0 2px; }
-        .header h1 {
-            font-family: 'Noto Sans KR', sans-serif;
-            font-weight: 900;
-            font-size: 2rem;
-            background: linear-gradient(135deg, #ffd700, #ff6b9d, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 1px;
-        }
-        .header p {
-            background: rgba(255,255,255,0.06);
-            display: inline-block;
-            padding: 3px 14px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            color: #ffd700;
-            border: 1px solid rgba(255,215,0,0.12);
-            margin-top: 2px;
-        }
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin: 14px 0 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 30px;
-            padding: 4px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .tabs span {
-            flex: 1;
-            text-align: center;
-            padding: 9px 0;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.6rem;
-            color: #888;
-            transition: 0.3s;
-            cursor: pointer;
-        }
-        .tabs span.active {
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(168,85,247,0.2);
-        }
-        .tabs span i { margin-right: 4px; }
-        .page { display: none; animation: fadeIn 0.25s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-primary {
-            display: inline-block;
-            padding: 10px 28px;
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            border: none;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #fff;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 4px 16px rgba(168,85,247,0.2);
-            text-align: center;
-            text-decoration: none;
-            border: 1px solid rgba(168,85,247,0.2);
-        }
-        .btn-primary:active { transform: scale(0.96); }
-        .btn-secondary {
-            display: inline-block;
-            padding: 10px 28px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #ccc;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
-            text-decoration: none;
-        }
-        .btn-secondary:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
-        .btn-sm {
-            padding: 5px 14px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 700;
-            font-size: 0.6rem;
-            cursor: pointer;
-            transition: 0.2s;
-            background: rgba(168,85,247,0.15);
-            color: #c084fc;
-            border: 1px solid rgba(168,85,247,0.2);
-        }
-        .btn-sm.primary { background: #7c3aed; color: #fff; border: none; }
-        .btn-sm.danger { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.2); }
-        .btn-sm.success { background: rgba(74,222,128,0.15); color: #4ade80; border-color: rgba(74,222,128,0.2); }
-        .btn-sm:active { transform: scale(0.95); }
-        .btn-report {
-            padding: 8px 18px;
-            border-radius: 30px;
-            border: none;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: #1a1a2e;
-            font-weight: 700;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        .btn-report:active { transform: scale(0.95); }
-        .btn-report i { margin-right: 4px; }
-        .find-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .find-header .count-badge {
-            font-size: 0.65rem;
-            color: #aaa;
-            background: rgba(255,255,255,0.05);
-            padding: 4px 12px;
-            border-radius: 30px;
-        }
-        .find-header .action-buttons {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .find-header .action-buttons button {
-            padding: 4px 10px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.05);
-            color: #aaa;
-            font-size: 0.55rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .find-header .action-buttons button.active {
-            background: rgba(168,85,247,0.15);
-            border-color: #a855f7;
-            color: #c084fc;
-        }
-        .find-header .action-buttons button.liked-btn.active {
-            background: rgba(244,114,182,0.15);
-            border-color: #f472b6;
-            color: #f472b6;
-        }
-        .find-header .action-buttons button.liked-by-btn.active {
-            background: rgba(74,222,128,0.15);
-            border-color: #4ade80;
-            color: #4ade80;
-        }
-        .find-header .action-buttons button.register-btn {
-            background: rgba(251,191,36,0.1);
-            border-color: rgba(251,191,36,0.2);
-            color: #fbbf24;
-        }
-        .find-header .action-buttons button.matching-btn {
-            background: rgba(74,222,128,0.1);
-            border-color: rgba(74,222,128,0.2);
-            color: #4ade80;
-        }
-        .find-header .action-buttons button.ideal-btn {
-            background: rgba(244,114,182,0.1);
-            border-color: rgba(244,114,182,0.2);
-            color: #f472b6;
-        }
-        .mode-tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .mode-tabs button {
-            flex: 1;
-            padding: 8px 0;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.03);
-            color: #888;
-            font-size: 0.65rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .mode-tabs button.active {
-            background: rgba(168,85,247,0.15);
-            border-color: #a855f7;
-            color: #fff;
-        }
-        .mode-tabs button i { margin-right: 4px; }
-        .filter-bar {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-        .filter-bar select {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 30px;
-            padding: 5px 12px;
-            color: #ccc;
-            font-size: 0.55rem;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            transition: 0.2s;
-        }
-        .filter-bar select:focus { border-color: #a855f7; }
-        .filter-bar select:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .note-card {
-            background: rgba(255,255,255,0.04);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 16px;
-            padding: 12px 10px;
-            cursor: pointer;
-            transition: 0.2s;
-            position: relative;
-        }
-        .note-card:active { transform: scale(0.96); }
-        .note-card .emoji-big { font-size: 1.6rem; display: block; }
-        .note-card .info-line { font-size: 0.5rem; color: #aaa; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .note-card .info-line .badge-verify { background: #2e7d32; color: #a5d6a7; padding: 1px 6px; border-radius: 30px; font-size: 0.4rem; border: 1px solid #4caf50; margin-left: 4px; }
-        .note-card .preview { font-size: 0.6rem; color: #cfcfcf; height: 2.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .note-card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 0.5rem; color: #666; }
-        .note-card .meta .like-icon { color: #555; cursor: pointer; transition: 0.2s; font-size: 0.7rem; }
-        .note-card .meta .like-icon.liked { color: #f472b6; text-shadow: 0 0 12px rgba(244,114,182,0.3); }
-        .note-card .meta .like-icon:hover { transform: scale(1.2); }
-        .note-card .meta .like-icon.disabled { color: #444; cursor: not-allowed; }
-        .note-card .card-type-badge {
-            position: absolute;
-            top: 6px; right: 6px;
-            font-size: 0.4rem;
-            background: rgba(168,85,247,0.2);
-            padding: 1px 6px;
-            border-radius: 30px;
-            color: #a855f7;
-            font-weight: 700;
-        }
-        .note-card .who-liked-badge {
-            position: absolute;
-            top: 6px; left: 6px;
-            font-size: 0.4rem;
-            background: rgba(74,222,128,0.2);
-            padding: 1px 6px;
-            border-radius: 30px;
-            color: #4ade80;
-            font-weight: 700;
-        }
-        .note-card .my-card-badge {
-            position: absolute;
-            top: 6px; left: 6px;
-            font-size: 0.4rem;
-            background: rgba(251,191,36,0.25);
-            padding: 1px 8px;
-            border-radius: 30px;
-            color: #fbbf24;
-            font-weight: 700;
-            border: 1px solid rgba(251,191,36,0.2);
-        }
-       /* ===== 새 축제 달력 ===== */
-.festival-calendar-wrap {
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 20px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    overflow: hidden;
-}
-.festival-calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-.festival-calendar-header .month {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: #fbbf24;
-}
-.festival-calendar-header button {
-    background: rgba(255, 255, 255, 0.05);
-    border: none;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: 0.2s;
-}
-.festival-calendar-header button:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-.festival-calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    overflow: hidden;      /* ← 추가 */
-    min-width: 0;           /* ← 추가 */
-}
-.festival-calendar-grid .day-header {
-    text-align: center;
-    font-size: 0.65rem;
-    color: #666;
-    padding: 6px 0;
-    font-weight: 600;
-}
-.festival-calendar-grid .day-cell {
-    aspect-ratio: 4 / 5;
-    min-height: 70px;
-    min-width: 0;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
-    padding: 4px 6px;
-    border: 1px solid transparent;
-    transition: 0.2s;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-.festival-calendar-grid .day-cell.today {
-    border-color: rgba(96, 165, 250, 0.5);
-    background: rgba(96, 165, 250, 0.05);
-}
-.festival-calendar-grid .day-cell .date-num {
-    font-size: 0.65rem;
-    color: #ccc;
-    font-weight: 600;
-    margin-bottom: 2px;
-    flex-shrink: 0;
-}
-.festival-calendar-grid .day-cell .event-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-height: 20px;
-    position: relative;
-}
-.festival-calendar-grid .day-cell .event-bar {
-    font-size: 0.45rem;
-    padding: 1px 4px;
-    border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    transition: 0.15s;
-    border-left: 2px solid transparent;
-    color: #ddd;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    height: 18px;
-    line-height: 18px;
-    flex-shrink: 0;
-}
-.festival-calendar-grid .day-cell .event-bar.multi-day-start {
-    border-radius: 4px 0 0 4px;
-    margin-right: -2px;
-}
-.festival-calendar-grid .day-cell .event-bar.multi-day-middle {
-    border-radius: 0;
-    margin-left: -2px;
-    margin-right: -2px;
-}
-.festival-calendar-grid .day-cell .event-bar.multi-day-end {
-    border-radius: 0 4px 4px 0;
-    margin-left: -2px;
-}
-.festival-calendar-grid .day-cell .event-bar:hover {
-    filter: brightness(1.2);
-}
-.festival-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 16px;
-    padding: 10px 0 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-.festival-legend .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.55rem;
-    color: #aaa;
-}
-.festival-legend .legend-item .color-dot {
-    width: 12px;
-    height: 4px;
-    border-radius: 4px;
-}
+    /* ============================================================
+       🎨 페스타팅 새 디자인 시스템
+       - Light Sky Blue Theme
+       ============================================================ */
 
-/* ===== 축제 상세 모달 ===== */
-.festival-modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(6px);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-}
-.festival-modal-overlay.active {
-    display: flex;
-}
-.festival-modal-box {
-    background: #1c1c2e;
-    border-radius: 24px;
-    max-width: 400px;
-    width: 92%;
-    padding: 24px 20px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    position: relative;
-}
-.festival-modal-box .close-btn {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    font-size: 1.2rem;
-    color: #666;
-    cursor: pointer;
-    transition: 0.2s;
-    background: none;
-    border: none;
-}
-.festival-modal-box .close-btn:hover {
-    color: #fff;
-}
-.festival-modal-box h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fbbf24;
-    margin-bottom: 4px;
-}
-.festival-modal-box .modal-sub {
-    color: #888;
-    font-size: 0.7rem;
-    margin-bottom: 12px;
-}
-.festival-modal-box .modal-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    font-size: 0.8rem;
-}
-.festival-modal-box .modal-row .label {
-    color: #888;
-}
-.festival-modal-box .modal-row .value {
-    color: #fff;
-    font-weight: 500;
-}
-.festival-modal-box .modal-row .ticket-badge {
-    display: inline-block;
-    padding: 2px 12px;
-    border-radius: 30px;
-    font-size: 0.65rem;
-    font-weight: 600;
-}
-.festival-modal-box .modal-row .ticket-badge.need {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-.festival-modal-box .modal-row .ticket-badge.free {
-    background: rgba(74, 222, 128, 0.2);
-    color: #4ade80;
-    border: 1px solid rgba(74, 222, 128, 0.2);
-}
-.festival-modal-box .modal-row .ticket-badge.unknown {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.2);
-}
-.festival-modal-box .modal-lineup {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 4px;
-}
-.festival-modal-box .modal-lineup .artist-tag {
-    background: rgba(255, 255, 255, 0.06);
-    padding: 4px 12px;
-    border-radius: 30px;
-    font-size: 0.7rem;
-    color: #ccc;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
+    /* ===== CSS 변수 ===== */
+    :root {
+        /* 배경 */
+        --bg-primary: #F0F8FF;
+        --bg-secondary: #E6F3FF;
+        --bg-card: #FFFFFF;
+        --bg-hover: #F5FAFF;
+        --bg-soft: #F8FBFF;
+        
+        /* 메인 컬러 */
+        --color-primary: #6BB6FF;
+        --color-primary-dark: #4A9EFF;
+        --color-primary-light: #A5D8FF;
+        --color-accent: #FF8FB1;
+        --color-accent-dark: #FF6B9D;
+        
+        /* 텍스트 */
+        --text-primary: #1F2937;
+        --text-secondary: #6B7280;
+        --text-tertiary: #9CA3AF;
+        --text-muted: #B0B7C3;
+        
+        /* 상태 */
+        --color-success: #4ADE80;
+        --color-success-text: #16A34A;
+        --color-success-bg: rgba(74, 222, 128, 0.15);
+        --color-warning: #FBBF24;
+        --color-warning-text: #B45309;
+        --color-warning-bg: rgba(251, 191, 36, 0.15);
+        --color-danger: #F87171;
+        --color-danger-text: #DC2626;
+        --color-danger-bg: rgba(248, 113, 113, 0.15);
+        --color-info: #60A5FA;
+        --color-info-text: #2563EB;
+        --color-info-bg: rgba(96, 165, 250, 0.15);
+        
+        /* 그림자 */
+        --shadow-sm: 0 2px 8px rgba(107, 182, 255, 0.08);
+        --shadow-md: 0 4px 16px rgba(107, 182, 255, 0.12);
+        --shadow-lg: 0 8px 32px rgba(107, 182, 255, 0.16);
+        --shadow-xl: 0 20px 60px rgba(107, 182, 255, 0.2);
+        
+        /* 테두리 */
+        --border-color: rgba(107, 182, 255, 0.2);
+        --border-soft: rgba(107, 182, 255, 0.1);
+        --border-input: rgba(107, 182, 255, 0.25);
+    }
 
-/* 알림 버튼 - 기본 (흑백) */
-.notification-btn {
-    color: #aaa !important;
-    border-color: rgba(255,255,255,0.08) !important;
-    background: rgba(255,255,255,0.05) !important;
-}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* 알림 버튼 - 새 알림 있을 때 (노란색 강조) */
-.notification-btn.has-unread {
-    color: #fbbf24 !important;
-    border-color: rgba(251,191,36,0.3) !important;
-    background: rgba(251,191,36,0.1) !important;
-    box-shadow: 0 0 20px rgba(251,191,36,0.05);
-}
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        background-attachment: fixed;
+        color: var(--text-primary);
+        min-height: 100vh;
+    }
 
-.notification-btn .new-badge {
-    display: none;
-    font-size: 0.45rem;
-    background: #f87171;
-    color: #fff;
-    padding: 1px 6px;
-    border-radius: 30px;
-    margin-left: 4px;
-}
+    /* ===== 배경 장식 (연하게) ===== */
+    .bg-firework {
+        position: fixed;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.06;
+        font-size: 7rem;
+        user-select: none;
+    }
+    .fw1 { top: 3%; left: 3%; transform: rotate(-15deg); }
+    .fw2 { bottom: 8%; right: 3%; transform: rotate(20deg); }
+    .fw3 { top: 40%; left: 50%; transform: translateX(-50%) rotate(5deg); font-size: 10rem; opacity: 0.04; }
 
-.notification-btn.has-unread .new-badge {
-    display: inline-block;
-}
+    .festival-bg {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        background: transparent;
+        padding-bottom: 20px;
+    }
 
-        .report-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            padding: 8px 12px;
-            background: rgba(251,191,36,0.06);
-            border-radius: 16px;
-            border: 1px solid rgba(251,191,36,0.1);
-            flex-wrap: wrap;
-        }
-        .report-area .reward-text {
-            font-size: 0.55rem;
-            color: #fbbf24;
-            flex: 1;
-            min-width: 80px;
-        }
-        .cal-event-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-        .cal-event-item {
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            padding: 6px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.6rem;
-            border-left: 3px solid #fbbf24;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .cal-event-item:active { transform: scale(0.98); }
-        .cal-event-item .school-name { font-weight: 700; color: #fff; }
-        .cal-event-item .event-detail { color: #aaa; font-size: 0.5rem; }
-        .auth-box {
-            background: rgba(255,255,255,0.04);
-            border-radius: 20px;
-            padding: 28px 20px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .auth-box h2 { font-size: 1.2rem; margin-bottom: 6px; color: #fbbf24; }
-        .auth-box p { font-size: 0.75rem; color: #888; margin-bottom: 16px; }
-        .auth-box .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        .profile-card {
-            background: rgba(255,255,255,0.04);
-            border-radius: 20px;
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .profile-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .profile-row .label { color: #888; font-size: 0.7rem; }
-        .profile-row .value { color: #fff; font-weight: 600; font-size: 0.8rem; }
-        .verify-section { margin-top: 12px; }
-        .verify-box {
-            background: rgba(255,255,255,0.02);
-            border-radius: 14px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            border-left: 3px solid #444;
-        }
-        .verify-box.success { border-left-color: #4ade80; }
-        .verify-box.rejected { border-left-color: #f87171; }
-        .verify-box .title { font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
-        .verify-box .desc { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
-        .verify-box .status-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 30px;
-            font-size: 0.55rem;
-            font-weight: 700;
-        }
-        .verify-box .status-badge.pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
-        .verify-box .status-badge.approved { background: rgba(74,222,128,0.15); color: #4ade80; }
-        .verify-box .status-badge.rejected { background: rgba(239,68,68,0.15); color: #f87171; }
-        .input-email { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 7px 12px; border-radius: 12px; color: #fff; width: 100%; margin-top: 4px; outline: none; font-size: 0.75rem; }
-        .input-email:focus { border-color: #a855f7; }
-        .hidden { display: none !important; }
-        .badge-status { display: inline-block; padding: 2px 10px; border-radius: 30px; font-size: 0.5rem; font-weight: 700; }
-        .badge-status.verified { background: #2e7d32; color: #a5d6a7; }
-        .badge-status.unverified { background: #451a1a; color: #f87171; }
-        .signup-form .form-group { margin-bottom: 10px; }
-        .signup-form .form-group label {
-            display: block;
-            font-size: 0.7rem;
-            color: #aaa;
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-        .signup-form .form-group input,
-        .signup-form .form-group select,
-        .signup-form .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 0.8rem;
-            outline: none;
-            font-family: inherit;
-            transition: 0.2s;
-        }
-        .signup-form .form-group input:focus,
-        .signup-form .form-group select:focus,
-        .signup-form .form-group textarea:focus {
-            border-color: #a855f7;
-            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
-        }
-        .signup-form .form-group textarea { resize: vertical; min-height: 60px; }
-        .signup-form .row-half { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .signup-form .verify-option {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .signup-form .verify-option input { flex: 1; min-width: 120px; }
-        .referral-area {
-            background: rgba(251,191,36,0.05);
-            border-radius: 12px;
-            padding: 12px;
-            border: 1px solid rgba(251,191,36,0.08);
-            margin-bottom: 10px;
-        }
-        .referral-area .referral-title {
-            font-size: 0.75rem;
-            color: #fbbf24;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .referral-area .referral-desc {
-            font-size: 0.6rem;
-            color: #888;
-            margin-bottom: 6px;
-        }
-        .referral-area .nickname-check {
-            display: flex;
-            gap: 6px;
-        }
-        .referral-area .nickname-check input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; font-size: 0.8rem; outline: none; padding: 8px 12px; font-family: inherit; transition: 0.2s; }
-        .referral-area .nickname-check input:focus { border-color: #a855f7; box-shadow: 0 0 0 2px rgba(168,85,247,0.1); }
-        .referral-area .nickname-check .btn-sm { white-space: nowrap; }
-        .referral-area .referral-input-wrap {
-            margin-top: 6px;
-        }
-        .referral-area .referral-input-wrap input {
-            width: 100%;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 0.8rem;
-            outline: none;
-            font-family: inherit;
-            transition: 0.2s;
-        }
-        .referral-area .referral-input-wrap input:focus {
-            border-color: #a855f7;
-            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
-        }
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(6px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: #1c1c2e;
-            border-radius: 24px;
-            max-width: 420px;
-            width: 92%;
-            padding: 20px 16px;
-            border: 1px solid rgba(255,255,255,0.06);
-            max-height: 85vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        .modal-box .close-btn {
-            position: absolute;
-            top: 10px; right: 16px;
-            font-size: 1.3rem;
-            color: #666;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .modal-box .close-btn:hover { color: #fff; }
-        .modal-box h2 {
-            font-family: 'Noto Sans KR', sans-serif;
-            font-weight: 900;
-            color: #fbbf24;
-            margin-bottom: 4px;
-            font-size: 1.1rem;
-        }
-        .modal-box .subtitle { font-size: 0.7rem; color: #888; margin-bottom: 12px; }
-        .modal-box .detail-item { padding: 4px 0; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .modal-box .detail-item strong { color: #aaa; margin-right: 6px; }
-        .modal-box .divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 8px 0; }
-        .modal-box .price-tag {
-            display: inline-block;
-            padding: 4px 14px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
-        .modal-box .price-tag.normal { background: rgba(74,222,128,0.15); color: #4ade80; }
-        .modal-box .price-tag.premium { background: rgba(244,114,182,0.15); color: #f472b6; }
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1c1c2e;
-            border: 1px solid #a855f7;
-            padding: 8px 20px;
-            border-radius: 40px;
-            color: #fff;
-            font-size: 0.75rem;
-            z-index: 9999;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: slideUp 0.3s ease;
-            white-space: nowrap;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-        .footer-text { text-align: center; color: #333; font-size: 0.5rem; padding: 12px 0 2px; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 12px; }
-        .footer-text .bottom-links { display: flex; justify-content: center; gap: 14px; margin-top: 4px; flex-wrap: wrap; }
-        .footer-text .bottom-links a { color: #555; text-decoration: none; font-size: 0.6rem; cursor: pointer; transition: 0.2s; }
-        .footer-text .bottom-links a:hover { color: #888; }
-        .inquiry-fab {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            color: #fff;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(168,85,247,0.3);
-            transition: 0.3s;
-            border: none;
-        }
-        .inquiry-fab:active { transform: scale(0.9); }
-        .inquiry-fab .tooltip {
-            position: absolute;
-            right: 60px;
-            background: #1c1c2e;
-            color: #fff;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.6rem;
-            white-space: nowrap;
-            border: 1px solid rgba(255,255,255,0.06);
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.3s;
-        }
-        .inquiry-fab:hover .tooltip { opacity: 1; }
-        .admin-panel {
-            background: rgba(239,68,68,0.05);
-            border: 1px solid rgba(239,68,68,0.1);
-            border-radius: 16px;
-            padding: 14px;
-            margin-top: 12px;
-        }
-        .admin-panel .admin-title {
-            color: #f87171;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-        .admin-panel .admin-desc {
-            font-size: 0.6rem;
-            color: #888;
-        }
-        .admin-panel .admin-buttons {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 6px;
-        }
-        .priority-item {
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .priority-item .priority-badge {
-            display: inline-block;
-            font-size: 0.6rem;
-            font-weight: 700;
-            color: #fbbf24;
-            margin-bottom: 4px;
-        }
-        .priority-item .priority-row {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .priority-item .priority-row select,
-        .priority-item .priority-row input {
-            flex: 1;
-            padding: 5px 8px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 0.65rem;
-            outline: none;
-            min-width: 60px;
-        }
-        .priority-item .priority-row select:focus,
-        .priority-item .priority-row input:focus {
-            border-color: #a855f7;
-        }
-        .priority-item .priority-row .multi-select-wrap {
-            flex: 2;
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
-        .priority-item .priority-row .multi-select-wrap select {
-            flex: 1;
-            min-width: 80px;
-        }
-        .ideal-mode-tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .ideal-mode-tabs button {
-            flex: 1;
-            padding: 6px 0;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.03);
-            color: #888;
-            font-size: 0.6rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .ideal-mode-tabs button.active {
-            background: rgba(168,85,247,0.15);
-            border-color: #a855f7;
-            color: #fff;
-        }
-        select option { background: #1c1c2e; color: #fff; }
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0;
-            flex-wrap: wrap;
-        }
-        .toggle-container label {
-            font-size: 0.7rem;
-            color: #aaa;
-            cursor: pointer;
-            user-select: none;
-        }
-        .toggle-switch {
-            position: relative;
-            width: 40px;
-            height: 22px;
-            background: #333;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: 0.3s;
-            flex-shrink: 0;
-        }
-        .toggle-switch.active {
-            background: #a855f7;
-        }
-        .toggle-switch .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 18px;
-            height: 18px;
-            background: #fff;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        .toggle-switch.active .toggle-knob {
-            left: 20px;
-        }
-        .toggle-description {
-            font-size: 0.6rem;
-            color: #666;
-            margin-left: 4px;
-        }
-        .privacy-settings-section {
-            background: rgba(255,255,255,0.03);
-            border-radius: 16px;
-            padding: 14px;
-            margin-top: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .privacy-settings-section .section-title {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #fbbf24;
-            margin-bottom: 4px;
-        }
-        .privacy-settings-section .section-desc {
-            font-size: 0.6rem;
-            color: #888;
-            margin-bottom: 8px;
-        }
-        .privacy-settings-section .section-note {
-            font-size: 0.55rem;
-            color: #fbbf24;
-            background: rgba(251,191,36,0.06);
-            padding: 4px 10px;
-            border-radius: 30px;
-            display: inline-block;
-            margin-bottom: 6px;
-            border: 1px solid rgba(251,191,36,0.08);
-        }
-        .password-hint {
-            font-size: 0.55rem;
-            color: #888;
-            margin-top: 2px;
-        }
-        .password-hint.valid { color: #4ade80; }
-        .password-hint.invalid { color: #f87171; }
-        .password-match-hint {
-            font-size: 0.55rem;
-            margin-top: 2px;
-        }
-        .password-match-hint.valid { color: #4ade80; }
-        .password-match-hint.invalid { color: #f87171; }
-        .school-hint {
-            font-size: 0.55rem;
-            margin-top: 2px;
-        }
-        .school-hint.valid { color: #4ade80; }
-        .school-hint.invalid { color: #f87171; }
-        .form-group .char-count {
-            font-size: 0.5rem;
-            color: #666;
-            text-align: right;
-            margin-top: 2px;
-        }
-        .card-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            margin-bottom: 6px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .card-item .card-info {
-            font-size: 0.7rem;
-        }
-        .card-item .card-info .card-type {
-            font-weight: 700;
-            color: #fbbf24;
-        }
-        .card-item .card-actions {
-            display: flex;
-            gap: 4px;
-        }
-        .card-item .card-actions .btn-sm {
-            font-size: 0.5rem;
-            padding: 3px 10px;
-        }
-        .field-hint {
-            font-size: 0.55rem;
-            color: #888;
-            margin-top: 2px;
-        }
-        .field-hint.error { color: #f87171; }
-        .field-hint.success { color: #4ade80; }
-        .phone-prefix-input {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 0 12px;
-            transition: 0.2s;
-        }
-        .phone-prefix-input:focus-within {
-            border-color: #a855f7;
-            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
-        }
-        .phone-prefix-input .prefix {
-            color: #aaa;
-            font-size: 0.8rem;
-            padding-right: 4px;
-            user-select: none;
-        }
-        .phone-prefix-input input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 0.8rem;
-            padding: 8px 0;
-            outline: none;
-            font-family: inherit;
-            min-width: 0;
-        }
-        .age-grade-input-wrap {
-            position: relative;
-        }
-        .age-grade-input-wrap input {
-            width: 100%;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 0.8rem;
-            outline: none;
-            font-family: inherit;
-            transition: 0.2s;
-        }
-        .age-grade-input-wrap input:focus {
-            border-color: #a855f7;
-            box-shadow: 0 0 0 2px rgba(168,85,247,0.1);
-        }
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
-        @media (max-width: 380px) {
-            .cal-cell { min-height: 42px; font-size: 0.6rem; }
-            .cal-cell .school-label { font-size: 0.35rem; }
-        }
-        @media (min-width: 420px) {
-            .cal-cell { min-height: 58px; font-size: 0.75rem; }
-            .cal-cell .school-label { font-size: 0.45rem; }
-        }
-        .festival-calendar-grid .day-cell .school-list {
-    font-size: 0.45rem;
-    color: #aaa;
-    line-height: 1.4;
-    margin-top: 2px;
-    word-break: break-all;
-    max-height: 5em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-}
+    .container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 14px 14px 20px;
+    }
 
-/* 관리자 카드 상세 모달을 다른 모달 위에 표시 */
-#commonModal.modal-front {
-    z-index: 1500 !important;
-}
+    /* ===== 헤더 ===== */
+    .header { text-align: center; padding: 12px 0 8px; }
+    .header h1 {
+        font-weight: 900;
+        font-size: 2.2rem;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }
+    .header p {
+        background: var(--bg-card);
+        display: inline-block;
+        padding: 5px 16px;
+        border-radius: 40px;
+        font-size: 0.7rem;
+        color: var(--color-primary-dark);
+        border: 1px solid var(--border-color);
+        margin-top: 6px;
+        box-shadow: var(--shadow-sm);
+        font-weight: 600;
+    }
 
-/* 찜 조정 모달을 카드 상세 위에 표시 */
-#adminLikesAdjustModal.modal-front {
-    z-index: 2000 !important;
-}
+    /* ===== 메인 탭 ===== */
+    .tabs {
+        display: flex;
+        gap: 4px;
+        margin: 14px 0 12px;
+        background: var(--bg-card);
+        border-radius: 30px;
+        padding: 5px;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-sm);
+    }
+    .tabs span {
+        flex: 1;
+        text-align: center;
+        padding: 10px 0;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.65rem;
+        color: var(--text-tertiary);
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    .tabs span.active {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(107, 182, 255, 0.35);
+    }
+    .tabs span i { margin-right: 4px; }
 
-/* 관리자 계정일 때 숨길 요소들 */
-body.admin-mode .privacy-settings-section,
-body.admin-mode .verify-section,
-body.admin-mode .user-action-buttons {
-    display: none !important;
-}
+    .page { display: none; animation: fadeIn 0.25s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* 카드 그리드 블러 처리 (비로그인 동성친구) */
-.card-grid.blurred {
-    filter: blur(8px);
-    pointer-events: none;
-    user-select: none;
-}
+    /* ===== 버튼 ===== */
+    .btn-primary {
+        display: inline-block;
+        padding: 12px 28px;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        border: none;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 4px 16px rgba(107, 182, 255, 0.3);
+        text-align: center;
+        text-decoration: none;
+    }
+    .btn-primary:active { transform: scale(0.96); }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(107, 182, 255, 0.4); }
 
-/* 동성친구 잠금 오버레이 */
-.same-blur-overlay {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(11, 11, 26, 0.6);
-    border-radius: 16px;
-    z-index: 10;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    pointer-events: auto;
-}
-.same-blur-overlay.active {
-    display: flex;
-}
+    .btn-secondary {
+        display: inline-block;
+        padding: 12px 28px;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--color-primary-dark);
+        cursor: pointer;
+        transition: 0.2s;
+        text-align: center;
+        text-decoration: none;
+        box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary:active { transform: scale(0.96); background: var(--bg-hover); }
 
-/* 잠금 오버레이 내용 카드 */
-.same-blur-content {
-    background: rgba(28, 28, 46, 0.98);
-    border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 20px;
-    padding: 24px 20px;
-    max-width: 320px;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    animation: fadeIn 0.3s ease;
-}
-    </style>
+    .btn-sm {
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.6rem;
+        cursor: pointer;
+        transition: 0.2s;
+        background: var(--bg-card);
+        color: var(--color-primary-dark);
+        border: 1px solid var(--border-color);
+    }
+    .btn-sm.primary {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        color: #fff;
+        border: none;
+        box-shadow: 0 3px 10px rgba(107, 182, 255, 0.25);
+    }
+    .btn-sm.danger {
+        background: var(--color-danger-bg);
+        color: var(--color-danger-text);
+        border-color: rgba(248, 113, 113, 0.3);
+    }
+    .btn-sm.success {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+        border-color: rgba(74, 222, 128, 0.3);
+    }
+    .btn-sm:active { transform: scale(0.95); }
+
+    .btn-report {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        background: linear-gradient(135deg, var(--color-warning), #F59E0B);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: 0.2s;
+        white-space: nowrap;
+        box-shadow: 0 3px 10px rgba(251, 191, 36, 0.3);
+    }
+    .btn-report:active { transform: scale(0.95); }
+    .btn-report i { margin-right: 4px; }
+
+    /* ===== 친구찾기 헤더 ===== */
+    .find-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .find-header .count-badge {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        padding: 5px 14px;
+        border-radius: 30px;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-sm);
+        font-weight: 600;
+    }
+    .find-header .action-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .find-header .action-buttons button {
+        padding: 6px 12px;
+        border-radius: 30px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.55rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+    .find-header .action-buttons button:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+    .find-header .action-buttons button.active {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        border-color: transparent;
+        color: #fff;
+    }
+    .find-header .action-buttons button.liked-btn.active {
+        background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+        border-color: transparent;
+        color: #fff;
+    }
+    .find-header .action-buttons button.liked-by-btn.active {
+        background: linear-gradient(135deg, var(--color-success), #22C55E);
+        border-color: transparent;
+        color: #fff;
+    }
+    .find-header .action-buttons button.register-btn {
+        background: var(--color-warning-bg);
+        border-color: rgba(251, 191, 36, 0.3);
+        color: var(--color-warning-text);
+    }
+    .find-header .action-buttons button.matching-btn {
+        background: var(--color-success-bg);
+        border-color: rgba(74, 222, 128, 0.3);
+        color: var(--color-success-text);
+    }
+    .find-header .action-buttons button.ideal-btn {
+        background: rgba(255, 143, 177, 0.15);
+        border-color: rgba(255, 143, 177, 0.3);
+        color: var(--color-accent-dark);
+    }
+
+    /* ===== 모드 탭 ===== */
+    .mode-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .mode-tabs button {
+        flex: 1;
+        padding: 10px 0;
+        border-radius: 30px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.65rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+    .mode-tabs button.active {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(107, 182, 255, 0.35);
+    }
+    .mode-tabs button i { margin-right: 4px; }
+
+    /* ===== 필터 ===== */
+    .filter-bar {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .filter-bar select {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 30px;
+        padding: 6px 14px;
+        color: var(--text-secondary);
+        font-size: 0.55rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+    .filter-bar select:focus { border-color: var(--color-primary); }
+    .filter-bar select:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* ===== 카드 그리드 ===== */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .note-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 12px 10px;
+        cursor: pointer;
+        transition: 0.2s;
+        position: relative;
+        box-shadow: var(--shadow-sm);
+    }
+    .note-card:active { transform: scale(0.97); }
+    .note-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    .note-card .emoji-big { font-size: 1.6rem; display: block; }
+    .note-card .info-line {
+        font-size: 0.5rem;
+        color: var(--text-secondary);
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .note-card .info-line .badge-verify {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+        padding: 1px 6px;
+        border-radius: 30px;
+        font-size: 0.4rem;
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        margin-left: 4px;
+    }
+    .note-card .preview {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        height: 2.2em;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .note-card .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+        font-size: 0.5rem;
+        color: var(--text-tertiary);
+        padding-top: 6px;
+        border-top: 1px solid var(--border-soft);
+    }
+    .note-card .meta .like-icon {
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 0.75rem;
+    }
+    .note-card .meta .like-icon.liked {
+        color: var(--color-accent-dark);
+        text-shadow: 0 0 12px rgba(255, 143, 177, 0.4);
+    }
+    .note-card .meta .like-icon:hover { transform: scale(1.2); }
+    .note-card .meta .like-icon.disabled { color: var(--text-muted); cursor: not-allowed; }
+    .note-card .card-type-badge {
+        position: absolute;
+        top: 6px; right: 6px;
+        font-size: 0.4rem;
+        background: var(--color-primary-light);
+        padding: 2px 8px;
+        border-radius: 30px;
+        color: var(--color-primary-dark);
+        font-weight: 700;
+    }
+    .note-card .who-liked-badge {
+        position: absolute;
+        top: 6px; left: 6px;
+        font-size: 0.4rem;
+        background: rgba(255, 143, 177, 0.2);
+        padding: 2px 8px;
+        border-radius: 30px;
+        color: var(--color-accent-dark);
+        font-weight: 700;
+    }
+    .note-card .my-card-badge {
+        position: absolute;
+        top: 6px; left: 6px;
+        font-size: 0.4rem;
+        background: var(--color-warning);
+        padding: 2px 8px;
+        border-radius: 30px;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    /* ===== 축제 달력 ===== */
+    .festival-calendar-wrap {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    .festival-calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .festival-calendar-header .month {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--color-primary-dark);
+    }
+    .festival-calendar-header button {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-soft);
+        color: var(--color-primary-dark);
+        padding: 6px 14px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: 0.2s;
+    }
+    .festival-calendar-header button:hover { background: var(--bg-hover); }
+    .festival-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        overflow: hidden;
+        min-width: 0;
+    }
+    .festival-calendar-grid .day-header {
+        text-align: center;
+        font-size: 0.65rem;
+        color: var(--text-tertiary);
+        padding: 6px 0;
+        font-weight: 600;
+    }
+    .festival-calendar-grid .day-cell {
+        aspect-ratio: 4 / 5;
+        min-height: 70px;
+        min-width: 0;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 4px 6px;
+        border: 1px solid transparent;
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    .festival-calendar-grid .day-cell.today {
+        border-color: var(--color-primary);
+        background: rgba(107, 182, 255, 0.1);
+    }
+    .festival-calendar-grid .day-cell .date-num {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        margin-bottom: 2px;
+        flex-shrink: 0;
+    }
+    .festival-calendar-grid .day-cell .event-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 20px;
+        position: relative;
+    }
+    .festival-calendar-grid .day-cell .event-bar {
+        font-size: 0.45rem;
+        padding: 1px 4px;
+        border-radius: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        transition: 0.15s;
+        border-left: 2px solid transparent;
+        color: var(--text-primary);
+        height: 18px;
+        line-height: 18px;
+        flex-shrink: 0;
+    }
+    .festival-calendar-grid .day-cell .event-bar.multi-day-start {
+        border-radius: 4px 0 0 4px;
+        margin-right: -2px;
+    }
+    .festival-calendar-grid .day-cell .event-bar.multi-day-middle {
+        border-radius: 0;
+        margin-left: -2px;
+        margin-right: -2px;
+    }
+    .festival-calendar-grid .day-cell .event-bar.multi-day-end {
+        border-radius: 0 4px 4px 0;
+        margin-left: -2px;
+    }
+    .festival-calendar-grid .day-cell .event-bar:hover { filter: brightness(0.95); }
+    .festival-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 10px 0 4px;
+        border-top: 1px solid var(--border-soft);
+    }
+    .festival-legend .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.55rem;
+        color: var(--text-secondary);
+    }
+    .festival-legend .legend-item .color-dot {
+        width: 12px;
+        height: 4px;
+        border-radius: 4px;
+    }
+    .festival-calendar-grid .day-cell .school-list {
+        font-size: 0.45rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+        margin-top: 2px;
+        word-break: break-all;
+        max-height: 5em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 6;
+        -webkit-box-orient: vertical;
+    }
+
+    /* ===== 축제 상세 모달 ===== */
+    .festival-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(30, 58, 138, 0.35);
+        backdrop-filter: blur(6px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    .festival-modal-overlay.active { display: flex; }
+    .festival-modal-box {
+        background: var(--bg-card);
+        border-radius: 24px;
+        max-width: 400px;
+        width: 92%;
+        padding: 24px 20px;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-xl);
+        position: relative;
+    }
+    .festival-modal-box .close-btn {
+        position: absolute;
+        top: 12px; right: 16px;
+        font-size: 1.2rem;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        transition: 0.2s;
+        background: none;
+        border: none;
+    }
+    .festival-modal-box .close-btn:hover { color: var(--text-primary); }
+    .festival-modal-box h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-primary-dark);
+        margin-bottom: 4px;
+    }
+    .festival-modal-box .modal-sub {
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        margin-bottom: 12px;
+    }
+    .festival-modal-box .modal-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 0.8rem;
+    }
+    .festival-modal-box .modal-row .label { color: var(--text-secondary); }
+    .festival-modal-box .modal-row .value { color: var(--text-primary); font-weight: 500; }
+    .festival-modal-box .modal-row .ticket-badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 30px;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    .festival-modal-box .modal-row .ticket-badge.need {
+        background: var(--color-danger-bg);
+        color: var(--color-danger-text);
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    .festival-modal-box .modal-row .ticket-badge.free {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .festival-modal-box .modal-row .ticket-badge.unknown {
+        background: var(--color-warning-bg);
+        color: var(--color-warning-text);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .festival-modal-box .modal-lineup {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+    }
+    .festival-modal-box .modal-lineup .artist-tag {
+        background: var(--bg-primary);
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-soft);
+    }
+
+    /* ===== 알림 버튼 ===== */
+    .notification-btn {
+        color: var(--text-secondary);
+        border-color: var(--border-color);
+        background: var(--bg-card);
+        box-shadow: var(--shadow-sm);
+    }
+    .notification-btn.has-unread {
+        color: #fff !important;
+        border-color: var(--color-warning) !important;
+        background: var(--color-warning) !important;
+        box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    }
+    .notification-btn .new-badge {
+        display: none;
+        font-size: 0.45rem;
+        background: #fff;
+        color: var(--color-warning-text);
+        padding: 1px 6px;
+        border-radius: 30px;
+        margin-left: 4px;
+        font-weight: 700;
+    }
+    .notification-btn.has-unread .new-badge { display: inline-block; }
+
+    /* ===== 제보 영역 ===== */
+    .report-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: var(--color-warning-bg);
+        border-radius: 16px;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+        flex-wrap: wrap;
+    }
+    .report-area .reward-text {
+        font-size: 0.55rem;
+        color: var(--color-warning-text);
+        flex: 1;
+        min-width: 80px;
+        font-weight: 600;
+    }
+
+    /* ===== 캘린더 이벤트 리스트 ===== */
+    .cal-event-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .cal-event-item {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.6rem;
+        border-left: 3px solid var(--color-primary);
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+    .cal-event-item:active { transform: scale(0.98); }
+    .cal-event-item .school-name { font-weight: 700; color: var(--text-primary); }
+    .cal-event-item .event-detail { color: var(--text-secondary); font-size: 0.5rem; }
+
+    /* ===== 인증 / 프로필 ===== */
+    .auth-box {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 28px 20px;
+        text-align: center;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-sm);
+    }
+    .auth-box h2 { font-size: 1.2rem; margin-bottom: 6px; color: var(--color-primary-dark); }
+    .auth-box p { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 16px; }
+    .auth-box .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    .profile-card {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-sm);
+    }
+    .profile-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border-soft);
+    }
+    .profile-row .label { color: var(--text-secondary); font-size: 0.7rem; }
+    .profile-row .value { color: var(--text-primary); font-weight: 600; font-size: 0.8rem; }
+
+    .verify-section { margin-top: 12px; }
+    .verify-box {
+        background: var(--bg-primary);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        border-left: 3px solid var(--text-muted);
+    }
+    .verify-box.success { border-left-color: var(--color-success); }
+    .verify-box.rejected { border-left-color: var(--color-danger); }
+    .verify-box .title { font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+    .verify-box .desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; }
+    .verify-box .status-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 30px;
+        font-size: 0.55rem;
+        font-weight: 700;
+    }
+    .verify-box .status-badge.pending {
+        background: var(--color-warning-bg);
+        color: var(--color-warning-text);
+    }
+    .verify-box .status-badge.approved {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+    }
+    .verify-box .status-badge.rejected {
+        background: var(--color-danger-bg);
+        color: var(--color-danger-text);
+    }
+
+    .input-email {
+        background: var(--bg-primary);
+        border: 1.5px solid var(--border-input);
+        padding: 8px 12px;
+        border-radius: 12px;
+        color: var(--text-primary);
+        width: 100%;
+        margin-top: 4px;
+        outline: none;
+        font-size: 0.75rem;
+    }
+    .input-email:focus { border-color: var(--color-primary); }
+
+    .hidden { display: none !important; }
+
+    .badge-status { display: inline-block; padding: 2px 10px; border-radius: 30px; font-size: 0.5rem; font-weight: 700; }
+    .badge-status.verified {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+    }
+    .badge-status.unverified {
+        background: var(--color-danger-bg);
+        color: var(--color-danger-text);
+    }
+
+    /* ===== 회원가입 폼 ===== */
+    .signup-form .form-group { margin-bottom: 10px; }
+    .signup-form .form-group label {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .signup-form .form-group input,
+    .signup-form .form-group select,
+    .signup-form .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        background: var(--bg-primary);
+        border: 1.5px solid var(--border-input);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        font-family: inherit;
+        transition: 0.2s;
+    }
+    .signup-form .form-group input:focus,
+    .signup-form .form-group select:focus,
+    .signup-form .form-group textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15);
+        background: var(--bg-card);
+    }
+    .signup-form .form-group input::placeholder,
+    .signup-form .form-group textarea::placeholder { color: var(--text-tertiary); }
+    .signup-form .form-group textarea { resize: vertical; min-height: 60px; }
+    .signup-form .row-half { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .signup-form .verify-option {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        border: 1px solid var(--border-soft);
+    }
+    .signup-form .verify-option input { flex: 1; min-width: 120px; }
+
+    /* ===== 추천인 영역 ===== */
+    .referral-area {
+        background: var(--color-warning-bg);
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(251, 191, 36, 0.15);
+        margin-bottom: 10px;
+    }
+    .referral-area .referral-title {
+        font-size: 0.75rem;
+        color: var(--color-warning-text);
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .referral-area .referral-desc {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .referral-area .nickname-check { display: flex; gap: 6px; }
+    .referral-area .nickname-check input {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-input);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        padding: 8px 12px;
+        font-family: inherit;
+        transition: 0.2s;
+    }
+    .referral-area .nickname-check input:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15);
+    }
+    .referral-area .nickname-check .btn-sm { white-space: nowrap; }
+    .referral-area .referral-input-wrap { margin-top: 6px; }
+    .referral-area .referral-input-wrap input {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-input);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        font-family: inherit;
+        transition: 0.2s;
+    }
+    .referral-area .referral-input-wrap input:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15);
+    }
+
+    /* ===== 공통 모달 ===== */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(30, 58, 138, 0.4);
+        backdrop-filter: blur(6px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: var(--bg-card);
+        border-radius: 24px;
+        max-width: 420px;
+        width: 92%;
+        padding: 22px 18px;
+        border: 1px solid var(--border-soft);
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: var(--shadow-xl);
+    }
+    .modal-box .close-btn {
+        position: absolute;
+        top: 10px; right: 16px;
+        font-size: 1.3rem;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .modal-box .close-btn:hover { color: var(--text-primary); }
+    .modal-box h2 {
+        font-weight: 900;
+        color: var(--color-primary-dark);
+        margin-bottom: 4px;
+        font-size: 1.1rem;
+    }
+    .modal-box .subtitle { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 12px; }
+    .modal-box .detail-item {
+        padding: 6px 0;
+        font-size: 0.75rem;
+        border-bottom: 1px solid var(--border-soft);
+        color: var(--text-primary);
+    }
+    .modal-box .detail-item strong { color: var(--text-secondary); margin-right: 6px; }
+    .modal-box .divider {
+        border: none;
+        border-top: 1px solid var(--border-soft);
+        margin: 8px 0;
+    }
+    .modal-box .price-tag {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+    .modal-box .price-tag.normal {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+    }
+    .modal-box .price-tag.premium {
+        background: rgba(255, 143, 177, 0.15);
+        color: var(--color-accent-dark);
+    }
+
+    /* ===== 토스트 ===== */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-card);
+        border: 1.5px solid var(--color-primary);
+        padding: 10px 22px;
+        border-radius: 40px;
+        color: var(--text-primary);
+        font-size: 0.75rem;
+        z-index: 9999;
+        box-shadow: var(--shadow-lg);
+        animation: slideUp 0.3s ease;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ===== 푸터 ===== */
+    .footer-text {
+        text-align: center;
+        color: var(--text-tertiary);
+        font-size: 0.55rem;
+        padding: 14px 0 4px;
+        border-top: 1px solid var(--border-soft);
+        margin-top: 16px;
+        font-weight: 500;
+    }
+    .footer-text .bottom-links {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+    }
+    .footer-text .bottom-links a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.6rem;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 600;
+    }
+    .footer-text .bottom-links a:hover { color: var(--color-primary-dark); }
+
+    /* ===== 문의 FAB ===== */
+    .inquiry-fab {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 100;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        color: #fff;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(107, 182, 255, 0.45);
+        transition: 0.3s;
+        border: none;
+    }
+    .inquiry-fab:active { transform: scale(0.9); }
+    .inquiry-fab .tooltip {
+        position: absolute;
+        right: 60px;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.6rem;
+        white-space: nowrap;
+        border: 1px solid var(--border-color);
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.3s;
+        box-shadow: var(--shadow-md);
+        font-weight: 600;
+    }
+    .inquiry-fab:hover .tooltip { opacity: 1; }
+
+    /* ===== 관리자 패널 ===== */
+    .admin-panel {
+        background: var(--color-danger-bg);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+        border-radius: 16px;
+        padding: 14px;
+        margin-top: 12px;
+    }
+    .admin-panel .admin-title {
+        color: var(--color-danger-text);
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .admin-panel .admin-desc {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+    }
+    .admin-panel .admin-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+    }
+
+    /* ===== 이상형 찾기 ===== */
+    .priority-item {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+        border: 1px solid var(--border-soft);
+    }
+    .priority-item .priority-badge {
+        display: inline-block;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--color-primary-dark);
+        margin-bottom: 4px;
+    }
+    .priority-item .priority-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .priority-item .priority-row select,
+    .priority-item .priority-row input {
+        flex: 1;
+        padding: 6px 10px;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-input);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.65rem;
+        outline: none;
+        min-width: 60px;
+    }
+    .priority-item .priority-row select:focus,
+    .priority-item .priority-row input:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(107, 182, 255, 0.15);
+    }
+    .priority-item .priority-row .multi-select-wrap {
+        flex: 2;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    .priority-item .priority-row .multi-select-wrap select {
+        flex: 1;
+        min-width: 80px;
+    }
+    .priority-item .priority-row label {
+        font-size: 0.55rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .ideal-mode-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .ideal-mode-tabs button {
+        flex: 1;
+        padding: 8px 0;
+        border-radius: 30px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.6rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+    .ideal-mode-tabs button.active {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        border-color: transparent;
+        color: #fff;
+    }
+
+    select option { background: var(--bg-card); color: var(--text-primary); }
+
+    /* ===== 토글 ===== */
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 6px 0;
+        flex-wrap: wrap;
+    }
+    .toggle-container label {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        user-select: none;
+        font-weight: 600;
+    }
+    .toggle-switch {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        background: var(--text-muted);
+        border-radius: 30px;
+        cursor: pointer;
+        transition: 0.3s;
+        flex-shrink: 0;
+    }
+    .toggle-switch.active { background: var(--color-primary); }
+    .toggle-switch .toggle-knob {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.3s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.active .toggle-knob { left: 20px; }
+    .toggle-description {
+        font-size: 0.6rem;
+        color: var(--text-tertiary);
+        margin-left: 4px;
+    }
+
+    /* ===== 개인정보 설정 ===== */
+    .privacy-settings-section {
+        background: var(--bg-primary);
+        border-radius: 16px;
+        padding: 14px;
+        margin-top: 12px;
+        border: 1px solid var(--border-soft);
+    }
+    .privacy-settings-section .section-title {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--color-primary-dark);
+        margin-bottom: 4px;
+    }
+    .privacy-settings-section .section-desc {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    .privacy-settings-section .section-note {
+        font-size: 0.55rem;
+        color: var(--color-warning-text);
+        background: var(--color-warning-bg);
+        padding: 4px 10px;
+        border-radius: 30px;
+        display: inline-block;
+        margin-bottom: 6px;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    /* ===== 폼 힌트 ===== */
+    .password-hint { font-size: 0.55rem; color: var(--text-tertiary); margin-top: 2px; }
+    .password-hint.valid { color: var(--color-success-text); }
+    .password-hint.invalid { color: var(--color-danger-text); }
+    .password-match-hint { font-size: 0.55rem; margin-top: 2px; }
+    .password-match-hint.valid { color: var(--color-success-text); }
+    .password-match-hint.invalid { color: var(--color-danger-text); }
+    .school-hint { font-size: 0.55rem; margin-top: 2px; color: var(--text-tertiary); }
+    .school-hint.valid { color: var(--color-success-text); }
+    .school-hint.invalid { color: var(--color-danger-text); }
+    .form-group .char-count { font-size: 0.5rem; color: var(--text-tertiary); text-align: right; margin-top: 2px; }
+    .field-hint { font-size: 0.55rem; color: var(--text-tertiary); margin-top: 2px; }
+    .field-hint.error { color: var(--color-danger-text); }
+    .field-hint.success { color: var(--color-success-text); }
+
+    /* ===== 내 카드 아이템 ===== */
+    .card-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        margin-bottom: 6px;
+        border: 1px solid var(--border-soft);
+    }
+    .card-item .card-info { font-size: 0.7rem; }
+    .card-item .card-info .card-type { font-weight: 700; color: var(--color-primary-dark); }
+    .card-item .card-actions { display: flex; gap: 4px; }
+    .card-item .card-actions .btn-sm { font-size: 0.5rem; padding: 4px 10px; }
+
+    /* ===== 전화번호 입력 ===== */
+    .phone-prefix-input {
+        display: flex;
+        align-items: center;
+        background: var(--bg-primary);
+        border: 1.5px solid var(--border-input);
+        border-radius: 12px;
+        padding: 0 12px;
+        transition: 0.2s;
+    }
+    .phone-prefix-input:focus-within {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15);
+        background: var(--bg-card);
+    }
+    .phone-prefix-input .prefix {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        padding-right: 4px;
+        user-select: none;
+        font-weight: 600;
+    }
+    .phone-prefix-input input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        padding: 10px 0;
+        outline: none;
+        font-family: inherit;
+        min-width: 0;
+    }
+
+    .age-grade-input-wrap { position: relative; }
+    .age-grade-input-wrap input {
+        width: 100%;
+        padding: 10px 12px;
+        background: var(--bg-primary);
+        border: 1.5px solid var(--border-input);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        font-family: inherit;
+        transition: 0.2s;
+    }
+    .age-grade-input-wrap input:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15);
+        background: var(--bg-card);
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* ===== 반응형 ===== */
+    @media (max-width: 380px) {
+        .cal-cell { min-height: 42px; font-size: 0.6rem; }
+        .cal-cell .school-label { font-size: 0.35rem; }
+    }
+    @media (min-width: 420px) {
+        .cal-cell { min-height: 58px; font-size: 0.75rem; }
+        .cal-cell .school-label { font-size: 0.45rem; }
+    }
+
+    /* ===== 특수 기능 ===== */
+    #commonModal.modal-front { z-index: 1500 !important; }
+    #adminLikesAdjustModal.modal-front { z-index: 2000 !important; }
+
+    body.admin-mode .privacy-settings-section,
+    body.admin-mode .verify-section,
+    body.admin-mode .user-action-buttons {
+        display: none !important;
+    }
+
+    /* 카드 그리드 블러 처리 (비로그인 동성친구) */
+    .card-grid.blurred {
+        filter: blur(8px);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .same-blur-overlay {
+        display: none;
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(240, 248, 255, 0.6);
+        border-radius: 16px;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        pointer-events: auto;
+    }
+    .same-blur-overlay.active { display: flex; }
+
+    .same-blur-content {
+        background: var(--bg-card);
+        border: 1.5px solid var(--color-primary-light);
+        border-radius: 20px;
+        padding: 24px 20px;
+        max-width: 320px;
+        width: 100%;
+        text-align: center;
+        box-shadow: var(--shadow-xl);
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* ===== 스크롤바 (밝은 테마) ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(107, 182, 255, 0.3);
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(107, 182, 255, 0.5);
+    }
+</style>
 </head>
 <body>
 
