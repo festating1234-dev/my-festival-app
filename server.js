@@ -1055,16 +1055,18 @@ app.get('/api/octomo/check-verified', async (req, res) => {
 //  아이디 찾기 API
 // ============================================================
 
-// 닉네임 마스킹 함수
+// 닉네임 마스킹 함수 (마지막 3자리만 가림)
 function maskNickname(nickname) {
     if (!nickname) return '***';
-    if (nickname.length <= 1) return nickname;
-    if (nickname.length === 2) return nickname[0] + '*';
-    // 3자 이상: 첫 글자 + 중간 마스킹 + 마지막 글자
-    return nickname[0] + '*'.repeat(nickname.length - 2) + nickname[nickname.length - 1];
+    if (nickname.length <= 3) {
+        // 3자 이하: 첫 글자만 남기고 나머지 *
+        return nickname[0] + '*'.repeat(nickname.length - 1);
+    }
+    // 4자 이상: 앞은 그대로, 마지막 3자리만 *
+    return nickname.slice(0, nickname.length - 3) + '***';
 }
 
-// 1. 이름+전화번호 확인 후 인증코드 발급
+// 1. 아이디 찾기 - 인증코드 발급 (정보 노출 방지: 유저 조회 안 함)
 app.post('/api/find-id/verify-info', async (req, res) => {
     const { name, phone: rawPhone } = req.body;
 
@@ -1109,35 +1111,11 @@ app.post('/api/find-id/verify-info', async (req, res) => {
                 .insert([{ phone, attempt_date: today, attempt_count: 1 }]);
         }
 
-                // ===== 이름 + 전화번호로 유저 조회 (양쪽 형식 + is_deleted 대응) =====
-        // 전화번호 양쪽 형식 생성
-        const phoneWithHyphen = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');  // 010-1234-5678
-        
-        // 하이픈 형식도 함께 조회
-        const { data: users } = await supabase
-            .from('users')
-            .select('id, nickname, name, phone, original_phone, is_deleted')
-            .eq('name', name)
-            .or(`phone.eq.${phone},phone.eq.${phoneWithHyphen},original_phone.eq.${phone},original_phone.eq.${phoneWithHyphen}`)
-            .order('id', { ascending: false })
-            .limit(5);
-
-        // 활성 계정만 필터링 (is_deleted가 false이거나 null)
-        const activeUsers = (users || []).filter(u => u.is_deleted !== true);
-
-        if (activeUsers.length === 0) {
-            console.log(`❌ 아이디 찾기 실패: name=${name}, phone=${phone} (조회된 계정: ${users?.length || 0}개)`);
-            return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
-        }
-
-        const foundUser = activeUsers[0];
-        console.log(`✅ 아이디 찾기 매칭: ${foundUser.nickname} (phone: ${foundUser.phone})`);
-
-        // ===== OCTOMO 인증코드 발급 =====
+        // ===== ★ 유저 조회 없이 인증코드만 발급 ★ =====
         const code = String(Math.floor(100000 + Math.random() * 900000));
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-        // 기존 코드 삭제 후 새로 저장
+        // 기존 코드 삭제 후 새로 저장 (name도 함께 저장)
         await supabase
             .from('phone_verifications')
             .delete()
@@ -1148,11 +1126,12 @@ app.post('/api/find-id/verify-info', async (req, res) => {
             .insert([{
                 phone,
                 code,
+                user_name: name,  // ★ 이름 저장
                 verified: false,
                 expires_at: expiresAt.toISOString()
             }]);
 
-        console.log(`🔍 아이디 찾기 인증코드 발급: ${phone} → ${code}`);
+        console.log(`🔍 아이디 찾기 인증코드 발급: ${phone} / ${name} → ${code}`);
 
         res.json({
             success: true,
@@ -1168,19 +1147,19 @@ app.post('/api/find-id/verify-info', async (req, res) => {
 
 // 2. 인증 확인 + 아이디 반환
 app.post('/api/find-id/confirm', async (req, res) => {
-    const { name, phone: rawPhone, code } = req.body;
+    const { phone: rawPhone, code } = req.body;
 
-    if (!name || !rawPhone || !code) {
+    if (!rawPhone || !code) {
         return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
 
     const phone = rawPhone.replace(/[^0-9]/g, '');
 
     try {
-        // DB 인증코드 확인
+        // DB 인증코드 확인 (name도 함께 조회)
         const { data: verif } = await supabase
             .from('phone_verifications')
-            .select('id, verified, expires_at')
+            .select('id, verified, expires_at, user_name')
             .eq('phone', phone)
             .eq('code', code)
             .eq('verified', false)
@@ -1193,6 +1172,8 @@ app.post('/api/find-id/confirm', async (req, res) => {
         if (new Date(verif[0].expires_at) < new Date()) {
             return res.status(400).json({ error: '인증코드가 만료되었습니다. 다시 시도해주세요.' });
         }
+
+        const userName = verif[0].user_name;
 
         // OCTOMO API 호출
         const octomoRes = await fetch('https://api.octoverse.kr/octomo/v1/public/message/exists', {
@@ -1220,13 +1201,13 @@ app.post('/api/find-id/confirm', async (req, res) => {
             .update({ verified: true })
             .eq('id', verif[0].id);
 
-        // 유저 정보 조회 (닉네임)
+        // ===== ★ 인증 성공 후에만 유저 조회 ★ =====
         const phoneWithHyphen = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
         
         const { data: users } = await supabase
             .from('users')
             .select('id, nickname, name, phone, original_phone, is_deleted')
-            .eq('name', name)
+            .eq('name', userName)
             .or(`phone.eq.${phone},phone.eq.${phoneWithHyphen},original_phone.eq.${phone},original_phone.eq.${phoneWithHyphen}`)
             .order('id', { ascending: false })
             .limit(5);
@@ -1234,6 +1215,7 @@ app.post('/api/find-id/confirm', async (req, res) => {
         const activeUsers = (users || []).filter(u => u.is_deleted !== true);
 
         if (activeUsers.length === 0) {
+            console.log(`❌ 아이디 찾기 실패 (인증 성공 but 유저 없음): ${phone} / ${userName}`);
             return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
         }
 
