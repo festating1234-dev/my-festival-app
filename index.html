@@ -1448,7 +1448,6 @@
 /* ============================================================
    🎉 온보딩 화면
    ============================================================ */
-
 .onboarding-screen {
     position: fixed;
     top: 0; left: 0;
@@ -1462,19 +1461,16 @@
     animation: onboardingFadeIn 0.4s ease;
 }
 .onboarding-screen.active { display: flex; }
-@keyframes onboardingFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+@keyframes onboardingFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .onboarding-container {
     max-width: 420px;
     width: 100%;
-    padding: 40px 24px 32px;
+    padding: 32px 20px 28px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
     min-height: 100vh;
     justify-content: center;
 }
@@ -1482,8 +1478,8 @@
 /* ===== 헤더 ===== */
 .onboarding-header { text-align: center; }
 .onboarding-logo {
-    font-size: 3.5rem;
-    margin-bottom: 8px;
+    font-size: 3rem;
+    margin-bottom: 4px;
     animation: bounce 2s infinite;
 }
 @keyframes bounce {
@@ -1493,26 +1489,21 @@
 .onboarding-title {
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 900;
-    font-size: 2.4rem;
+    font-size: 2.2rem;
     background: linear-gradient(135deg, #6BB6FF, #FF8FB1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 1px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 .onboarding-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #4A9EFF;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
 
-/* ===== 기능 소개 ===== */
-.onboarding-features {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
+/* ===== 기능 카드 (일반) ===== */
 .onboarding-feature {
     background: #FFFFFF;
     border-radius: 20px;
@@ -1524,8 +1515,6 @@
     align-items: center;
     animation: slideInRight 0.5s ease backwards;
 }
-.onboarding-feature:nth-child(1) { animation-delay: 0.1s; }
-.onboarding-feature:nth-child(2) { animation-delay: 0.2s; }
 @keyframes slideInRight {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
@@ -1552,45 +1541,84 @@
     line-height: 1.5;
 }
 
-/* ===== 미니 카드 (Feature 1) ===== */
-.mini-card {
-    position: absolute;
+/* ===== 카드 매칭 (Feature 1 - 확장형) ===== */
+.onboarding-feature-cards {
     background: #FFFFFF;
-    border: 1.5px solid rgba(107,182,255,0.25);
-    border-radius: 10px;
-    padding: 5px 7px;
+    border-radius: 20px;
+    padding: 16px 14px;
+    border: 1px solid rgba(107,182,255,0.15);
+    box-shadow: 0 4px 16px rgba(107,182,255,0.1);
+    animation: slideInRight 0.5s ease backwards;
+}
+.onboarding-cards-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.preview-card {
+    background: #F8FBFF;
+    border: 1.5px solid rgba(107,182,255,0.2);
+    border-radius: 12px;
+    padding: 10px 8px 8px;
+    position: relative;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 4px;
-    box-shadow: 0 2px 8px rgba(107,182,255,0.15);
-    width: 85px;
-    font-size: 0.45rem;
-    transform: rotate(-6deg);
-    top: 10px;
-    left: 0;
+    box-shadow: 0 2px 6px rgba(107,182,255,0.08);
 }
-.mini-card-2 {
-    transform: rotate(4deg);
-    top: 45px;
-    left: 12px;
-    border-color: rgba(255,143,177,0.35);
+.preview-card-type {
+    position: absolute;
+    top: 6px; right: 6px;
+    font-size: 0.4rem;
+    background: #A5D8FF;
+    color: #2563EB;
+    padding: 1px 5px;
+    border-radius: 20px;
+    font-weight: 700;
 }
-.mini-emoji { font-size: 0.9rem; flex-shrink: 0; }
-.mini-info { flex: 1; min-width: 0; }
-.mini-school {
+.preview-card-emoji {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+.preview-card-info { text-align: center; }
+.preview-card-main {
+    font-size: 0.5rem;
     font-weight: 700;
     color: #1F2937;
+    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.mini-detail {
+.preview-card-sub {
+    font-size: 0.42rem;
     color: #9CA3AF;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
 }
-.mini-heart { font-size: 0.5rem; flex-shrink: 0; }
+.preview-card-intro {
+    font-size: 0.4rem;
+    color: #6B7280;
+    line-height: 1.5;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(107,182,255,0.1);
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.preview-card-meta {
+    font-size: 0.45rem;
+    color: #FF8FB1;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(107,182,255,0.1);
+    text-align: right;
+    font-weight: 600;
+}
 
 /* ===== 미니 캘린더 (Feature 2) ===== */
 .mini-calendar {
@@ -1643,7 +1671,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 4px;
     animation: slideInRight 0.5s ease 0.3s backwards;
 }
 .onboarding-btn-primary {
@@ -1705,12 +1733,11 @@
 .onboarding-btn-login-link:active { transform: scale(0.97); }
 
 /* 반응형 */
-@media (max-height: 700px) {
-    .onboarding-container { padding: 20px 24px; gap: 16px; }
-    .onboarding-logo { font-size: 2.5rem; }
-    .onboarding-title { font-size: 2rem; }
-    .onboarding-feature { padding: 12px; }
-    .onboarding-feature-icon { width: 80px; height: 80px; }
+@media (max-height: 750px) {
+    .onboarding-container { padding: 20px 20px; gap: 14px; }
+    .onboarding-logo { font-size: 2.4rem; }
+    .onboarding-title { font-size: 1.9rem; }
+    .preview-card-intro { -webkit-line-clamp: 3; }
     .onboarding-btn-primary { padding: 14px; font-size: 0.95rem; }
     .onboarding-btn-secondary { padding: 12px; font-size: 0.85rem; }
 }
@@ -1720,7 +1747,7 @@
 <body>
 
 <!-- ============================================================
-     🎉 온보딩 화면 (비로그인 시 표시)
+     🎉 온보딩 화면
      ============================================================ -->
 <div id="onboardingScreen" class="onboarding-screen">
     <div class="onboarding-container">
@@ -1732,58 +1759,63 @@
             <p class="onboarding-subtitle">대학 축제 시즌, 인연을 만나다</p>
         </div>
 
-        <!-- 주요 기능 소개 -->
-        <div class="onboarding-features">
+        <!-- Feature 1: 카드 매칭 (카드 2개 + 설명) -->
+        <div class="onboarding-feature-cards">
+            <div class="onboarding-cards-preview">
+                <!-- 카드 1: 여럿이서 -->
+                <div class="preview-card">
+                    <div class="preview-card-type">여럿이서</div>
+                    <div class="preview-card-emoji">🐱</div>
+                    <div class="preview-card-info">
+                        <div class="preview-card-main">한양대학교 / 예체능</div>
+                        <div class="preview-card-sub">♂ 남성 / 183cm</div>
+                        <div class="preview-card-sub">24학번 / 22살</div>
+                    </div>
+                    <div class="preview-card-intro">안녕하세요! 다음 주에 저희 학교 축제인데 저희과 부스 같이 구경하실래요? 끝나고는 저희 과 친구들이랑 같이 3대3 미팅해요!</div>
+                    <div class="preview-card-meta">❤️ 12</div>
+                </div>
+                
+                <!-- 카드 2: 동성친구 -->
+                <div class="preview-card">
+                    <div class="preview-card-type" style="background:rgba(255,143,177,0.2); color:#FF6B9D;">동성친구</div>
+                    <div class="preview-card-emoji">🐰</div>
+                    <div class="preview-card-info">
+                        <div class="preview-card-main">연세대학교 / 인문</div>
+                        <div class="preview-card-sub">♀ 여성 / 168cm</div>
+                        <div class="preview-card-sub">26학번 / 20살</div>
+                    </div>
+                    <div class="preview-card-intro">다음주에 홍대 축제 같이 놀러갈 친구 찾아요!! 스타일 좋고 잘 꾸미는 친구면 좋을 것 같고, 같이 공연도 보고 주점에서 헌팅도 해요 ㅎㅎ</div>
+                    <div class="preview-card-meta">❤️ 8</div>
+                </div>
+            </div>
             
-            <!-- Feature 1: 카드 매칭 -->
-            <div class="onboarding-feature">
-                <div class="onboarding-feature-icon">
-                    <div class="mini-card">
-                        <span class="mini-emoji">🦊</span>
-                        <div class="mini-info">
-                            <div class="mini-school">서울대학교</div>
-                            <div class="mini-detail">23학번 · 23세</div>
-                        </div>
-                        <span class="mini-heart">❤️</span>
+            <div class="onboarding-feature-text">
+                <h3>💕 카드 매칭</h3>
+                <p>둘이서(소개팅), 여럿이서(미팅), 동성친구찾기까지<br>원하는 방식으로 친구를 찾아보세요</p>
+            </div>
+        </div>
+
+        <!-- Feature 2: 축제일정 -->
+        <div class="onboarding-feature">
+            <div class="onboarding-feature-icon">
+                <div class="mini-calendar">
+                    <div class="mini-cal-header">🗓️ 2026년 9월</div>
+                    <div class="mini-cal-grid">
+                        <span class="mini-cal-day">14</span>
+                        <span class="mini-cal-day event">15</span>
+                        <span class="mini-cal-day event">16</span>
+                        <span class="mini-cal-day">17</span>
+                        <span class="mini-cal-day event">18</span>
+                        <span class="mini-cal-day">19</span>
+                        <span class="mini-cal-day">20</span>
                     </div>
-                    <div class="mini-card mini-card-2">
-                        <span class="mini-emoji">🐰</span>
-                        <div class="mini-info">
-                            <div class="mini-school">연세대학교</div>
-                            <div class="mini-detail">22학번 · 22세</div>
-                        </div>
-                        <span class="mini-heart">💖</span>
-                    </div>
-                </div>
-                <div class="onboarding-feature-text">
-                    <h3>💕 카드 매칭</h3>
-                    <p>둘이서, 여럿이서, 동성친구까지<br>원하는 방식으로 인연을 찾아보세요</p>
+                    <div class="mini-cal-event">🎤 서울대 대동제 · 아이유</div>
                 </div>
             </div>
-
-            <!-- Feature 2: 축제일정 -->
-            <div class="onboarding-feature">
-                <div class="onboarding-feature-icon">
-                    <div class="mini-calendar">
-                        <div class="mini-cal-header">🗓️ 2026년 9월</div>
-                        <div class="mini-cal-grid">
-                            <span class="mini-cal-day">14</span>
-                            <span class="mini-cal-day event">15</span>
-                            <span class="mini-cal-day event">16</span>
-                            <span class="mini-cal-day">17</span>
-                            <span class="mini-cal-day event">18</span>
-                            <span class="mini-cal-day">19</span>
-                            <span class="mini-cal-day">20</span>
-                        </div>
-                        <div class="mini-cal-event">🎤 서울대 대동제 · 아이유</div>
-                    </div>
-                </div>
-                <div class="onboarding-feature-text">
-                    <h3>🗓️ 축제일정 한눈에</h3>
-                    <p>전국 대학 축제 일정과 라인업을<br>캘린더로 한 번에 확인해요</p>
-                </div>
+            <div class="onboarding-feature-text">
+                <h3>🗓️ 축제일정 한눈에</h3>
+                <p>전국 대학 축제 일정과 라인업을<br>캘린더로 한 번에 확인해요</p>
             </div>
-
         </div>
 
         <!-- 버튼들 -->
@@ -11167,10 +11199,8 @@ function closeModal() {
 // ============================================================
 //  🎉 온보딩 화면
 // ============================================================
-
 const ONBOARDING_SESSION_KEY = 'festating_onboarding_shown';
 
-// 온보딩 표시
 function showOnboarding() {
     const screen = document.getElementById('onboardingScreen');
     if (!screen) return;
@@ -11178,7 +11208,6 @@ function showOnboarding() {
     document.body.style.overflow = 'hidden';
 }
 
-// 온보딩 숨김
 function hideOnboarding() {
     const screen = document.getElementById('onboardingScreen');
     if (!screen) return;
@@ -11187,24 +11216,11 @@ function hideOnboarding() {
     sessionStorage.setItem(ONBOARDING_SESSION_KEY, 'true');
 }
 
-// 🎉 축제친구 만들기 (회원가입)
-function onboardingSignup() {
-    hideOnboarding();
-    openSignupModal();
-}
+function onboardingSignup() { hideOnboarding(); openSignupModal(); }
+function onboardingLogin() { hideOnboarding(); openLoginModal(); }
+function onboardingBrowse() { hideOnboarding(); }
 
-// 로그인
-function onboardingLogin() {
-    hideOnboarding();
-    openLoginModal();
-}
-
-// 👀 구경하기 (그냥 닫기)
-function onboardingBrowse() {
-    hideOnboarding();
-}
-
-    // ================================================================
+        // ================================================================
     // 19. 초기화
     // ================================================================
     async function init() {
