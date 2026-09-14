@@ -34,6 +34,128 @@ const supabase = createClient(
 );
 
 // ============================================================
+//  매칭 요청 알림 정리 헬퍼
+// ============================================================
+
+// 매칭 ID들에 해당하는 match_request 알림 삭제
+async function deleteMatchRequestNotifications(matchIds) {
+    if (!matchIds || matchIds.length === 0) return 0;
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .in('match_id', matchIds)
+            .eq('type', 'match_request');
+        
+        if (error) {
+            console.error('알림 삭제 오류:', error);
+            return 0;
+        }
+        console.log(`🔔 매칭 요청 알림 ${matchIds.length}건 삭제`);
+        return matchIds.length;
+    } catch (e) {
+        console.error('deleteMatchRequestNotifications 오류:', e);
+        return 0;
+    }
+}
+
+// 특정 유저(A)의 pending 매칭들을 취소 + 알림 정리
+// - A가 탈퇴/정지/매칭제한/카드삭제 시 사용
+async function cancelPendingMatchesByUser(userId, reason = '자동 취소') {
+    try {
+        const { data: pendingMatches } = await supabase
+            .from('matches')
+            .select('*')
+            .eq('from_user_id', userId)
+            .eq('status', 'pending');
+
+        if (!pendingMatches || pendingMatches.length === 0) return 0;
+
+        const matchIds = pendingMatches.map(m => m.id);
+
+        // 각 매칭에 대해 A 매칭권 환급
+        for (const match of pendingMatches) {
+            if (match.a_tickets_used > 0) {
+                const { data: fromUser } = await supabase
+                    .from('users')
+                    .select('free_tickets')
+                    .eq('id', match.from_user_id)
+                    .single();
+
+                if (fromUser) {
+                    await supabase
+                        .from('users')
+                        .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                        .eq('id', match.from_user_id);
+                }
+            }
+        }
+
+        // 매칭 상태 취소
+        await supabase
+            .from('matches')
+            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+            .in('id', matchIds);
+
+        // ★ 관련 알림 삭제
+        await deleteMatchRequestNotifications(matchIds);
+
+        console.log(`🚫 유저 ${userId}의 pending 매칭 ${matchIds.length}건 취소 (${reason})`);
+        return matchIds.length;
+    } catch (e) {
+        console.error('cancelPendingMatchesByUser 오류:', e);
+        return 0;
+    }
+}
+
+// 특정 카드(B 카드)의 pending 매칭 취소 + 알림 정리
+// - 카드가 삭제될 때 사용
+async function cancelPendingMatchesByCard(cardId, reason = '카드 삭제') {
+    try {
+        const { data: pendingMatches } = await supabase
+            .from('matches')
+            .select('*')
+            .or(`to_card_id.eq.${cardId},from_card_id.eq.${cardId}`)
+            .eq('status', 'pending');
+
+        if (!pendingMatches || pendingMatches.length === 0) return 0;
+
+        const matchIds = pendingMatches.map(m => m.id);
+
+        // A 매칭권 환급
+        for (const match of pendingMatches) {
+            if (match.a_tickets_used > 0) {
+                const { data: fromUser } = await supabase
+                    .from('users')
+                    .select('free_tickets')
+                    .eq('id', match.from_user_id)
+                    .single();
+
+                if (fromUser) {
+                    await supabase
+                        .from('users')
+                        .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
+                        .eq('id', match.from_user_id);
+                }
+            }
+        }
+
+        await supabase
+            .from('matches')
+            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+            .in('id', matchIds);
+
+        await deleteMatchRequestNotifications(matchIds);
+
+        console.log(`🗑️ 카드 ${cardId}의 pending 매칭 ${matchIds.length}건 취소 (${reason})`);
+        return matchIds.length;
+    } catch (e) {
+        console.error('cancelPendingMatchesByCard 오류:', e);
+        return 0;
+    }
+}
+
+// ============================================================
 //  매칭권 관련 헬퍼 함수
 // ============================================================
 
@@ -104,6 +226,9 @@ async function processExpiredMatches(userId) {
                 .from('matches')
                 .update({ status: 'expired', responded_at: new Date().toISOString() })
                 .eq('id', match.id);
+
+            // ★ B의 매칭 요청 알림 삭제
+            await deleteMatchRequestNotifications([match.id]);
 
             // A에게 알림
             await supabase.from('notifications').insert([{
@@ -849,18 +974,14 @@ app.delete('/api/users/:id', async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // 유저의 카드 삭제 (실제 삭제)
+                // ★ pending 매칭 취소 + 알림 정리 + 환급 (헬퍼 사용)
+        await cancelPendingMatchesByUser(parseInt(id), '회원 탈퇴');
+
+        // 유저의 카드 삭제
         await supabase.from('profiles').delete().eq('user_id', id);
 
         // 유저의 좋아요 삭제
         await supabase.from('likes').delete().eq('user_id', id);
-
-        // pending 매칭 취소
-        await supabase
-            .from('matches')
-            .update({ status: 'cancelled', responded_at: now })
-            .eq('from_user_id', id)
-            .eq('status', 'pending');
 
         console.log(`🗑️ 유저 ${id} 소프트 삭제 완료 (닉네임: ${user.nickname} → ${anonymizedNickname})`);
 
@@ -1481,12 +1602,8 @@ app.delete('/api/profiles/:id', async (req, res) => {
             .delete()
             .eq('card_id', id);
 
-        // 2. 관련 매칭 삭제 (pending 상태만 - 성사/거절된 이력은 보존)
-        await supabase
-            .from('matches')
-            .delete()
-            .eq('to_card_id', id)
-            .eq('status', 'pending');
+        // 2. ★ 관련 pending 매칭 취소 + 알림 삭제 + A 환급
+        await cancelPendingMatchesByCard(parseInt(id), '카드 삭제');
 
         // 3. 프로필(카드) 삭제
         const { error } = await supabase
@@ -1496,7 +1613,7 @@ app.delete('/api/profiles/:id', async (req, res) => {
 
         if (error) throw error;
 
-        console.log(`🗑️ 카드 ${id} 삭제 완료 (관련 좋아요/매칭 정리됨)`);
+        console.log(`🗑️ 카드 ${id} 삭제 완료`);
         res.json({ success: true });
     } catch (err) {
         console.error('Profile delete error:', err);
@@ -1935,7 +2052,19 @@ app.post('/api/matches', async (req, res) => {
             .update({ free_tickets: currentTickets - cost.a })
             .eq('id', from_user_id);
 
-        // 6. 매칭 저장 (3일 만료)
+                // ===== 6. 신청자(A)의 카드 정보 조회 (알림 문구용) =====
+        const { data: fromCard } = await supabase
+            .from('profiles')
+            .select('id, school, age, type')
+            .eq('user_id', from_user_id)
+            .eq('type', targetCard.type)
+            .limit(1);
+
+        const fromCardId = fromCard?.[0]?.id || null;
+        const fromCardSchool = fromCard?.[0]?.school || '알 수 없음';
+        const fromCardAge = fromCard?.[0]?.age || '?';
+
+        // ===== 7. 매칭 저장 (3일 만료) =====
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 3);
 
@@ -1944,6 +2073,7 @@ app.post('/api/matches', async (req, res) => {
             .insert([{
                 from_user_id,
                 to_card_id,
+                from_card_id: fromCardId,  // ★ 신청자 카드 ID 저장
                 type: type || 'normal',
                 status: 'pending',
                 a_tickets_used: cost.a,
@@ -1954,14 +2084,15 @@ app.post('/api/matches', async (req, res) => {
 
         if (error) throw error;
 
-        // 7. 알림 발송 (B에게)
+        // ===== 8. 알림 발송 (B에게) - 카드 정보 + match_id 저장 =====
         if (targetCard.user_id) {
             await supabase.from('notifications').insert([{
                 user_id: targetCard.user_id,
                 type: 'match_request',
                 title: '💌 새 매칭 신청이 도착했어요!',
-                message: `${fromUser.nickname || '누군가'}님이 매칭을 신청했어요. 3일 내에 응답해주세요!`,
+                message: `${fromCardSchool} ${fromCardAge}살 카드로부터 매칭 신청이 들어왔어요. 3일 내에 응답해주세요!`,
                 link: 'matching',
+                match_id: data[0].id,  // ★ 매칭 ID 저장 (나중에 삭제용)
                 is_read: false
             }]);
         }
@@ -2036,6 +2167,9 @@ app.put('/api/matches/:id', async (req, res) => {
                 .update({ status: 'rejected', responded_at: new Date().toISOString() })
                 .eq('id', id);
 
+            // ★ B의 매칭 요청 알림 삭제
+            await deleteMatchRequestNotifications([parseInt(id)]);
+
             // A에게 알림
             await supabase.from('notifications').insert([{
                 user_id: match.from_user_id,
@@ -2083,6 +2217,9 @@ app.put('/api/matches/:id', async (req, res) => {
                 b_tickets_used: cost.b
             })
             .eq('id', id);
+
+        // ★ B의 매칭 요청 알림 삭제
+        await deleteMatchRequestNotifications([parseInt(id)]);
 
         // A에게 알림
         await supabase.from('notifications').insert([{
@@ -2151,6 +2288,9 @@ app.delete('/api/matches/:id', async (req, res) => {
             .from('matches')
             .update({ status: 'cancelled', responded_at: new Date().toISOString() })
             .eq('id', id);
+
+        // ★ 관련 알림 삭제
+        await deleteMatchRequestNotifications([parseInt(id)]);
 
         res.json({ success: true, refunded: match.a_tickets_used });
     } catch (err) {
@@ -2817,47 +2957,8 @@ app.post('/api/admin/delete-card', async (req, res) => {
         // 4-1. 좋아요 삭제
         await supabase.from('likes').delete().eq('card_id', card_id);
 
-        // 4-2. pending 매칭 삭제 (A 환급 처리)
-        const { data: pendingMatches } = await supabase
-            .from('matches')
-            .select('*')
-            .eq('to_card_id', card_id)
-            .eq('status', 'pending');
-
-        if (pendingMatches && pendingMatches.length > 0) {
-            for (const match of pendingMatches) {
-                // A의 매칭권 환급
-                if (match.a_tickets_used > 0) {
-                    const { data: fromUser } = await supabase
-                        .from('users')
-                        .select('free_tickets')
-                        .eq('id', match.from_user_id)
-                        .single();
-
-                    if (fromUser) {
-                        await supabase
-                            .from('users')
-                            .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
-                            .eq('id', match.from_user_id);
-                    }
-                }
-
-                await supabase
-                    .from('matches')
-                    .update({ status: 'cancelled', responded_at: new Date().toISOString() })
-                    .eq('id', match.id);
-
-                // A에게 알림
-                await supabase.from('notifications').insert([{
-                    user_id: match.from_user_id,
-                    type: 'match_cancelled',
-                    title: '🚫 매칭이 취소되었어요',
-                    message: `관리자에 의해 대상 카드가 삭제되어 매칭이 취소되었어요. 사용한 매칭권 ${match.a_tickets_used}장이 환급되었어요.`,
-                    link: 'matching',
-                    is_read: false
-                }]);
-            }
-        }
+                // 4-2. ★ pending 매칭 취소 + 알림 정리 + A 환급 (헬퍼 사용)
+        await cancelPendingMatchesByCard(parseInt(card_id), '관리자 카드 삭제');
 
         // 5. 카드 삭제
         const { error: deleteError } = await supabase
@@ -3263,9 +3364,12 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
             return res.status(400).json({ error: '변경할 항목이 없습니다.' });
         }
 
-        // ★★★ 매칭 제한 시 유저의 모든 카드 삭제 ★★★
+                // ★★★ 매칭 제한 시 유저의 모든 카드 삭제 ★★★
         let deletedCardsCount = 0;
         if (match_blocked === true) {
+            // ★ pending 매칭 취소 + 알림 정리 (카드 삭제 전에)
+            await cancelPendingMatchesByUser(parseInt(id), '매칭 제한');
+
             // 카드 조회
             const { data: userCards } = await supabase
                 .from('profiles')
@@ -3278,37 +3382,6 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
                 // 관련 좋아요 삭제
                 await supabase.from('likes').delete().in('card_id', cardIds);
 
-                // pending 매칭 취소 + A 환급
-                const { data: pendingMatches } = await supabase
-                    .from('matches')
-                    .select('*')
-                    .in('to_card_id', cardIds)
-                    .eq('status', 'pending');
-
-                if (pendingMatches && pendingMatches.length > 0) {
-                    for (const match of pendingMatches) {
-                        if (match.a_tickets_used > 0) {
-                            const { data: fromUser } = await supabase
-                                .from('users')
-                                .select('free_tickets')
-                                .eq('id', match.from_user_id)
-                                .single();
-
-                            if (fromUser) {
-                                await supabase
-                                    .from('users')
-                                    .update({ free_tickets: (fromUser.free_tickets || 0) + match.a_tickets_used })
-                                    .eq('id', match.from_user_id);
-                            }
-                        }
-
-                        await supabase
-                            .from('matches')
-                            .update({ status: 'cancelled', responded_at: new Date().toISOString() })
-                            .eq('id', match.id);
-                    }
-                }
-
                 // 카드 삭제
                 const { error: deleteCardsError } = await supabase
                     .from('profiles')
@@ -3317,7 +3390,6 @@ app.put('/api/admin/users/:id/restrict', async (req, res) => {
 
                 if (!deleteCardsError) {
                     deletedCardsCount = cardIds.length;
-                    console.log(`🗑️ 매칭 제한으로 유저 ${targetUser?.nickname}의 카드 ${deletedCardsCount}개 삭제`);
                 }
             }
         }
@@ -3863,6 +3935,9 @@ app.put('/api/admin/users/:id/ban', async (req, res) => {
     }
 
     try {
+        // ★ pending 매칭 취소 + 알림 정리 (카드 삭제 전에)
+        await cancelPendingMatchesByUser(parseInt(id), '이용 정지');
+
         // 1. 해당 사용자의 모든 프로필(카드) 삭제
         const { error: deleteError } = await supabase
             .from('profiles')
