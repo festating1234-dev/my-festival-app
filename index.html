@@ -6349,11 +6349,22 @@ function openFestivalModal(events, clickedDate) {
         const dayDiff = Math.floor((currentDate - start) / (1000 * 60 * 60 * 24)) + 1;
         const dayLabel = dayDiff + '일차';
 
+                // ★ lineup이 문자열/배열 둘 다 처리
         let lineupText = '추후 공개';
+        
         if (ev.dayLineup && clickedDate && ev.dayLineup[clickedDate]) {
-            lineupText = ev.dayLineup[clickedDate].join(' · ');
-        } else if (ev.lineup && ev.lineup.length > 0) {
-            lineupText = ev.lineup.join(' · ');
+            const dayLineupVal = ev.dayLineup[clickedDate];
+            if (Array.isArray(dayLineupVal)) {
+                lineupText = dayLineupVal.join(' · ');
+            } else if (typeof dayLineupVal === 'string') {
+                lineupText = dayLineupVal;
+            }
+        } else if (ev.lineup) {
+            if (Array.isArray(ev.lineup)) {
+                lineupText = ev.lineup.join(' · ');
+            } else if (typeof ev.lineup === 'string') {
+                lineupText = ev.lineup;
+            }
         }
 
         const externalText = ev.external === true ? '✅ 가능' : ev.external === false ? '❌ 불가' : '정보없음';
