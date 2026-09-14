@@ -1557,33 +1557,60 @@
     margin-bottom: 12px;
 }
 .preview-card {
-    background: #F8FBFF;
-    border: 1.5px solid rgba(107,182,255,0.2);
-    border-radius: 12px;
-    padding: 10px 8px 8px;
+    background: #FFFFFF;
+    border: 1px solid rgba(107,182,255,0.15);
+    border-radius: 14px;
+    padding: 10px 10px 8px;
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 2px 6px rgba(107,182,255,0.08);
+    gap: 3px;
+    box-shadow: 0 2px 8px rgba(107,182,255,0.08);
 }
 .preview-card-type {
     position: absolute;
-    top: 6px; right: 6px;
+    top: 8px; right: 8px;
     font-size: 0.4rem;
     background: #A5D8FF;
     color: #2563EB;
-    padding: 1px 5px;
+    padding: 2px 7px;
     border-radius: 20px;
     font-weight: 700;
 }
-.preview-card-emoji {
-    font-size: 1.5rem;
-    text-align: center;
-    margin-top: 8px;
-    margin-bottom: 2px;
+
+/* ★ 이모지 + 인증배지 (왼쪽 정렬) */
+.preview-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    margin-bottom: 4px;
 }
-.preview-card-info { text-align: center; }
+.preview-card-emoji {
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.preview-card-verify {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.preview-card-verify span {
+    font-size: 0.38rem;
+    background: rgba(74,222,128,0.15);
+    color: #16A34A;
+    padding: 1px 6px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ★ 정보 왼쪽 정렬 */
+.preview-card-info {
+    text-align: left;
+    margin-top: 2px;
+}
 .preview-card-main {
     font-size: 0.5rem;
     font-weight: 700;
@@ -1596,28 +1623,47 @@
 .preview-card-sub {
     font-size: 0.42rem;
     color: #9CA3AF;
-    line-height: 1.4;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+/* ★ 자기소개 왼쪽 정렬 */
 .preview-card-intro {
     font-size: 0.4rem;
     color: #6B7280;
     line-height: 1.5;
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: left;
+}
+
+/* ★ 하단 (찜 개수 + 하트) */
+.preview-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 6px;
     padding-top: 6px;
     border-top: 1px solid rgba(107,182,255,0.1);
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
 }
-.preview-card-meta {
+.preview-card-meta-left {
     font-size: 0.45rem;
+    color: #9CA3AF;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.preview-card-meta-left i {
     color: #FF8FB1;
-    margin-top: 4px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(107,182,255,0.1);
-    text-align: right;
-    font-weight: 600;
+}
+.preview-card-meta-right {
+    font-size: 0.6rem;
+    color: #C9D3E0;
 }
 
 /* ===== 미니 캘린더 (Feature 2) ===== */
@@ -1759,33 +1805,53 @@
             <p class="onboarding-subtitle">대학 축제 시즌, 인연을 만나다</p>
         </div>
 
-        <!-- Feature 1: 카드 매칭 (카드 2개 + 설명) -->
+                <!-- Feature 1: 카드 매칭 (카드 2개 + 설명) -->
         <div class="onboarding-feature-cards">
             <div class="onboarding-cards-preview">
                 <!-- 카드 1: 여럿이서 -->
                 <div class="preview-card">
                     <div class="preview-card-type">여럿이서</div>
-                    <div class="preview-card-emoji">🐱</div>
+                    <div class="preview-card-header">
+                        <div class="preview-card-emoji">🐱</div>
+                        <div class="preview-card-verify">
+                            <span>✅ 학교메일</span>
+                        </div>
+                    </div>
                     <div class="preview-card-info">
                         <div class="preview-card-main">한양대학교 / 예체능</div>
                         <div class="preview-card-sub">♂ 남성 / 183cm</div>
                         <div class="preview-card-sub">24학번 / 22살</div>
                     </div>
                     <div class="preview-card-intro">안녕하세요! 다음 주에 저희 학교 축제인데 저희과 부스 같이 구경하실래요? 끝나고는 저희 과 친구들이랑 같이 3대3 미팅해요!</div>
-                    <div class="preview-card-meta">❤️ 12</div>
+                    <div class="preview-card-meta">
+                        <div class="preview-card-meta-left">
+                            <i class="far fa-heart"></i> 12
+                        </div>
+                        <div class="preview-card-meta-right">♡</div>
+                    </div>
                 </div>
                 
                 <!-- 카드 2: 동성친구 -->
                 <div class="preview-card">
                     <div class="preview-card-type" style="background:rgba(255,143,177,0.2); color:#FF6B9D;">동성친구</div>
-                    <div class="preview-card-emoji">🐰</div>
+                    <div class="preview-card-header">
+                        <div class="preview-card-emoji">🐰</div>
+                        <div class="preview-card-verify">
+                            <span style="background:rgba(96,165,250,0.15); color:#2563EB;">✅ 학생증</span>
+                        </div>
+                    </div>
                     <div class="preview-card-info">
                         <div class="preview-card-main">연세대학교 / 인문</div>
                         <div class="preview-card-sub">♀ 여성 / 168cm</div>
                         <div class="preview-card-sub">26학번 / 20살</div>
                     </div>
                     <div class="preview-card-intro">다음주에 홍대 축제 같이 놀러갈 친구 찾아요!! 스타일 좋고 잘 꾸미는 친구면 좋을 것 같고, 같이 공연도 보고 주점에서 헌팅도 해요 ㅎㅎ</div>
-                    <div class="preview-card-meta">❤️ 8</div>
+                    <div class="preview-card-meta">
+                        <div class="preview-card-meta-left">
+                            <i class="far fa-heart"></i> 8
+                        </div>
+                        <div class="preview-card-meta-right">♡</div>
+                    </div>
                 </div>
             </div>
             
