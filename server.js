@@ -1109,19 +1109,29 @@ app.post('/api/find-id/verify-info', async (req, res) => {
                 .insert([{ phone, attempt_date: today, attempt_count: 1 }]);
         }
 
-        // ===== 이름 + 전화번호로 유저 조회 =====
+                // ===== 이름 + 전화번호로 유저 조회 (양쪽 형식 + is_deleted 대응) =====
+        // 전화번호 양쪽 형식 생성
+        const phoneWithHyphen = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');  // 010-1234-5678
+        
+        // 하이픈 형식도 함께 조회
         const { data: users } = await supabase
             .from('users')
             .select('id, nickname, name, phone, original_phone, is_deleted')
-            .eq('is_deleted', false)
             .eq('name', name)
-            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
-            .limit(1);
+            .or(`phone.eq.${phone},phone.eq.${phoneWithHyphen},original_phone.eq.${phone},original_phone.eq.${phoneWithHyphen}`)
+            .order('id', { ascending: false })
+            .limit(5);
 
-        if (!users || users.length === 0) {
-            // 정보가 일치하는 유저 없음
+        // 활성 계정만 필터링 (is_deleted가 false이거나 null)
+        const activeUsers = (users || []).filter(u => u.is_deleted !== true);
+
+        if (activeUsers.length === 0) {
+            console.log(`❌ 아이디 찾기 실패: name=${name}, phone=${phone} (조회된 계정: ${users?.length || 0}개)`);
             return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
         }
+
+        const foundUser = activeUsers[0];
+        console.log(`✅ 아이디 찾기 매칭: ${foundUser.nickname} (phone: ${foundUser.phone})`);
 
         // ===== OCTOMO 인증코드 발급 =====
         const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -1211,19 +1221,23 @@ app.post('/api/find-id/confirm', async (req, res) => {
             .eq('id', verif[0].id);
 
         // 유저 정보 조회 (닉네임)
+        const phoneWithHyphen = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        
         const { data: users } = await supabase
             .from('users')
             .select('id, nickname, name, phone, original_phone, is_deleted')
-            .eq('is_deleted', false)
             .eq('name', name)
-            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
-            .limit(1);
+            .or(`phone.eq.${phone},phone.eq.${phoneWithHyphen},original_phone.eq.${phone},original_phone.eq.${phoneWithHyphen}`)
+            .order('id', { ascending: false })
+            .limit(5);
 
-        if (!users || users.length === 0) {
+        const activeUsers = (users || []).filter(u => u.is_deleted !== true);
+
+        if (activeUsers.length === 0) {
             return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
         }
 
-        const maskedNickname = maskNickname(users[0].nickname);
+        const maskedNickname = maskNickname(activeUsers[0].nickname);
         console.log(`✅ 아이디 찾기 성공: ${phone} → ${maskedNickname}`);
 
         res.json({
