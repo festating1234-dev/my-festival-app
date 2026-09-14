@@ -5720,18 +5720,32 @@ document.addEventListener('DOMContentLoaded', function() {
     content.innerHTML = `
         <h2>📞 문의하기</h2>
         <div class="subtitle">궁금한 점이 있으시면 아래로 연락주세요</div>
-        <div style="background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; margin:10px 0; text-align:center;">
-            <div style="font-size:1.2rem; margin-bottom:4px;">💬</div>
-            <div style="font-weight:700; font-size:1rem; color:#fff;">카카오톡 ID: <span style="color:#fbbf24;">festivalting</span></div>
-            <div style="font-size:0.7rem; color:#888; margin-top:4px;">운영시간: 평일 10:00 ~ 18:00</div>
-        </div>
-        <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; text-align:center; border:1px solid rgba(251,191,36,0.1);">
-            <div style="font-size:0.75rem; color:#aaa;">📋 <strong>구글 폼</strong>으로도 문의 가능합니다</div>
-            <button class="btn-sm primary" onclick="window.open('https://forms.gle/예시링크','_blank')" style="margin-top:6px;">
-                <i class="fas fa-external-link-alt"></i> 구글 폼 열기
+
+        <!-- 구글폼 안내 -->
+        <div style="background:rgba(168,85,247,0.06); border-radius:14px; padding:16px; margin:12px 0; text-align:center; border:1px solid rgba(168,85,247,0.15);">
+            <div style="font-size:2rem; margin-bottom:8px;">📋</div>
+            <div style="font-weight:700; font-size:0.9rem; color:#fff; margin-bottom:4px;">문의하기 폼</div>
+            <div style="font-size:0.7rem; color:#aaa; margin-bottom:14px; line-height:1.6;">
+                아래 버튼을 눌러 문의사항을 남겨주세요.<br>
+                운영진 확인 후 순차적으로 답변드려요!
+            </div>
+            <button class="btn-primary" onclick="window.open('https://forms.gle/7EJGz465cW3PJmTS6', '_blank')" style="width:100%; padding:12px;">
+                <i class="fas fa-external-link-alt"></i> 문의하기 폼 열기
             </button>
         </div>
-        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:10px;">닫기</button>
+
+        <!-- 운영 시간 안내 -->
+        <div style="background:rgba(251,191,36,0.05); border-radius:12px; padding:12px; margin-bottom:12px; border:1px solid rgba(251,191,36,0.1); text-align:center;">
+            <div style="font-size:0.7rem; color:#fbbf24;">⏰ 운영시간: 평일 10:00 ~ 18:00</div>
+            <div style="font-size:0.6rem; color:#888; margin-top:4px;">(주말/공휴일 제외)</div>
+        </div>
+
+        <!-- 안내 문구 -->
+        <div style="background:rgba(239,68,68,0.05); border-radius:10px; padding:10px; margin-bottom:12px; border:1px solid rgba(239,68,68,0.1); font-size:0.6rem; color:#f87171; line-height:1.6; text-align:center;">
+            ⚠️ 답변이 다소 지연될 수 있는 점 양해 부탁드려요.
+        </div>
+
+        <button class="btn-sm" onclick="closeModal()" style="width:100%;">닫기</button>
     `;
     modal.classList.add('active');
 }
@@ -5754,7 +5768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-weight:700; color:#4ade80; font-size:0.85rem;">📋 환불 절차</div>
                 <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
                     1. 대화내역을 캡처합니다<br>
-                    2. 카카오톡 ID: <strong style="color:#fff;">festivalting</strong>으로 제보<br>
+                    2. 문의하기 구글 폼으로 제보<br>
                     3. 운영진 확인 후 환불 처리
                 </div>
             </div>
@@ -7799,7 +7813,7 @@ function openEditProfile() {
                 <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">💬 문의하기</div>
                 <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
                     궁금한 점이나 불편한 사항이 있으시면 언제든지 연락주세요.<br>
-                    카카오톡 ID: <strong style="color:#fff;">festivalting</strong>
+                    카카오톡 ID: <strong style="color:#fff;">준비중</strong>
                 </div>
             </div>
 
