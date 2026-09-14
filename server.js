@@ -229,11 +229,15 @@ app.post('/api/users', async (req, res) => {
     try {
         const userData = { ...req.body };
         
-        // ===== ★ OCTOMO 휴대폰 인증 확인 ★ =====
-        const phone = userData.phone;
-        if (!phone) {
+                // ===== ★ OCTOMO 휴대폰 인증 확인 (전화번호 형식 통일) ★ =====
+        const rawPhone = userData.phone;
+        if (!rawPhone) {
             return res.status(400).json({ error: '휴대폰 번호가 필요합니다.' });
         }
+
+        // 하이픈 제거 (010-1234-5678 → 01012345678)
+        const phone = rawPhone.replace(/[^0-9]/g, '');
+        console.log(`📱 인증 확인 요청: rawPhone=${rawPhone}, phone=${phone}`);
 
         const { data: verif } = await supabase
             .from('phone_verifications')
@@ -244,14 +248,15 @@ app.post('/api/users', async (req, res) => {
             .limit(1);
 
         if (!verif || verif.length === 0) {
+            console.log(`❌ 인증 실패: phone=${phone}의 verified 기록 없음`);
             return res.status(400).json({ error: '휴대폰 인증이 완료되지 않았습니다.' });
         }
 
-        // ===== ★ Phase B: 재가입 여부 확인 + 매칭권 지급 제한 ★ =====
+        // ===== ★ Phase B: 재가입 여부 확인 + 매칭권 지급 제한 (양쪽 형식으로 조회) ★ =====
         const { data: prevUsers } = await supabase
             .from('users')
             .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed')
-            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
+            .or(`phone.eq.${phone},phone.eq.${rawPhone},original_phone.eq.${phone},original_phone.eq.${rawPhone}`)
             .limit(1);
 
         let isRejoin = false;
@@ -801,7 +806,7 @@ app.delete('/api/users/:id', async (req, res) => {
             .update({
                 is_deleted: true,
                 deleted_at: now,
-                original_phone: user.phone || null,  // 원본 전화번호 보관
+                original_phone: (user.phone || '').replace(/[^0-9]/g, '') || null,  // 하이픈 제거 후 보관
                 nickname: anonymizedNickname,         // 닉네임 익명화
                 phone: null,                          // 전화번호 제거
                 email: null                           // 이메일 제거 (선택)
