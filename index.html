@@ -11299,6 +11299,10 @@ function onboardingBrowse() { hideOnboarding(); }
         await fetchProfiles();
         renderProfiles();
     }
+
+    // ★★★ 축제 데이터 로드 (이 부분이 빠져있었음!) ★★★
+    await fetchFestivals();
+
     renderFestivalCalendar();
     updateLikedBtn();
     updateUI();
