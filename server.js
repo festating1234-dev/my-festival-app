@@ -1052,6 +1052,191 @@ app.get('/api/octomo/check-verified', async (req, res) => {
 });
 
 // ============================================================
+//  아이디 찾기 API
+// ============================================================
+
+// 닉네임 마스킹 함수
+function maskNickname(nickname) {
+    if (!nickname) return '***';
+    if (nickname.length <= 1) return nickname;
+    if (nickname.length === 2) return nickname[0] + '*';
+    // 3자 이상: 첫 글자 + 중간 마스킹 + 마지막 글자
+    return nickname[0] + '*'.repeat(nickname.length - 2) + nickname[nickname.length - 1];
+}
+
+// 1. 이름+전화번호 확인 후 인증코드 발급
+app.post('/api/find-id/verify-info', async (req, res) => {
+    const { name, phone: rawPhone } = req.body;
+
+    if (!name || !rawPhone) {
+        return res.status(400).json({ error: '이름과 전화번호를 모두 입력해주세요.' });
+    }
+
+    const phone = rawPhone.replace(/[^0-9]/g, '');
+    if (!/^010\d{8}$/.test(phone)) {
+        return res.status(400).json({ error: '올바른 휴대폰 번호 형식이 아닙니다.' });
+    }
+
+    try {
+        // ===== Rate Limit 확인 (하루 5회) =====
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: attempts } = await supabase
+            .from('find_id_attempts')
+            .select('attempt_count')
+            .eq('phone', phone)
+            .eq('attempt_date', today)
+            .limit(1);
+
+        const currentCount = attempts?.[0]?.attempt_count || 0;
+        if (currentCount >= 5) {
+            return res.status(429).json({ 
+                error: '오늘 아이디 찾기 시도 횟수를 초과했습니다. 내일 다시 시도해주세요.',
+                code: 'RATE_LIMIT'
+            });
+        }
+
+        // 시도 횟수 증가
+        if (attempts && attempts.length > 0) {
+            await supabase
+                .from('find_id_attempts')
+                .update({ attempt_count: currentCount + 1 })
+                .eq('phone', phone)
+                .eq('attempt_date', today);
+        } else {
+            await supabase
+                .from('find_id_attempts')
+                .insert([{ phone, attempt_date: today, attempt_count: 1 }]);
+        }
+
+        // ===== 이름 + 전화번호로 유저 조회 =====
+        const { data: users } = await supabase
+            .from('users')
+            .select('id, nickname, name, phone, original_phone, is_deleted')
+            .eq('is_deleted', false)
+            .eq('name', name)
+            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
+            .limit(1);
+
+        if (!users || users.length === 0) {
+            // 정보가 일치하는 유저 없음
+            return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
+        }
+
+        // ===== OCTOMO 인증코드 발급 =====
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        // 기존 코드 삭제 후 새로 저장
+        await supabase
+            .from('phone_verifications')
+            .delete()
+            .eq('phone', phone);
+
+        await supabase
+            .from('phone_verifications')
+            .insert([{
+                phone,
+                code,
+                verified: false,
+                expires_at: expiresAt.toISOString()
+            }]);
+
+        console.log(`🔍 아이디 찾기 인증코드 발급: ${phone} → ${code}`);
+
+        res.json({
+            success: true,
+            code: code,
+            receiver: '1666-3538',
+            remaining_attempts: 4 - currentCount
+        });
+    } catch (error) {
+        console.error('Find ID verify-info error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 인증 확인 + 아이디 반환
+app.post('/api/find-id/confirm', async (req, res) => {
+    const { name, phone: rawPhone, code } = req.body;
+
+    if (!name || !rawPhone || !code) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    const phone = rawPhone.replace(/[^0-9]/g, '');
+
+    try {
+        // DB 인증코드 확인
+        const { data: verif } = await supabase
+            .from('phone_verifications')
+            .select('id, verified, expires_at')
+            .eq('phone', phone)
+            .eq('code', code)
+            .eq('verified', false)
+            .limit(1);
+
+        if (!verif || verif.length === 0) {
+            return res.status(400).json({ error: '발급된 인증코드가 아닙니다.' });
+        }
+
+        if (new Date(verif[0].expires_at) < new Date()) {
+            return res.status(400).json({ error: '인증코드가 만료되었습니다. 다시 시도해주세요.' });
+        }
+
+        // OCTOMO API 호출
+        const octomoRes = await fetch('https://api.octoverse.kr/octomo/v1/public/message/exists', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Octomo ${process.env.OCTOMO_API_KEY}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                mobileNum: phone,
+                text: code
+            })
+        });
+
+        const octomoData = await octomoRes.json();
+
+        if (!octomoData.exists) {
+            return res.status(400).json({ error: '인증코드가 확인되지 않았습니다. 문자를 다시 확인해주세요.' });
+        }
+
+        // 인증 완료 처리
+        await supabase
+            .from('phone_verifications')
+            .update({ verified: true })
+            .eq('id', verif[0].id);
+
+        // 유저 정보 조회 (닉네임)
+        const { data: users } = await supabase
+            .from('users')
+            .select('id, nickname, name, phone, original_phone, is_deleted')
+            .eq('is_deleted', false)
+            .eq('name', name)
+            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
+            .limit(1);
+
+        if (!users || users.length === 0) {
+            return res.status(404).json({ error: '일치하는 정보가 없습니다.' });
+        }
+
+        const maskedNickname = maskNickname(users[0].nickname);
+        console.log(`✅ 아이디 찾기 성공: ${phone} → ${maskedNickname}`);
+
+        res.json({
+            success: true,
+            masked_id: maskedNickname
+        });
+    } catch (error) {
+        console.error('Find ID confirm error:', error);
+        res.status(500).json({ error: '인증 확인 중 오류가 발생했습니다.' });
+    }
+});
+
+// ============================================================
 //  학생증 인증 관련 API
 // ============================================================
 
