@@ -4333,14 +4333,14 @@ async function deleteAllNotifications() {
 async function loadNotifications() {
     if (!currentUser) return;
     const container = document.getElementById('notificationList');
-    container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
+    container.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:0.7rem; padding:20px 0;">⏳ 로딩 중...</div>';
 
     try {
         const res = await fetch(`/api/notifications?userId=${currentUser.id}`);
         const notifications = await res.json();
 
         if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.7rem; padding:20px 0;">📭 새로운 알림이 없습니다.</div>';
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:0.7rem; padding:20px 0;">📭 새로운 알림이 없습니다.</div>';
             return;
         }
 
@@ -4351,23 +4351,23 @@ async function loadNotifications() {
             const isReviewRejected = n.type === 'review_rejected';
 
             html += `
-                <div class="notification-item" style="background:${isUnread ? 'rgba(168,85,247,0.05)' : 'transparent'}; border-left:3px solid ${isUnread ? '#a855f7' : 'transparent'}; padding:10px 12px; margin-bottom:4px; border-radius:8px; transition:0.2s; position:relative;">
+                <div class="notification-item" style="background:${isUnread ? 'rgba(107,182,255,0.08)' : '#FFFFFF'}; border:1px solid ${isUnread ? 'rgba(107,182,255,0.2)' : 'rgba(107,182,255,0.1)'}; border-left:3px solid ${isUnread ? '#4A9EFF' : '#E6F3FF'}; padding:12px; margin-bottom:6px; border-radius:10px; transition:0.2s; position:relative;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer;" onclick="handleNotificationClick(${n.id}, '${n.link || ''}', '${n.type}', ${n.card_id || null})">
                         <div style="flex:1;">
-                            <div style="font-weight:600; font-size:0.8rem; color:${isUnread ? '#fbbf24' : '#aaa'};">${n.title}</div>
-                            <div style="font-size:0.65rem; color:#ccc; margin-top:2px;">${n.message}</div>
+                            <div style="font-weight:700; font-size:0.82rem; color:${isUnread ? '#2563EB' : '#6B7280'};">${n.title}</div>
+                            <div style="font-size:0.68rem; color:#4B5563; margin-top:3px; line-height:1.5;">${n.message}</div>
                         </div>
-                        <div style="font-size:0.5rem; color:#666; white-space:nowrap; margin-left:8px;">${time}</div>
+                        <div style="font-size:0.5rem; color:#9CA3AF; white-space:nowrap; margin-left:8px;">${time}</div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                        ${isUnread ? '<div style="font-size:0.45rem; color:#a855f7;">● 새 알림</div>' : '<div></div>'}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                        ${isUnread ? '<div style="font-size:0.5rem; color:#4A9EFF; font-weight:700;">● 새 알림</div>' : '<div></div>'}
                         <div style="display:flex; gap:4px;">
                             ${isReviewRejected && n.card_id ? `
-                                <button class="btn-sm primary" onclick="event.stopPropagation(); openMatchingFromReviewNotification(${n.card_id || null}, ${n.match_id || null}, ${n.id})" style="font-size:0.45rem; padding:2px 8px;">
+                                <button class="btn-sm primary" onclick="event.stopPropagation(); openMatchingFromReviewNotification(${n.card_id || null}, ${n.match_id || null}, ${n.id})" style="font-size:0.5rem; padding:3px 10px;">
     ✍️ 리뷰 다시 작성하기
 </button>
                             ` : ''}
-                            <button class="btn-sm danger" onclick="event.stopPropagation(); deleteNotification(${n.id})" style="font-size:0.45rem; padding:2px 8px;">
+                            <button class="btn-sm danger" onclick="event.stopPropagation(); deleteNotification(${n.id})" style="font-size:0.5rem; padding:3px 10px;">
                                 <i class="fas fa-trash"></i> 삭제
                             </button>
                         </div>
@@ -4379,7 +4379,7 @@ async function loadNotifications() {
         container.innerHTML = html;
     } catch (error) {
         console.error('Load notifications error:', error);
-        container.innerHTML = '<div style="color:#f87171; font-size:0.7rem; padding:20px 0; text-align:center;">⚠️ 알림을 불러오는데 실패했습니다.</div>';
+        container.innerHTML = '<div style="color:#DC2626; font-size:0.7rem; padding:20px 0; text-align:center;">⚠️ 알림을 불러오는데 실패했습니다.</div>';
     }
 }
 
@@ -8456,26 +8456,26 @@ function openFaqModal() {
     let faqHtml = '';
     faqData.forEach((cat, catIdx) => {
         faqHtml += `
-            <div style="margin-bottom:8px; background:rgba(168,85,247,0.04); border-radius:12px; border:1px solid rgba(168,85,247,0.1); overflow:hidden;">
+            <div style="margin-bottom:8px; background:rgba(107,182,255,0.06); border-radius:12px; border:1px solid rgba(107,182,255,0.15); overflow:hidden;">
                 <!-- 카테고리 헤더 -->
-                <div onclick="toggleFaqCategory(${catIdx})" style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:rgba(168,85,247,0.06); user-select:none;">
-                    <div style="font-weight:700; font-size:0.8rem; color:#fbbf24;">${cat.category}</div>
-                    <div id="faqCatArrow_${catIdx}" style="color:#a855f7; font-size:0.9rem; transition:transform 0.2s;">▼</div>
+                <div onclick="toggleFaqCategory(${catIdx})" style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:rgba(107,182,255,0.1); user-select:none;">
+                    <div style="font-weight:700; font-size:0.8rem; color:#2563EB;">${cat.category}</div>
+                    <div id="faqCatArrow_${catIdx}" style="color:#4A9EFF; font-size:0.9rem; transition:transform 0.2s;">▼</div>
                 </div>
                 
                 <!-- 카테고리 내용 -->
                 <div id="faqCatContent_${catIdx}" style="display:none; padding:8px 14px 14px 14px;">
                     ${cat.items.map((item, itemIdx) => `
-                        <div style="margin-bottom:6px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid rgba(255,255,255,0.04); overflow:hidden;">
+                        <div style="margin-bottom:6px; background:#FFFFFF; border-radius:10px; border:1px solid rgba(107,182,255,0.12); overflow:hidden;">
                             <div onclick="toggleFaqItem(${catIdx}, ${itemIdx})" style="padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; user-select:none;">
-                                <div style="font-size:0.7rem; color:#ddd; line-height:1.5; flex:1;">
-                                    <span style="color:#a855f7; font-weight:700;">Q.</span> ${item.q}
+                                <div style="font-size:0.72rem; color:#1F2937; line-height:1.5; flex:1; font-weight:600;">
+                                    <span style="color:#4A9EFF; font-weight:700;">Q.</span> ${item.q}
                                 </div>
-                                <div id="faqItemArrow_${catIdx}_${itemIdx}" style="color:#888; font-size:0.7rem; transition:transform 0.2s; flex-shrink:0;">▼</div>
+                                <div id="faqItemArrow_${catIdx}_${itemIdx}" style="color:#9CA3AF; font-size:0.7rem; transition:transform 0.2s; flex-shrink:0;">▼</div>
                             </div>
-                            <div id="faqItemContent_${catIdx}_${itemIdx}" style="display:none; padding:0 12px 12px 12px; border-top:1px solid rgba(255,255,255,0.04);">
-                                <div style="font-size:0.68rem; color:#aaa; line-height:1.7; padding-top:10px;">
-                                    <span style="color:#4ade80; font-weight:700;">A.</span> ${item.a}
+                            <div id="faqItemContent_${catIdx}_${itemIdx}" style="display:none; padding:0 12px 12px 12px; border-top:1px solid rgba(107,182,255,0.12);">
+                                <div style="font-size:0.7rem; color:#4B5563; line-height:1.7; padding-top:10px;">
+                                    <span style="color:#16A34A; font-weight:700;">A.</span> ${item.a}
                                 </div>
                             </div>
                         </div>
@@ -8491,7 +8491,7 @@ function openFaqModal() {
 
         <!-- 검색창 -->
         <div style="margin-bottom:10px; display:flex; gap:6px;">
-            <input type="text" id="faqSearchInput" placeholder="🔍 키워드로 검색 (예: 매칭권)" oninput="searchFaq(this.value)" style="flex:1; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff; font-size:0.75rem; outline:none;">
+            <input type="text" id="faqSearchInput" placeholder="🔍 키워드로 검색 (예: 매칭권)" oninput="searchFaq(this.value)" style="flex:1; padding:10px 14px; background:#F0F8FF; border:1.5px solid rgba(107,182,255,0.25); border-radius:12px; color:#1F2937; font-size:0.75rem; outline:none;">
         </div>
 
         <!-- FAQ 목록 -->
@@ -8500,8 +8500,8 @@ function openFaqModal() {
         </div>
 
         <!-- 문의 안내 -->
-        <div style="background:rgba(251,191,36,0.06); border-radius:10px; padding:12px; margin-top:10px; border:1px solid rgba(251,191,36,0.15); text-align:center;">
-            <div style="font-size:0.65rem; color:#aaa; margin-bottom:8px;">원하는 답변을 못 찾으셨나요?</div>
+        <div style="background:rgba(251,191,36,0.1); border-radius:10px; padding:12px; margin-top:10px; border:1px solid rgba(251,191,36,0.25); text-align:center;">
+            <div style="font-size:0.65rem; color:#6B7280; margin-bottom:8px;">원하는 답변을 못 찾으셨나요?</div>
             <button class="btn-primary" onclick="closeModal(); openInquiry();" style="width:100%; padding:10px; font-size:0.7rem;">
                 <i class="fas fa-comment-dots"></i> 문의하기
             </button>
