@@ -944,12 +944,13 @@ app.post('/api/octomo/verify', async (req, res) => {
             return res.status(400).json({ error: '인증코드가 만료되었습니다. 다시 발급받아주세요.' });
         }
 
-        // OCTOMO API 호출
-        const octomoRes = await fetch('https://octomo.octoverse.kr/octomo/v1/public/message/exists', {
+                // OCTOMO API 호출 (문서 기준 정확한 URL + 헤더)
+        const octomoRes = await fetch('https://api.octoverse.kr/octomo/v1/public/message/exists', {
             method: 'POST',
             headers: {
+                'Authorization': `Octomo ${process.env.OCTOMO_API_KEY}`,
                 'Content-Type': 'application/json',
-                'x-api-key': process.env.OCTOMO_API_KEY
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 mobileNum: phone,
