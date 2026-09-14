@@ -586,18 +586,17 @@
         border-radius: 4px;
     }
     .festival-calendar-grid .day-cell .school-list {
-        font-size: 0.45rem;
-        color: var(--text-secondary);
-        line-height: 1.4;
-        margin-top: 2px;
-        word-break: break-all;
-        max-height: 5em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 6;
-        -webkit-box-orient: vertical;
-    }
+    font-size: 0.42rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-top: 2px;
+    word-break: break-all;
+    max-height: 6.5em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 8;   /* 6 → 8로 확장 */
+    -webkit-box-orient: vertical;
+}
 
     /* ===== 축제 상세 모달 ===== */
     .festival-modal-overlay {
@@ -5976,7 +5975,6 @@ async function fetchFestivals() {
         const res = await fetch('/api/festivals');
         if (res.ok) {
             const data = await res.json();
-            // 서버 데이터를 프론트 형식으로 변환
             FESTIVAL_EVENTS = data.map(f => ({
                 id: f.id,
                 school: f.school,
@@ -5986,6 +5984,7 @@ async function fetchFestivals() {
                 location: f.location,
                 ticket: f.ticket,
                 external: f.external,
+                pub: f.pub,           // ★ 추가
                 dayLineup: f.day_lineup,
                 lineup: f.lineup
             }));
@@ -6443,17 +6442,24 @@ function openFestivalModal(events, clickedDate) {
             }
         }
 
-        const externalText = ev.external === true ? '✅ 가능' : ev.external === false ? '❌ 불가' : '정보없음';
-        const color = getSchoolColor(ev.school);
+                // 외부인 출입 정보
+        let externalText = '정보없음';
+        if (ev.external === '가능') externalText = '✅ 가능';
+        else if (ev.external === '불가') externalText = '❌ 불가';
+        
+        // 주점 정보
+        let pubText = '정보없음';
+        if (ev.pub === 'O') pubText = '✅ 있음';
+        else if (ev.pub === 'X') pubText = '❌ 없음';
 
         html += `
-            <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:8px;">
-                <div style="font-weight:700; font-size:0.9rem; color:#fbbf24;">${ev.school}</div>
-                <div style="font-size:0.7rem; color:#aaa; margin-top:2px;">
+            <div style="background:rgba(107,182,255,0.06); border:1px solid rgba(107,182,255,0.15); border-radius:12px; padding:12px; margin-bottom:8px;">
+                <div style="font-weight:700; font-size:0.9rem; color:#2563EB;">${ev.school}</div>
+                <div style="font-size:0.7rem; color:#4B5563; margin-top:4px; line-height:1.7;">
                     <div>📅 ${ev.title} ${dayLabel}</div>
-                    <div>🎫 티켓: ${ev.ticket || '정보없음'}</div>
                     <div>📍 장소: ${ev.location || '정보없음'}</div>
                     <div>🚪 외부인 출입: ${externalText}</div>
+                    <div>🍻 주점: ${pubText}</div>
                     <div style="margin-top:4px;">🎤 라인업: ${lineupText}</div>
                 </div>
             </div>
