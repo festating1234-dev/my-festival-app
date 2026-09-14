@@ -6657,12 +6657,45 @@ async function checkReferralCode() {
                 </div>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-phone"></i> 휴대폰 번호</label>
-                <div class="phone-prefix-input">
-                    <span class="prefix">010-</span>
-                    <input type="text" id="signupPhone" placeholder="0000-0000" maxlength="9" oninput="formatPhoneInput(this)">
-                </div>
-            </div>
+    <label><i class="fas fa-phone"></i> 휴대폰 번호 <span style="color:#f87171;">*</span></label>
+    <div class="phone-prefix-input">
+        <span class="prefix">010-</span>
+        <input type="text" id="signupPhone" placeholder="0000-0000" maxlength="9" oninput="formatPhoneInput(this)" onchange="resetOctomoVerification()">
+    </div>
+    <div style="font-size:0.55rem; color:#888; margin-top:2px;">인증 완료 후 가입 가능해요</div>
+</div>
+
+<!-- ★ OCTOMO 휴대폰 인증 섹션 ★ -->
+<div class="form-group" style="background:rgba(74,222,128,0.05); border-radius:12px; padding:12px; border:1px solid rgba(74,222,128,0.15);">
+    <label style="font-size:0.75rem; color:#4ade80; font-weight:700;">📱 휴대폰 인증</label>
+    
+    <div id="octomoStep1">
+        <div style="font-size:0.6rem; color:#aaa; margin:6px 0; line-height:1.6;">
+            버튼을 누르면 인증코드가 발급됩니다.<br>
+            수신번호: <strong style="color:#fbbf24;">1666-3538</strong>
+        </div>
+        <button type="button" class="btn-sm primary" onclick="requestOctomoCode()" style="width:100%;">
+            📨 인증코드 발급받기
+        </button>
+    </div>
+
+    <div id="octomoStep2" style="display:none;">
+        <div style="background:rgba(251,191,36,0.08); border-radius:8px; padding:8px 10px; margin:8px 0; font-size:0.6rem; color:#fbbf24; line-height:1.6;">
+            아래 인증코드를 <strong>1666-3538</strong>로 문자 발송해주세요!
+        </div>
+        <div style="text-align:center; font-size:1.3rem; font-weight:900; color:#fbbf24; letter-spacing:6px; font-family:'Courier New', monospace; margin:10px 0;" id="octomoCodeDisplay">------</div>
+        <div id="octomoCountdown" style="text-align:center; font-size:0.6rem; color:#888; margin-bottom:8px;">⏰ 10:00 남음</div>
+        
+        <button type="button" class="btn-sm success" onclick="verifyOctomoCode()" style="width:100%;" id="octomoVerifyBtn">
+            ✅ 문자 발송 완료 (인증 확인)
+        </button>
+        <button type="button" class="btn-sm" onclick="resetOctomoVerification()" style="width:100%; margin-top:4px; font-size:0.55rem;">
+            🔄 코드 재발급
+        </button>
+    </div>
+
+    <div id="octomoStatus" style="font-size:0.6rem; color:#888; margin-top:6px; text-align:center;"></div>
+</div>
             <div class="form-group">
                 <label>자기소개 (20자 이상)</label>
                 <textarea id="signupIntro" placeholder="예: 안녕하세요! 저는 영문학과를 다니고 있는 23살입니다. 저희 과 부스에서 빙수 파는데 같이 먹으러 갈래요?" required minlength="20"></textarea>
@@ -7788,6 +7821,150 @@ function updateUI() {
     } else {
         document.getElementById('adminPanel').classList.add('hidden');
     }
+}
+
+// ============================================================
+//  OCTOMO 휴대폰 인증
+// ============================================================
+
+let octomoVerified = false;
+let octomoCurrentPhone = '';
+let octomoCountdownTimer = null;
+
+// ===== 인증코드 발급 =====
+async function requestOctomoCode() {
+    const phoneInput = document.getElementById('signupPhone')?.value.trim();
+    if (!phoneInput) {
+        showToast('⚠️ 휴대폰 번호를 먼저 입력해주세요.');
+        return;
+    }
+
+    const phone = '010' + phoneInput.replace(/[^0-9]/g, '');
+    if (!/^010\d{8}$/.test(phone)) {
+        showToast('⚠️ 올바른 휴대폰 번호를 입력해주세요.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/octomo/generate-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            octomoCurrentPhone = phone;
+            octomoVerified = false;
+
+            document.getElementById('octomoCodeDisplay').textContent = data.code;
+            document.getElementById('octomoStep1').style.display = 'none';
+            document.getElementById('octomoStep2').style.display = 'block';
+            document.getElementById('octomoStatus').innerHTML = '';
+
+            startOctomoCountdown(600);  // 10분
+            showToast('✅ 인증코드가 발급되었습니다. 문자를 발송해주세요!');
+        } else {
+            showToast('❌ ' + data.error);
+        }
+    } catch (error) {
+        console.error('OCTOMO request error:', error);
+        showToast('⚠️ 서버 통신 오류');
+    }
+}
+
+// ===== 인증 확인 =====
+async function verifyOctomoCode() {
+    if (!octomoCurrentPhone) {
+        showToast('⚠️ 인증코드를 먼저 발급받아주세요.');
+        return;
+    }
+
+    const code = document.getElementById('octomoCodeDisplay')?.textContent.trim();
+    if (!code || code === '------') {
+        showToast('⚠️ 인증코드가 없습니다.');
+        return;
+    }
+
+    const btn = document.getElementById('octomoVerifyBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ 확인 중...';
+    }
+
+    try {
+        const res = await fetch('/api/octomo/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: octomoCurrentPhone, code })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.verified) {
+            octomoVerified = true;
+            if (octomoCountdownTimer) {
+                clearInterval(octomoCountdownTimer);
+                octomoCountdownTimer = null;
+            }
+
+            document.getElementById('octomoStatus').innerHTML = '<span style="color:#4ade80;">✅ 휴대폰 인증이 완료되었습니다!</span>';
+            if (btn) {
+                btn.textContent = '✅ 인증 완료';
+                btn.style.opacity = '0.6';
+            }
+            showToast('✅ 휴대폰 인증 완료!');
+        } else {
+            document.getElementById('octomoStatus').innerHTML = `<span style="color:#f87171;">❌ ${data.error}</span>`;
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '✅ 문자 발송 완료 (인증 확인)';
+            }
+        }
+    } catch (error) {
+        console.error('OCTOMO verify error:', error);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✅ 문자 발송 완료 (인증 확인)';
+        }
+    }
+}
+
+// ===== 카운트다운 =====
+function startOctomoCountdown(seconds) {
+    if (octomoCountdownTimer) clearInterval(octomoCountdownTimer);
+    let remaining = seconds;
+
+    const update = () => {
+        const min = Math.floor(remaining / 60);
+        const sec = remaining % 60;
+        const el = document.getElementById('octomoCountdown');
+        if (el) el.textContent = `⏰ ${min}:${String(sec).padStart(2, '0')} 남음`;
+        
+        if (remaining <= 0) {
+            clearInterval(octomoCountdownTimer);
+            octomoCountdownTimer = null;
+            if (el) el.textContent = '⏰ 인증코드가 만료되었습니다.';
+        }
+        remaining--;
+    };
+    update();
+    octomoCountdownTimer = setInterval(update, 1000);
+}
+
+// ===== 초기화 (전화번호 변경 시) =====
+function resetOctomoVerification() {
+    octomoVerified = false;
+    octomoCurrentPhone = '';
+    if (octomoCountdownTimer) {
+        clearInterval(octomoCountdownTimer);
+        octomoCountdownTimer = null;
+    }
+    const s1 = document.getElementById('octomoStep1');
+    const s2 = document.getElementById('octomoStep2');
+    const status = document.getElementById('octomoStatus');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
+    if (status) status.innerHTML = '';
 }
 
     // ===== 이메일 인증 관련 함수 (새로운 버전) =====

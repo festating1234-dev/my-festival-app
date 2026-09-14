@@ -229,7 +229,42 @@ app.post('/api/users', async (req, res) => {
     try {
         const userData = { ...req.body };
         
-        // 1. 프론트에서 넘어온 추천인/이벤트 코드 분리
+        // ===== ★ OCTOMO 휴대폰 인증 확인 ★ =====
+        const phone = userData.phone;
+        if (!phone) {
+            return res.status(400).json({ error: '휴대폰 번호가 필요합니다.' });
+        }
+
+        const { data: verif } = await supabase
+            .from('phone_verifications')
+            .select('id, verified, expires_at')
+            .eq('phone', phone)
+            .eq('verified', true)
+            .gte('expires_at', new Date().toISOString())
+            .limit(1);
+
+        if (!verif || verif.length === 0) {
+            return res.status(400).json({ error: '휴대폰 인증이 완료되지 않았습니다.' });
+        }
+
+        // ===== ★ Phase B: 재가입 여부 확인 + 매칭권 지급 제한 ★ =====
+        const { data: prevUsers } = await supabase
+            .from('users')
+            .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed')
+            .or(`phone.eq.${phone},original_phone.eq.${phone}`)
+            .limit(1);
+
+        let isRejoin = false;
+        let prevUserData = null;
+        if (prevUsers && prevUsers.length > 0) {
+            prevUserData = prevUsers[0];
+            if (prevUserData.is_deleted) {
+                isRejoin = true;
+                console.log(`🔄 재가입 감지: 전화번호 ${phone}의 이전 계정 ${prevUserData.id}`);
+            }
+        }
+
+        // ===== 추천인/이벤트 코드 분리 =====
         const usedReferralCode = userData.used_referral_code;
 
         // ★★★ 재가입 여부 확인 (Phase 2 기반 작업) ★★★
@@ -262,9 +297,17 @@ app.post('/api/users', async (req, res) => {
         // 2. 내 추천인 코드 생성
         const myReferralCode = await getUniqueReferralCode();
         
-                // 3. 초기 매칭권 계산 (가입 축하 2개 + 추천인 1개)
-        // ⚠️ Phase 2에서 isRejoin에 따라 차등 지급 예정
-        let initialTickets = 2;
+                // ===== 초기 매칭권 계산 (재가입 시 차단) =====
+        let initialTickets = 0;
+        
+        if (isRejoin) {
+            // 재가입: 매칭권 지급 X
+            console.log(`⚠️ 재가입이므로 매칭권 지급 차단`);
+            initialTickets = 0;
+        } else {
+            // 신규 가입: 가입 축하 2개
+            initialTickets = 2;
+        }
         
         // is_rejoin, _previous_user_id는 DB에 저장하지 않음
         delete userData._is_rejoin;
@@ -286,9 +329,24 @@ app.post('/api/users', async (req, res) => {
         }
         
         // 4. 유저 데이터 세팅
-        userData.referral_code = myReferralCode;
+                userData.referral_code = myReferralCode;
         userData.free_tickets = initialTickets;
         userData.invited_count = 0;
+        userData.phone_verified = true;  // ★ OCTOMO 인증 완료 표시
+        userData.phone_verified_at = new Date().toISOString();
+        
+        // ★ Phase B: 매칭권 수령 여부 기록
+        if (isRejoin && prevUserData) {
+            // 이전 계정의 수령 이력 상속
+            userData.signup_reward_claimed = prevUserData.signup_reward_claimed;
+            userData.email_reward_claimed = prevUserData.email_reward_claimed;
+            userData.card_reward_claimed = prevUserData.card_reward_claimed;
+        } else {
+            // 신규 가입: 가입 매칭권 수령 표시
+            userData.signup_reward_claimed = true;
+            userData.email_reward_claimed = false;
+            userData.card_reward_claimed = false;
+        }
         if (referrer) userData.referrer_user_id = referrer.id;
         
         // 5. 유저 생성
@@ -662,24 +720,29 @@ app.post('/api/verify-email-code', async (req, res) => {
             .update({ verified: true })
             .eq('id', data.id);
 
-                // ★ 이메일 인증 시 매칭권 3개 지급
+                // ★ 이메일 인증 시 매칭권 3개 지급 (재지급 차단)
         const { data: currentUser } = await supabase
             .from('users')
-            .select('free_tickets')
+            .select('free_tickets, email_reward_claimed')
             .eq('id', userId)
             .single();
 
         const currentTickets = currentUser?.free_tickets || 0;
+        const alreadyClaimed = currentUser?.email_reward_claimed === true;
+        const rewardAmount = alreadyClaimed ? 0 : 3;
+        const newTickets = currentTickets + rewardAmount;
 
-        // users 테이블에 이메일 인증 상태 + 매칭권 3개 추가 지급
         await supabase
             .from('users')
             .update({ 
                 email_verified: true, 
                 email: email,
-                free_tickets: currentTickets + 3  // ★ +3
+                free_tickets: newTickets,
+                email_reward_claimed: true  // ★ 수령 표시
             })
             .eq('id', userId);
+
+        console.log(`📧 이메일 인증 완료: 유저 ${userId}, 매칭권 +${rewardAmount} (${alreadyClaimed ? '이미 수령함' : '신규 지급'})`);
 
         console.log(`📧 이메일 인증 완료: 유저 ${userId}, 매칭권 +3 (총 ${currentTickets + 3}개)`);
 
@@ -811,6 +874,169 @@ app.get('/api/users', async (req, res) => {
 });
 
 // ============================================================
+//  OCTOMO 휴대폰 인증 API
+// ============================================================
+
+// 1. 인증코드 발급
+app.post('/api/octomo/generate-code', async (req, res) => {
+    const { phone } = req.body;
+
+    if (!phone) {
+        return res.status(400).json({ error: '휴대폰 번호가 필요합니다.' });
+    }
+
+    // 010 + 8자리 검증
+    if (!/^010\d{8}$/.test(phone)) {
+        return res.status(400).json({ error: '올바른 휴대폰 번호 형식이 아닙니다. (01012345678)' });
+    }
+
+    try {
+        // 이미 가입된 번호인지 확인
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('id, is_deleted')
+            .eq('phone', phone)
+            .eq('is_deleted', false)
+            .limit(1);
+
+        if (existingUser && existingUser.length > 0) {
+            return res.status(400).json({ 
+                error: '이미 가입된 휴대폰 번호입니다.',
+                code: 'PHONE_ALREADY_USED'
+            });
+        }
+
+        // 6자리 인증코드 생성
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);  // 10분 만료
+
+        // 기존 코드 삭제 후 새로 저장
+        await supabase
+            .from('phone_verifications')
+            .delete()
+            .eq('phone', phone);
+
+        await supabase
+            .from('phone_verifications')
+            .insert([{
+                phone,
+                code,
+                verified: false,
+                expires_at: expiresAt.toISOString()
+            }]);
+
+        console.log(`📱 OCTOMO 코드 발급: ${phone} → ${code}`);
+
+        res.json({
+            success: true,
+            code: code,
+            receiver: '1666-3538',
+            expires_in: 600,  // 10분
+            message: `1666-3538로 "${code}"를 문자로 보내주세요.`
+        });
+    } catch (error) {
+        console.error('OCTOMO generate error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. 인증 확인 (OCTOMO API 호출)
+app.post('/api/octomo/verify', async (req, res) => {
+    const { phone, code } = req.body;
+
+    if (!phone || !code) {
+        return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    try {
+        // DB에서 인증코드 조회
+        const { data: verification } = await supabase
+            .from('phone_verifications')
+            .select('*')
+            .eq('phone', phone)
+            .eq('code', code)
+            .eq('verified', false)
+            .limit(1);
+
+        if (!verification || verification.length === 0) {
+            return res.status(400).json({ error: '발급된 인증코드가 아닙니다.' });
+        }
+
+        const verif = verification[0];
+
+        // 만료 확인
+        if (new Date(verif.expires_at) < new Date()) {
+            return res.status(400).json({ error: '인증코드가 만료되었습니다. 다시 발급받아주세요.' });
+        }
+
+        // OCTOMO API 호출
+        const octomoRes = await fetch('https://octomo.octoverse.kr/octomo/v1/public/message/exists', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.OCTOMO_API_KEY
+            },
+            body: JSON.stringify({
+                mobileNum: phone,
+                text: code
+            })
+        });
+
+        const octomoData = await octomoRes.json();
+
+        if (octomoData.exists) {
+            // 인증 성공 처리
+            await supabase
+                .from('phone_verifications')
+                .update({ verified: true })
+                .eq('id', verif.id);
+
+            console.log(`✅ OCTOMO 인증 성공: ${phone}`);
+
+            res.json({
+                success: true,
+                verified: true,
+                message: '휴대폰 인증이 완료되었습니다.'
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                error: '인증코드가 확인되지 않았습니다. 문자를 다시 확인해주세요.'
+            });
+        }
+    } catch (error) {
+        console.error('OCTOMO verify error:', error);
+        res.status(500).json({ error: '인증 확인 중 오류가 발생했습니다.' });
+    }
+});
+
+// 3. 인증 완료 여부 확인 (회원가입 시 사용)
+app.get('/api/octomo/check-verified', async (req, res) => {
+    const { phone } = req.query;
+
+    if (!phone) {
+        return res.status(400).json({ error: '휴대폰 번호가 필요합니다.' });
+    }
+
+    try {
+        const { data: verification } = await supabase
+            .from('phone_verifications')
+            .select('id, verified, expires_at')
+            .eq('phone', phone)
+            .eq('verified', true)
+            .gte('expires_at', new Date().toISOString())
+            .limit(1);
+
+        res.json({
+            verified: !!(verification && verification.length > 0)
+        });
+    } catch (error) {
+        console.error('OCTOMO check error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 //  학생증 인증 관련 API
 // ============================================================
 
@@ -886,17 +1112,19 @@ app.put('/api/admin/card/:userId', async (req, res) => {
                 return res.status(400).json({ error: '이미 승인된 학생증입니다.' });
             }
 
+            const alreadyClaimed = user?.card_reward_claimed === true;
+            const rewardAmount = alreadyClaimed ? 0 : 3;
             const currentTickets = user?.free_tickets || 0;
-            const newTickets = currentTickets + 3;
+            const newTickets = currentTickets + rewardAmount;
 
             await supabase
                 .from('users')
                 .update({ 
                     card_status: 'approved',
-                    free_tickets: newTickets
+                    free_tickets: newTickets,
+                    card_reward_claimed: true  // ★ 수령 표시
                 })
                 .eq('id', userId);
-
             // ★ 알림 발송
             await supabase.from('notifications').insert([{
                 user_id: userId,
