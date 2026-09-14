@@ -1789,6 +1789,82 @@
     .onboarding-btn-secondary { padding: 12px; font-size: 0.85rem; }
 }
 
+/* ============================================================
+   🎪 축제 관리 모달 - 라이트 테마 수정
+   ============================================================ */
+
+/* 축제 관리 모달 - 입력 필드 */
+#festivalManageModal input[type="text"],
+#festivalManageModal input[type="date"],
+#festivalManageModal input[type="number"],
+#festivalManageModal select,
+#festivalManageModal textarea,
+#festivalManageModal .day-lineup-input {
+    background: #F0F8FF !important;
+    border: 1.5px solid rgba(107, 182, 255, 0.25) !important;
+    color: #1F2937 !important;
+    font-weight: 500 !important;
+}
+#festivalManageModal input[type="text"]:focus,
+#festivalManageModal input[type="date"]:focus,
+#festivalManageModal input[type="number"]:focus,
+#festivalManageModal select:focus,
+#festivalManageModal textarea:focus,
+#festivalManageModal .day-lineup-input:focus {
+    border-color: #4A9EFF !important;
+    box-shadow: 0 0 0 3px rgba(107, 182, 255, 0.15) !important;
+    background: #FFFFFF !important;
+}
+
+/* placeholder 색상 */
+#festivalManageModal input::placeholder,
+#festivalManageModal textarea::placeholder {
+    color: #9CA3AF !important;
+}
+
+/* 라벨 */
+#festivalManageModal label {
+    color: #4B5563 !important;
+    font-weight: 600 !important;
+}
+
+/* 제목/부제목 */
+#festivalManageModal h2 {
+    color: #2563EB !important;
+}
+#festivalManageModal .subtitle {
+    color: #6B7280 !important;
+}
+#festivalManageModal #festivalModalTitle {
+    color: #2563EB !important;
+}
+
+/* 날짜별 라인업 라벨 */
+#festivalManageModal .day-lineup-input + label,
+#festivalManageModal #festivalDayLineupContainer label {
+    color: #4B5563 !important;
+}
+
+/* 닫기 버튼 */
+#festivalManageModal .close-btn {
+    color: #9CA3AF !important;
+}
+#festivalManageModal .close-btn:hover {
+    color: #1F2937 !important;
+}
+
+/* 안내 문구 */
+#festivalManageModal div[style*="color:#666"],
+#festivalManageModal div[style*="color:#888"] {
+    color: #6B7280 !important;
+}
+
+/* select 옵션 */
+#festivalManageModal select option {
+    background: #FFFFFF !important;
+    color: #1F2937 !important;
+}
+
 </style>
 </head>
 <body>
