@@ -6730,7 +6730,7 @@ async function checkReferralCode() {
         <button type="button" class="btn-sm success" onclick="verifyOctomoCode()" style="width:100%;" id="octomoVerifyBtn">
             ✅ 인증 확인
         </button>
-        <button type="button" class="btn-sm" onclick="resetOctomoVerification()" style="width:100%; margin-top:4px; font-size:0.55rem;">
+        <button type="button" class="btn-sm" onclick="resetOctomoVerification()" style="width:100%; margin-top:4px; font-size:0.55rem;" id="octomoResetBtn">
             🔄 코드 재발급
         </button>
     </div>
@@ -7894,7 +7894,7 @@ async function requestOctomoCode() {
         });
         const data = await res.json();
 
-        if (res.ok) {
+                if (res.ok) {
             octomoCurrentPhone = phone;
             octomoVerified = false;
 
@@ -7902,6 +7902,23 @@ async function requestOctomoCode() {
             document.getElementById('octomoStep1').style.display = 'none';
             document.getElementById('octomoStep2').style.display = 'block';
             document.getElementById('octomoStatus').innerHTML = '';
+
+            // ★ 인증 확인 버튼 활성화
+            const verifyBtn = document.getElementById('octomoVerifyBtn');
+            if (verifyBtn) {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = '✅ 인증 확인';
+                verifyBtn.style.opacity = '1';
+            }
+
+            // ★ 코드 재발급 버튼 활성화
+            const resetBtn = document.getElementById('octomoResetBtn');
+            if (resetBtn) {
+                resetBtn.disabled = false;
+                resetBtn.style.opacity = '1';
+                resetBtn.style.cursor = 'pointer';
+                resetBtn.textContent = '🔄 코드 재발급';
+            }
 
             startOctomoCountdown(600);  // 10분
             showToast('✅ 인증코드가 발급되었습니다. 문자를 발송해주세요!');
@@ -7941,7 +7958,7 @@ async function verifyOctomoCode() {
         });
         const data = await res.json();
 
-        if (res.ok && data.verified) {
+                if (res.ok && data.verified) {
             octomoVerified = true;
             if (octomoCountdownTimer) {
                 clearInterval(octomoCountdownTimer);
@@ -7952,7 +7969,18 @@ async function verifyOctomoCode() {
             if (btn) {
                 btn.textContent = '✅ 인증 완료';
                 btn.style.opacity = '0.6';
+                btn.disabled = true;  // ★ 인증 확인 버튼도 비활성화
             }
+
+            // ★★★ 코드 재발급 버튼 비활성화 ★★★
+            const resetBtn = document.getElementById('octomoResetBtn');
+            if (resetBtn) {
+                resetBtn.disabled = true;
+                resetBtn.style.opacity = '0.4';
+                resetBtn.style.cursor = 'not-allowed';
+                resetBtn.textContent = '🔄 인증 완료됨';
+            }
+
             showToast('✅ 휴대폰 인증 완료!');
         } else {
             document.getElementById('octomoStatus').innerHTML = `<span style="color:#f87171;">❌ ${data.error}</span>`;
