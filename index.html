@@ -6464,14 +6464,26 @@ async function requestFindId() {
         });
         const data = await res.json();
 
-        if (res.ok) {
+                if (res.ok) {
             findIdCurrentPhone = phone;
             findIdCurrentName = name;
 
             document.getElementById('findIdCodeDisplay').textContent = data.code;
+            
+            // ★ 입력 정보 표시 (이름 + 전화번호 하이픈 포함)
+            const phoneWithHyphen = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+            document.getElementById('findIdDisplayName').textContent = name;
+            document.getElementById('findIdDisplayPhone').textContent = phoneWithHyphen;
+
             document.getElementById('findIdStep1').style.display = 'none';
             document.getElementById('findIdStep2').style.display = 'block';
             status.innerHTML = '';
+
+            // 인증방법 안내 초기화 (접힌 상태로)
+            const guide = document.getElementById('findIdGuide');
+            const guideBtn = document.getElementById('findIdGuideBtn');
+            if (guide) guide.style.display = 'none';
+            if (guideBtn) guideBtn.innerHTML = '📖 인증방법 보기';
 
             startFindIdCountdown(600);
             showToast(`✅ 인증코드가 발급되었습니다. (남은 시도: ${data.remaining_attempts}회)`);
@@ -6579,8 +6591,22 @@ function resetFindId() {
     document.getElementById('findIdStep2').style.display = 'none';
     document.getElementById('findIdStep3').style.display = 'none';
     document.getElementById('findIdStatus').innerHTML = '';
-    document.getElementById('findIdName').value = '';
-    document.getElementById('findIdPhone').value = '';
+    
+    // ★ 입력 정보 초기화 (값은 유지해서 수정 편하도록)
+    const nameInput = document.getElementById('findIdName');
+    const phoneInput = document.getElementById('findIdPhone');
+    const displayName = document.getElementById('findIdDisplayName');
+    const displayPhone = document.getElementById('findIdDisplayPhone');
+    
+    // input 값은 그대로 유지 (수정 편의)
+    if (displayName) displayName.textContent = '-';
+    if (displayPhone) displayPhone.textContent = '-';
+
+    // 인증방법 안내 초기화
+    const guide = document.getElementById('findIdGuide');
+    const guideBtn = document.getElementById('findIdGuideBtn');
+    if (guide) guide.style.display = 'none';
+    if (guideBtn) guideBtn.innerHTML = '📖 인증방법 보기';
 
     const btn = document.getElementById('findIdVerifyBtn');
     if (btn) {
@@ -6645,8 +6671,20 @@ function openFindAccountModal() {
                 <div id="findIdStatus" style="font-size:0.65rem; color:#888; margin-top:8px; text-align:center;"></div>
             </div>
 
-                        <!-- Step 2: 인증 확인 -->
+                                    <!-- Step 2: 인증 확인 -->
             <div id="findIdStep2" style="display:none;">
+                <!-- ★ 입력 정보 표시 (신규) ★ -->
+                <div style="background:rgba(168,85,247,0.06); border-radius:10px; padding:10px 12px; margin-bottom:10px; border:1px solid rgba(168,85,247,0.12);">
+                    <div style="font-size:0.6rem; color:#a855f7; font-weight:700; margin-bottom:6px;">📋 입력하신 정보</div>
+                    <div style="font-size:0.7rem; color:#ddd; line-height:1.7;">
+                        이름: <strong style="color:#fbbf24;" id="findIdDisplayName">-</strong><br>
+                        전화번호: <strong style="color:#fbbf24;" id="findIdDisplayPhone">-</strong>
+                    </div>
+                    <button type="button" onclick="resetFindId()" style="margin-top:6px; font-size:0.55rem; color:#888; background:none; border:none; cursor:pointer; padding:0; text-decoration:underline;">
+                        ✏️ 정보 수정
+                    </button>
+                </div>
+
                 <div style="background:rgba(251,191,36,0.08); border-radius:8px; padding:10px; margin-bottom:8px; font-size:0.65rem; color:#fbbf24; line-height:1.6;">
                     📱 아래 인증번호를 <strong>1666-3538</strong>로 문자 발송해주세요!
                 </div>
