@@ -1444,9 +1444,363 @@
     border: 1px solid rgba(107, 182, 255, 0.15) !important;
     box-shadow: 0 4px 16px rgba(107, 182, 255, 0.12) !important;
 }
+
+/* ============================================================
+   🎉 온보딩 화면
+   ============================================================ */
+
+.onboarding-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, #F0F8FF 0%, #E6F3FF 60%, #D6EBFF 100%);
+    z-index: 10000;
+    display: none;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: center;
+    animation: onboardingFadeIn 0.4s ease;
+}
+.onboarding-screen.active { display: flex; }
+@keyframes onboardingFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.onboarding-container {
+    max-width: 420px;
+    width: 100%;
+    padding: 40px 24px 32px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100vh;
+    justify-content: center;
+}
+
+/* ===== 헤더 ===== */
+.onboarding-header { text-align: center; }
+.onboarding-logo {
+    font-size: 3.5rem;
+    margin-bottom: 8px;
+    animation: bounce 2s infinite;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+.onboarding-title {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 900;
+    font-size: 2.4rem;
+    background: linear-gradient(135deg, #6BB6FF, #FF8FB1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.onboarding-subtitle {
+    font-size: 0.8rem;
+    color: #4A9EFF;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ===== 기능 소개 ===== */
+.onboarding-features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.onboarding-feature {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid rgba(107,182,255,0.15);
+    box-shadow: 0 4px 16px rgba(107,182,255,0.1);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    animation: slideInRight 0.5s ease backwards;
+}
+.onboarding-feature:nth-child(1) { animation-delay: 0.1s; }
+.onboarding-feature:nth-child(2) { animation-delay: 0.2s; }
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.onboarding-feature-icon {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.onboarding-feature-text { flex: 1; min-width: 0; }
+.onboarding-feature-text h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 6px;
+}
+.onboarding-feature-text p {
+    font-size: 0.68rem;
+    color: #6B7280;
+    line-height: 1.5;
+}
+
+/* ===== 미니 카드 (Feature 1) ===== */
+.mini-card {
+    position: absolute;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(107,182,255,0.25);
+    border-radius: 10px;
+    padding: 5px 7px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(107,182,255,0.15);
+    width: 85px;
+    font-size: 0.45rem;
+    transform: rotate(-6deg);
+    top: 10px;
+    left: 0;
+}
+.mini-card-2 {
+    transform: rotate(4deg);
+    top: 45px;
+    left: 12px;
+    border-color: rgba(255,143,177,0.35);
+}
+.mini-emoji { font-size: 0.9rem; flex-shrink: 0; }
+.mini-info { flex: 1; min-width: 0; }
+.mini-school {
+    font-weight: 700;
+    color: #1F2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mini-detail {
+    color: #9CA3AF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mini-heart { font-size: 0.5rem; flex-shrink: 0; }
+
+/* ===== 미니 캘린더 (Feature 2) ===== */
+.mini-calendar {
+    width: 90px;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(107,182,255,0.25);
+    border-radius: 10px;
+    padding: 6px 5px;
+    box-shadow: 0 2px 8px rgba(107,182,255,0.15);
+}
+.mini-cal-header {
+    font-size: 0.45rem;
+    color: #2563EB;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 4px;
+}
+.mini-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+.mini-cal-day {
+    font-size: 0.4rem;
+    color: #9CA3AF;
+    text-align: center;
+    padding: 2px 0;
+    border-radius: 3px;
+}
+.mini-cal-day.event {
+    background: #6BB6FF;
+    color: #FFFFFF;
+    font-weight: 700;
+}
+.mini-cal-event {
+    font-size: 0.4rem;
+    color: #4B5563;
+    text-align: center;
+    padding: 2px 4px;
+    background: rgba(107,182,255,0.1);
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== 버튼들 ===== */
+.onboarding-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    animation: slideInRight 0.5s ease 0.3s backwards;
+}
+.onboarding-btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #6BB6FF, #4A9EFF);
+    border: none;
+    border-radius: 30px;
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 16px rgba(107,182,255,0.35);
+}
+.onboarding-btn-primary:active { transform: scale(0.97); }
+
+.onboarding-btn-secondary {
+    width: 100%;
+    padding: 14px;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(107,182,255,0.3);
+    border-radius: 30px;
+    color: #4A9EFF;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 2px 8px rgba(107,182,255,0.1);
+}
+.onboarding-btn-secondary:active {
+    transform: scale(0.97);
+    background: #F0F8FF;
+}
+
+.onboarding-btn-login-link {
+    width: 100%;
+    padding: 12px 8px 4px;
+    background: transparent;
+    border: none;
+    color: #9CA3AF;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+}
+.onboarding-btn-login-link span {
+    color: #4A9EFF;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-left: 2px;
+}
+.onboarding-btn-login-link:hover { color: #6B7280; }
+.onboarding-btn-login-link:active { transform: scale(0.97); }
+
+/* 반응형 */
+@media (max-height: 700px) {
+    .onboarding-container { padding: 20px 24px; gap: 16px; }
+    .onboarding-logo { font-size: 2.5rem; }
+    .onboarding-title { font-size: 2rem; }
+    .onboarding-feature { padding: 12px; }
+    .onboarding-feature-icon { width: 80px; height: 80px; }
+    .onboarding-btn-primary { padding: 14px; font-size: 0.95rem; }
+    .onboarding-btn-secondary { padding: 12px; font-size: 0.85rem; }
+}
+
 </style>
 </head>
 <body>
+
+<!-- ============================================================
+     🎉 온보딩 화면 (비로그인 시 표시)
+     ============================================================ -->
+<div id="onboardingScreen" class="onboarding-screen">
+    <div class="onboarding-container">
+        
+        <!-- 헤더 -->
+        <div class="onboarding-header">
+            <div class="onboarding-logo">🎉</div>
+            <h1 class="onboarding-title">페스타팅</h1>
+            <p class="onboarding-subtitle">대학 축제 시즌, 인연을 만나다</p>
+        </div>
+
+        <!-- 주요 기능 소개 -->
+        <div class="onboarding-features">
+            
+            <!-- Feature 1: 카드 매칭 -->
+            <div class="onboarding-feature">
+                <div class="onboarding-feature-icon">
+                    <div class="mini-card">
+                        <span class="mini-emoji">🦊</span>
+                        <div class="mini-info">
+                            <div class="mini-school">서울대학교</div>
+                            <div class="mini-detail">23학번 · 23세</div>
+                        </div>
+                        <span class="mini-heart">❤️</span>
+                    </div>
+                    <div class="mini-card mini-card-2">
+                        <span class="mini-emoji">🐰</span>
+                        <div class="mini-info">
+                            <div class="mini-school">연세대학교</div>
+                            <div class="mini-detail">22학번 · 22세</div>
+                        </div>
+                        <span class="mini-heart">💖</span>
+                    </div>
+                </div>
+                <div class="onboarding-feature-text">
+                    <h3>💕 카드 매칭</h3>
+                    <p>둘이서, 여럿이서, 동성친구까지<br>원하는 방식으로 인연을 찾아보세요</p>
+                </div>
+            </div>
+
+            <!-- Feature 2: 축제일정 -->
+            <div class="onboarding-feature">
+                <div class="onboarding-feature-icon">
+                    <div class="mini-calendar">
+                        <div class="mini-cal-header">🗓️ 2026년 9월</div>
+                        <div class="mini-cal-grid">
+                            <span class="mini-cal-day">14</span>
+                            <span class="mini-cal-day event">15</span>
+                            <span class="mini-cal-day event">16</span>
+                            <span class="mini-cal-day">17</span>
+                            <span class="mini-cal-day event">18</span>
+                            <span class="mini-cal-day">19</span>
+                            <span class="mini-cal-day">20</span>
+                        </div>
+                        <div class="mini-cal-event">🎤 서울대 대동제 · 아이유</div>
+                    </div>
+                </div>
+                <div class="onboarding-feature-text">
+                    <h3>🗓️ 축제일정 한눈에</h3>
+                    <p>전국 대학 축제 일정과 라인업을<br>캘린더로 한 번에 확인해요</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 버튼들 -->
+        <div class="onboarding-buttons">
+            <button class="onboarding-btn-primary" onclick="onboardingSignup()">
+                🎉 축제친구 만들기
+            </button>
+            <button class="onboarding-btn-secondary" onclick="onboardingBrowse()">
+                👀 구경하기
+            </button>
+            <button class="onboarding-btn-login-link" onclick="onboardingLogin()">
+                이미 계정이 있다면? <span>로그인하기</span>
+            </button>
+        </div>
+
+    </div>
+</div>
 
 <div class="bg-firework fw1">🎆</div>
 <div class="bg-firework fw2">🎇</div>
@@ -7144,11 +7498,12 @@ function switchFindTab(tab) {
         });
         const data = await res.json();
 
-        if (res.ok) {
+                if (res.ok) {
             currentUserId = data.id;
             setData('currentUser', currentUserId);
             await loadUserData();
             closeModal();
+            hideOnboarding();  // ★ 온보딩 닫기
             showToast('✅ 로그인 완료!');
         } else if (res.status === 403 && data.error === '이용 정지') {
             // ★★★ 정지 메시지 표시 ★★★
@@ -7764,6 +8119,7 @@ async function checkReferralCode() {
     setData('currentUser', currentUserId);
     await loadUserData();
     closeModal();
+    hideOnboarding();
     showToast('🎉 회원가입 완료!');
 
     // ★★★ 추천인 알림 ★★★
@@ -10808,28 +11164,73 @@ function closeModal() {
         if (e.key === 'Enter') verifyEmail();
     });
 
+// ============================================================
+//  🎉 온보딩 화면
+// ============================================================
+
+const ONBOARDING_SESSION_KEY = 'festating_onboarding_shown';
+
+// 온보딩 표시
+function showOnboarding() {
+    const screen = document.getElementById('onboardingScreen');
+    if (!screen) return;
+    screen.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// 온보딩 숨김
+function hideOnboarding() {
+    const screen = document.getElementById('onboardingScreen');
+    if (!screen) return;
+    screen.classList.remove('active');
+    document.body.style.overflow = '';
+    sessionStorage.setItem(ONBOARDING_SESSION_KEY, 'true');
+}
+
+// 🎉 축제친구 만들기 (회원가입)
+function onboardingSignup() {
+    hideOnboarding();
+    openSignupModal();
+}
+
+// 로그인
+function onboardingLogin() {
+    hideOnboarding();
+    openLoginModal();
+}
+
+// 👀 구경하기 (그냥 닫기)
+function onboardingBrowse() {
+    hideOnboarding();
+}
+
     // ================================================================
     // 19. 초기화
     // ================================================================
     async function init() {
-    // localStorage에서 로그인 상태 복원
     currentUserId = getData('currentUser', null);
     if (currentUserId) {
         await loadUserData();
     } else {
-        // 비로그인 상태에서도 프로필 목록은 로드해야 함
         allProfiles = [];
         await fetchProfiles();
-        renderProfiles();  // ← 이 줄은 유지 (비로그인 시 필요)
+        renderProfiles();
     }
-    await fetchFestivals();
     renderFestivalCalendar();
-    // 알림 배지 초기화 (로그인 상태면 읽지 않은 알림 개수 표시)
-updateNotificationBadge();
     updateLikedBtn();
     updateUI();
 
+    // ★★★ 온보딩 화면 표시 로직 ★★★
+    const isLoggedInNow = !!currentUserId;
+    const alreadyShown = sessionStorage.getItem(ONBOARDING_SESSION_KEY) === 'true';
     
+    if (!isLoggedInNow && !alreadyShown) {
+        setTimeout(() => {
+            showOnboarding();
+        }, 300);
+    } else {
+        hideOnboarding();
+    }
 }
 
     init();
