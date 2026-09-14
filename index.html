@@ -5710,9 +5710,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // 8. 제보 / 문의 / 환불
     // ================================================================
     function openReport() {
-        window.open('https://open.kakao.com/o/페스타팅제보', '_blank');
-        showToast('📢 카카오톡 오픈채팅으로 연결됩니다');
-    }
+    // ★ 축제 제보 안내 모달
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>📢 우리학교 축제 제보하기</h2>
+        <div class="subtitle">축제 정보를 알려주시면 캘린더에 반영해드려요!</div>
+
+        <div style="background:rgba(251,191,36,0.06); border-radius:12px; padding:14px; margin:12px 0; border:1px solid rgba(251,191,36,0.15); text-align:center;">
+            <div style="font-size:2rem; margin-bottom:8px;">🎁</div>
+            <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">제보 시 무료 매칭권 1회 지급!</div>
+            <div style="font-size:0.65rem; color:#888; margin-top:4px;">(운영진 확인 후 지급됩니다)</div>
+        </div>
+
+        <div style="background:rgba(168,85,247,0.06); border-radius:12px; padding:14px; margin-bottom:12px; border:1px solid rgba(168,85,247,0.12);">
+            <div style="font-size:0.7rem; color:#a855f7; font-weight:700; margin-bottom:8px;">📝 아래 정보를 제보해주세요</div>
+            <div style="font-size:0.7rem; color:#ddd; line-height:1.9; padding-left:4px;">
+                • 학교명<br>
+                • 축제 이름<br>
+                • 축제 일정 (날짜)<br>
+                • 장소<br>
+                • 라인업 (아티스트)<br>
+                • 외부인 출입 가능 여부
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="window.open('https://forms.gle/7EJGz465cW3PJmTS6', '_blank')" style="width:100%; padding:12px;">
+            <i class="fas fa-external-link-alt"></i> 제보하기 폼 열기
+        </button>
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>
+    `;
+    modal.classList.add('active');
+}
 
     function openInquiry() {
     const modal = document.getElementById('commonModal');
@@ -5751,34 +5780,34 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
     function openRefundModal() {
-        const modal = document.getElementById('commonModal');
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <h2>💰 환불 정책</h2>
-            <div class="subtitle">비매너 행위 시 대화내역 캡처로 신고해주세요</div>
-            <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(239,68,68,0.1);">
-                <div style="font-weight:700; color:#f87171; font-size:0.85rem;">📌 환불 사유</div>
-                <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
-                    • 상대방의 일방적인 잠수<br>
-                    • 상대방의 차단<br>
-                    • 폭언 및 비매너 행위
-                </div>
+    const modal = document.getElementById('commonModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <h2>💰 환불 정책</h2>
+        <div class="subtitle">비매너 행위 시 대화내역 캡처로 신고해주세요</div>
+        <div style="background:rgba(239,68,68,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(239,68,68,0.1);">
+            <div style="font-weight:700; color:#f87171; font-size:0.85rem;">📌 환불 사유</div>
+            <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
+                • 상대방의 일방적인 잠수<br>
+                • 상대방의 차단<br>
+                • 폭언 및 비매너 행위
             </div>
-            <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(74,222,128,0.1);">
-                <div style="font-weight:700; color:#4ade80; font-size:0.85rem;">📋 환불 절차</div>
-                <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
-                    1. 대화내역을 캡처합니다<br>
-                    2. 문의하기 구글 폼으로 제보<br>
-                    3. 운영진 확인 후 환불 처리
-                </div>
+        </div>
+        <div style="background:rgba(74,222,128,0.05); border-radius:12px; padding:14px; margin:8px 0; border:1px solid rgba(74,222,128,0.1);">
+            <div style="font-weight:700; color:#4ade80; font-size:0.85rem;">📋 환불 절차</div>
+            <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
+                1. 대화내역을 캡처합니다<br>
+                2. 아래 <strong style="color:#fbbf24;">문의하기 폼</strong>으로 제보<br>
+                3. 운영진 확인 후 환불 처리
             </div>
-            <button class="btn-sm primary" onclick="window.open('https://open.kakao.com/o/페스타팅환불','_blank')" style="width:100%; margin-top:8px;">
-                <i class="fas fa-external-link-alt"></i> 환불 신청하기 (오픈채팅)
-            </button>
-            <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>
-        `;
-        modal.classList.add('active');
-    }
+        </div>
+        <button class="btn-primary" onclick="window.open('https://forms.gle/7EJGz465cW3PJmTS6', '_blank')" style="width:100%; margin-top:8px; padding:12px;">
+            <i class="fas fa-external-link-alt"></i> 환불 신청하기 (문의하기 폼)
+        </button>
+        <button class="btn-sm" onclick="closeModal()" style="width:100%; margin-top:6px;">닫기</button>
+    `;
+    modal.classList.add('active');
+}
 
 // ================================================================
 //  9. 프로필 상세 + 매칭 신청
@@ -7808,13 +7837,18 @@ function openEditProfile() {
                 </div>
             </div>
 
-            <!-- 문의하기 -->
+                        <!-- 문의하기 -->
             <div style="background:rgba(251,191,36,0.06); border-radius:12px; padding:12px;">
                 <div style="font-weight:700; font-size:0.85rem; color:#fbbf24;">💬 문의하기</div>
                 <div style="font-size:0.7rem; color:#aaa; margin-top:4px; line-height:1.6;">
-                    궁금한 점이나 불편한 사항이 있으시면 언제든지 연락주세요.<br>
-                    카카오톡 ID: <strong style="color:#fff;">준비중</strong>
+                    궁금한 점이나 불편한 사항이 있으시면 언제든지 연락주세요.
                 </div>
+                <div style="font-size:0.65rem; color:#888; margin-top:6px;">
+                    카카오톡 ID: <strong style="color:#fbbf24;">준비 중</strong>
+                </div>
+                <button class="btn-primary" onclick="window.open('https://forms.gle/7EJGz465cW3PJmTS6', '_blank')" style="width:100%; margin-top:10px; padding:10px;">
+                    <i class="fas fa-external-link-alt"></i> 문의하기 폼 열기
+                </button>
             </div>
 
         </div>
