@@ -6026,10 +6026,11 @@ function renderFestivalCalendar() {
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
     // ===== 1. 월별 이벤트 필터링 =====
-    const eventsByDate = {};
+        const eventsByDate = {};
     FESTIVAL_EVENTS.forEach(ev => {
-        const start = new Date(ev.startDate);
-        const end = new Date(ev.endDate);
+        // ★ 타임존 문제 해결: 문자열에 T00:00:00을 붙여 로컬 자정으로 해석
+        const start = new Date(ev.startDate + 'T00:00:00');
+        const end = new Date(ev.endDate + 'T00:00:00');
         const monthStart = new Date(festivalCurrentYear, festivalCurrentMonth, 1);
         const monthEnd = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0);
         const effStart = new Date(Math.max(start, monthStart));
@@ -6346,9 +6347,10 @@ function renderFestivalSchoolList() {
     const existingList = document.getElementById('festivalSchoolListContainer');
     if (existingList) existingList.remove();
 
-    const monthEvents = FESTIVAL_EVENTS.filter(ev => {
-        const start = new Date(ev.startDate);
-        const end = new Date(ev.endDate);
+        const monthEvents = FESTIVAL_EVENTS.filter(ev => {
+        // ★ 타임존 문제 해결
+        const start = new Date(ev.startDate + 'T00:00:00');
+        const end = new Date(ev.endDate + 'T00:00:00');
         const monthStart = new Date(festivalCurrentYear, festivalCurrentMonth, 1);
         const monthEnd = new Date(festivalCurrentYear, festivalCurrentMonth + 1, 0);
         return !(end < monthStart || start > monthEnd);
