@@ -231,14 +231,44 @@ app.post('/api/users', async (req, res) => {
         
         // 1. 프론트에서 넘어온 추천인/이벤트 코드 분리
         const usedReferralCode = userData.used_referral_code;
+
+        // ★★★ 재가입 여부 확인 (Phase 2 기반 작업) ★★★
+        const checkPhone = userData.phone;  // 신규 가입 시 입력한 전화번호
+        let isRejoin = false;
+        let previousUser = null;
+
+        if (checkPhone) {
+            const { data: prevUsers } = await supabase
+                .from('users')
+                .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed, original_phone, phone')
+                .or(`phone.eq.${checkPhone},original_phone.eq.${checkPhone}`)
+                .limit(1);
+
+            if (prevUsers && prevUsers.length > 0) {
+                previousUser = prevUsers[0];
+                if (previousUser.is_deleted) {
+                    isRejoin = true;
+                    console.log(`🔄 재가입 감지: 전화번호 ${checkPhone}의 이전 계정 ${previousUser.id}`);
+                }
+            }
+        }
+
+        // 이 정보를 임시로 userData에 저장 (Phase 2에서 활용)
+        userData._is_rejoin = isRejoin;
+        userData._previous_user_id = previousUser?.id || null;
         delete userData.used_referral_code;
         delete userData.referral_code; // 혹시 몰라서 제거
         
         // 2. 내 추천인 코드 생성
         const myReferralCode = await getUniqueReferralCode();
         
-        // 3. 초기 매칭권 계산 (가입 축하 2개 + 추천인 1개)
-        let initialTickets = 2;  // ★ 가입 축하 매칭권 2개
+                // 3. 초기 매칭권 계산 (가입 축하 2개 + 추천인 1개)
+        // ⚠️ Phase 2에서 isRejoin에 따라 차등 지급 예정
+        let initialTickets = 2;
+        
+        // is_rejoin, _previous_user_id는 DB에 저장하지 않음
+        delete userData._is_rejoin;
+        delete userData._previous_user_id;
         
         // 3-2. 추천인 코드 확인
         let referrer = null;
@@ -305,7 +335,7 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-// 1-3. 로그인 (관리자 플래그 포함)
+// 1-3. 로그인 (관리자 플래그 + 탈퇴 계정 체크)
 app.post('/api/login', async (req, res) => {
     const { nickname, password } = req.body;
 
@@ -332,6 +362,14 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
         }
 
+        // ★★★ 탈퇴 계정 체크 ★★★
+        if (data.is_deleted) {
+            return res.status(403).json({
+                error: '탈퇴한 계정',
+                message: '탈퇴한 계정입니다. 재가입 후 이용해주세요.'
+            });
+        }
+
         // 정지 확인
         if (data.is_banned) {
             return res.status(403).json({
@@ -340,7 +378,7 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // ★ 관리자 여부 명시적으로 포함
+        // 관리자 여부 명시
         res.json({
             ...data,
             is_admin: data.is_admin === true
@@ -696,17 +734,64 @@ app.put('/api/users/:id', async (req, res) => {
     }
 });
 
-// 1-6. 사용자 삭제 (선택)
+// 1-6. 사용자 탈퇴 (소프트 삭제)
 app.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const { error } = await supabase
+        // 유저 조회
+        const { data: user, error: fetchError } = await supabase
             .from('users')
-            .delete()
+            .select('id, nickname, phone, is_deleted')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+
+        if (user.is_deleted) {
+            return res.status(400).json({ error: '이미 탈퇴한 계정입니다.' });
+        }
+
+        // 익명화 처리용 값
+        const anonymizedNickname = `탈퇴한 사용자_${String(id).slice(-4)}`;
+        const now = new Date().toISOString();
+
+        // 소프트 삭제 처리
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                is_deleted: true,
+                deleted_at: now,
+                original_phone: user.phone || null,  // 원본 전화번호 보관
+                nickname: anonymizedNickname,         // 닉네임 익명화
+                phone: null,                          // 전화번호 제거
+                email: null                           // 이메일 제거 (선택)
+            })
             .eq('id', id);
 
-        if (error) throw error;
-        res.json({ success: true });
+        if (updateError) throw updateError;
+
+        // 유저의 카드 삭제 (실제 삭제)
+        await supabase.from('profiles').delete().eq('user_id', id);
+
+        // 유저의 좋아요 삭제
+        await supabase.from('likes').delete().eq('user_id', id);
+
+        // pending 매칭 취소
+        await supabase
+            .from('matches')
+            .update({ status: 'cancelled', responded_at: now })
+            .eq('from_user_id', id)
+            .eq('status', 'pending');
+
+        console.log(`🗑️ 유저 ${id} 소프트 삭제 완료 (닉네임: ${user.nickname} → ${anonymizedNickname})`);
+
+        res.json({ 
+            success: true, 
+            message: '탈퇴 처리가 완료되었습니다.',
+            soft_delete: true
+        });
     } catch (err) {
         console.error('User delete error:', err);
         res.status(500).json({ error: err.message });
