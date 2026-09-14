@@ -239,7 +239,7 @@ app.post('/api/users', async (req, res) => {
         const phone = rawPhone.replace(/[^0-9]/g, '');
         console.log(`📱 인증 확인 요청: rawPhone=${rawPhone}, phone=${phone}`);
 
-        const { data: verif } = await supabase
+               const { data: verif } = await supabase
             .from('phone_verifications')
             .select('id, verified, expires_at')
             .eq('phone', phone)
@@ -252,11 +252,25 @@ app.post('/api/users', async (req, res) => {
             return res.status(400).json({ error: '휴대폰 인증이 완료되지 않았습니다.' });
         }
 
-        // ===== ★ Phase B: 재가입 여부 확인 + 매칭권 지급 제한 (양쪽 형식으로 조회) ★ =====
+        // ===== ★ 이중 방어: 활성 계정 중복 체크 ★ =====
+        const { data: activeUser } = await supabase
+            .from('users')
+            .select('id, nickname')
+            .eq('is_deleted', false)
+            .or(`phone.eq.${phone},phone.eq.${rawPhone}`)
+            .limit(1);
+
+        if (activeUser && activeUser.length > 0) {
+            console.log(`❌ 중복 가입 시도: ${phone} (기존 계정: ${activeUser[0].nickname})`);
+            return res.status(400).json({ error: '이미 가입된 휴대폰 번호입니다.' });
+        }
+
+                // ===== ★ Phase B: 재가입 여부 확인 + 매칭권 지급 제한 (양쪽 형식으로 조회) ★ =====
         const { data: prevUsers } = await supabase
             .from('users')
-            .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed')
+            .select('id, is_deleted, signup_reward_claimed, email_reward_claimed, card_reward_claimed, email_verified, email, card_status, card_image_url')
             .or(`phone.eq.${phone},phone.eq.${rawPhone},original_phone.eq.${phone},original_phone.eq.${rawPhone}`)
+            .order('id', { ascending: false })
             .limit(1);
 
         let isRejoin = false;
@@ -266,6 +280,7 @@ app.post('/api/users', async (req, res) => {
             if (prevUserData.is_deleted) {
                 isRejoin = true;
                 console.log(`🔄 재가입 감지: 전화번호 ${phone}의 이전 계정 ${prevUserData.id}`);
+                console.log(`   → 이전 인증 상태: email=${prevUserData.email_verified}, card=${prevUserData.card_status}`);
             }
         }
 
@@ -315,17 +330,36 @@ app.post('/api/users', async (req, res) => {
         userData.phone_verified = true;  // ★ OCTOMO 인증 완료 표시
         userData.phone_verified_at = new Date().toISOString();
         
-        // ★ Phase B: 매칭권 수령 여부 기록
+                // ★ Phase B: 매칭권 수령 여부 + 인증 상태 기록
         if (isRejoin && prevUserData) {
-            // 이전 계정의 수령 이력 상속
+            // 재가입: 이전 계정의 수령 이력 + 인증 상태 상속
             userData.signup_reward_claimed = prevUserData.signup_reward_claimed;
             userData.email_reward_claimed = prevUserData.email_reward_claimed;
             userData.card_reward_claimed = prevUserData.card_reward_claimed;
+
+            // ★★★ 이메일/학생증 인증 상태 이전 ★★★
+            if (prevUserData.email_verified) {
+                userData.email_verified = true;
+                userData.email = prevUserData.email;
+                console.log(`   → 이메일 인증 이전 완료 (${prevUserData.email})`);
+            } else {
+                userData.email_verified = false;
+            }
+
+            if (prevUserData.card_status) {
+                userData.card_status = prevUserData.card_status;
+                userData.card_image_url = prevUserData.card_image_url;
+                console.log(`   → 학생증 인증 상태 이전 완료 (${prevUserData.card_status})`);
+            } else {
+                userData.card_status = 'none';
+            }
         } else {
-            // 신규 가입: 가입 매칭권 수령 표시
+            // 신규 가입
             userData.signup_reward_claimed = true;
             userData.email_reward_claimed = false;
             userData.card_reward_claimed = false;
+            userData.email_verified = false;
+            userData.card_status = 'none';
         }
         if (referrer) userData.referrer_user_id = referrer.id;
         
