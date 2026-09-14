@@ -6679,15 +6679,56 @@ async function checkReferralCode() {
         </button>
     </div>
 
-    <div id="octomoStep2" style="display:none;">
+        <div id="octomoStep2" style="display:none;">
         <div style="background:rgba(251,191,36,0.08); border-radius:8px; padding:8px 10px; margin:8px 0; font-size:0.6rem; color:#fbbf24; line-height:1.6;">
-            아래 인증코드를 <strong>1666-3538</strong>로 문자 발송해주세요!
+            📱 아래 인증번호를 <strong>1666-3538</strong>로 문자 발송해주세요!
         </div>
-        <div style="text-align:center; font-size:1.3rem; font-weight:900; color:#fbbf24; letter-spacing:6px; font-family:'Courier New', monospace; margin:10px 0;" id="octomoCodeDisplay">------</div>
-        <div id="octomoCountdown" style="text-align:center; font-size:0.6rem; color:#888; margin-bottom:8px;">⏰ 10:00 남음</div>
-        
+        <div style="text-align:center; font-size:1.5rem; font-weight:900; color:#fbbf24; letter-spacing:8px; font-family:'Courier New', monospace; margin:10px 0;" id="octomoCodeDisplay">------</div>
+        <div id="octomoCountdown" style="text-align:center; font-size:0.6rem; color:#888; margin-bottom:10px;">⏰ 10:00 남음</div>
+
+        <!-- ★ 문자 앱 열기 버튼 (메인) ★ -->
+        <button type="button" class="btn-primary" onclick="openOctomoSmsApp()" style="width:100%; padding:12px; font-size:0.8rem; margin-bottom:6px;">
+            📨 문자 앱 열기 <span style="font-size:0.65rem; opacity:0.8;">(전송 버튼만 누르면 돼요!)</span>
+        </button>
+
+        <!-- ★ 인증방법 보기 버튼 (토글) ★ -->
+        <button type="button" class="btn-sm" onclick="toggleOctomoGuide()" style="width:100%; font-size:0.6rem; margin-bottom:6px;" id="octomoGuideBtn">
+            📖 인증방법 보기
+        </button>
+
+        <!-- ★ 인증방법 설명 (기본 숨김) ★ -->
+        <div id="octomoGuide" style="display:none; background:rgba(96,165,250,0.08); border-radius:10px; padding:12px; margin:8px 0; border:1px solid rgba(96,165,250,0.15);">
+            <div style="font-size:0.7rem; color:#60a5fa; font-weight:700; margin-bottom:8px;">📖 인증 방법</div>
+            <div style="font-size:0.65rem; color:#ccc; line-height:1.9; padding-left:4px;">
+                <strong>1.</strong> 아래 <strong style="color:#4ade80;">[📨 문자 앱 열기]</strong> 버튼을 누르면<br>
+                &nbsp;&nbsp;&nbsp;문자 앱이 자동으로 열려요.<br>
+                <strong>2.</strong> 수신번호(<strong>1666-3538</strong>)와<br>
+                &nbsp;&nbsp;&nbsp;인증번호(<strong id="octomoGuideCode">------</strong>)가<br>
+                &nbsp;&nbsp;&nbsp;이미 입력되어 있어요.<br>
+                <strong>3.</strong> 그대로 <strong style="color:#fbbf24;">전송 버튼</strong>만 눌러주세요!<br>
+                <strong>4.</strong> 이 화면으로 돌아와서<br>
+                &nbsp;&nbsp;&nbsp;<strong style="color:#4ade80;">[✅ 인증 확인]</strong> 버튼을 눌러주세요.
+            </div>
+                        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(96,165,250,0.2); font-size:0.6rem; color:#888; line-height:1.6;">
+                💡 <strong>왜 이렇게 하나요?</strong><br>
+                스팸 방지를 위해 사용자가 직접 문자를 보내는 방식이에요.<br>
+                문자 요금은 본인 요금제에 따라 부과될 수 있어요.
+            </div>
+
+            <!-- ★ 보안 안내 추가 ★ -->
+            <div style="margin-top:8px; padding:10px; background:rgba(74,222,128,0.06); border-radius:8px; border:1px solid rgba(74,222,128,0.15); font-size:0.6rem; color:#aaa; line-height:1.7;">
+                <div style="color:#4ade80; font-weight:700; margin-bottom:4px;">🔒 안전한 인증 방식</div>
+                이 방식은 사용자가 직접 문자를 발송하여 <strong style="color:#fff;">실제 기기 점유를 증명</strong>하는 
+                <strong style="color:#fff;">MO(Mobile Originated) 인증</strong>이에요.<br>
+                기존 SMS 인증(코드를 받는 방식)보다 <strong style="color:#fff;">코드 가로채기 위험이 적어</strong> 보안에 강하며, 
+                최근 <strong style="color:#fff;">금융권에서도 도입</strong>하고 있는 안전한 본인인증 방식이에요.
+            </div>
+        </div>
+        </div>
+
+        <!-- ★ 인증 확인 버튼 ★ -->
         <button type="button" class="btn-sm success" onclick="verifyOctomoCode()" style="width:100%;" id="octomoVerifyBtn">
-            ✅ 문자 발송 완료 (인증 확인)
+            ✅ 인증 확인
         </button>
         <button type="button" class="btn-sm" onclick="resetOctomoVerification()" style="width:100%; margin-top:4px; font-size:0.55rem;">
             🔄 코드 재발급
@@ -7927,6 +7968,72 @@ async function verifyOctomoCode() {
             btn.textContent = '✅ 문자 발송 완료 (인증 확인)';
         }
     }
+}
+
+// ===== 인증방법 토글 =====
+function toggleOctomoGuide() {
+    const guide = document.getElementById('octomoGuide');
+    const btn = document.getElementById('octomoGuideBtn');
+    const codeEl = document.getElementById('octomoGuideCode');
+    
+    if (!guide) return;
+    
+    if (guide.style.display === 'none') {
+        // 열기
+        guide.style.display = 'block';
+        if (btn) btn.innerHTML = '📖 인증방법 닫기';
+        // 안내에도 현재 코드 표시
+        const currentCode = document.getElementById('octomoCodeDisplay')?.textContent.trim();
+        if (codeEl) codeEl.textContent = currentCode || '------';
+    } else {
+        // 닫기
+        guide.style.display = 'none';
+        if (btn) btn.innerHTML = '📖 인증방법 보기';
+    }
+}
+
+// ===== 문자 앱 열기 (SMS 딥링크) =====
+function openOctomoSmsApp() {
+    const code = document.getElementById('octomoCodeDisplay')?.textContent.trim();
+    if (!code || code === '------') {
+        showToast('⚠️ 인증번호를 먼저 발급받아주세요.');
+        return;
+    }
+
+    const phoneNumber = '1666-3538';
+    const body = code;  // 인증번호만 문자 본문으로
+
+    // OS 감지
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+
+    let smsUrl;
+
+    if (isIOS) {
+        // iOS: &body= 형식 (iOS 8+ 지원)
+        smsUrl = `sms:${phoneNumber}&body=${encodeURIComponent(body)}`;
+    } else if (isAndroid) {
+        // Android: ?body= 형식
+        smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(body)}`;
+    } else {
+        // 데스크톱 또는 기타: 기본 형식
+        smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(body)}`;
+    }
+
+    console.log('📱 SMS URL:', smsUrl);
+
+    // 문자 앱 열기
+    try {
+        window.location.href = smsUrl;
+    } catch (e) {
+        console.error('SMS 앱 열기 실패:', e);
+    }
+
+    // 안내 토스트
+    setTimeout(() => {
+        showToast('📨 문자 앱에서 전송 버튼만 눌러주세요!');
+    }, 500);
 }
 
 // ===== 카운트다운 =====
